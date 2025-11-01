@@ -27,10 +27,10 @@
 - [x] T002 Configure tauri.conf.json for macOS 11+ target and Universal binary in src-tauri/tauri.conf.json
 - [x] T003 [P] Add Rust dependencies to src-tauri/Cargo.toml (tauri, serde, pest, tempfile, sha2, uuid, chrono, notify)
 - [x] T004 [P] Add frontend dependencies (vitest, @testing-library/svelte, @testing-library/jest-dom) via npm
-- [x] T005 [P] Configure file system permissions in src-tauri/tauri.conf.json for $HOME/.config/skhd/* access
+- [x] T005 [P] Configure file system permissions in src-tauri/tauri.conf.json for $HOME/.config/skhd/\* access
 - [x] T006 [P] Setup ESLint and Prettier for frontend in package.json
 - [x] T007 [P] Create project directory structure per plan.md (src-tauri/src/commands, models, services, utils, tests)
-- [x] T008 [P] Create frontend directory structure (src/components, services, hooks, styles, __tests__)
+- [x] T008 [P] Create frontend directory structure (src/components, services, hooks, styles, **tests**)
 
 ---
 
@@ -106,8 +106,8 @@
 - [ ] T040 [US1] Implement App.svelte to load and display config on mount
 - [ ] T041 [US1] Add error handling and loading states to App.svelte
 - [ ] T042 [P] [US1] Create basic CSS styling for native macOS feel in src/styles/main.css
-- [ ] T043 [P] [US1] Frontend test for ShortcutList component rendering in src/__tests__/components/ShortcutList.test.ts
-- [ ] T044 [P] [US1] Frontend test for EmptyState component in src/__tests__/components/EmptyState.test.ts
+- [ ] T043 [P] [US1] Frontend test for ShortcutList component rendering in src/**tests**/components/ShortcutList.test.ts
+- [ ] T044 [P] [US1] Frontend test for EmptyState component in src/**tests**/components/EmptyState.test.ts
 - [ ] T045 [US1] Manual test: Launch app and verify config loads within 2 seconds (SC-001, SC-007)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Users can view their skhd config in the GUI.
@@ -145,8 +145,8 @@
 - [ ] T063 [US2] Implement undo/redo stack in config store in src/stores/config.ts (FR-009)
 - [ ] T064 [US2] Add save button and save logic to App.svelte
 - [ ] T065 [US2] Implement unsaved changes detection and prompt before close in App.svelte (FR-014)
-- [ ] T066 [P] [US2] Frontend test for ShortcutEditor component in src/__tests__/components/ShortcutEditor.test.ts
-- [ ] T067 [P] [US2] Frontend test for undo/redo functionality in src/__tests__/stores/config.test.ts
+- [ ] T066 [P] [US2] Frontend test for ShortcutEditor component in src/**tests**/components/ShortcutEditor.test.ts
+- [ ] T067 [P] [US2] Frontend test for undo/redo functionality in src/**tests**/stores/config.test.ts
 - [ ] T068 [US2] Manual test: Complete full edit workflow (add → edit → save) in under 30 seconds (SC-002)
 - [ ] T069 [US2] Manual test: Verify backup created before save with correct timestamp (SC-009)
 
@@ -168,7 +168,7 @@
 - [ ] T073 [US3] Implement shortcut testing logic (keyboard event listening) in TestShortcut component
 - [ ] T074 [US3] Add test feedback UI (success/failure indicators) to TestShortcut component
 - [ ] T075 [US3] Integrate TestShortcut component into ShortcutEditor
-- [ ] T076 [P] [US3] Frontend test for TestShortcut component in src/__tests__/components/TestShortcut.test.ts
+- [ ] T076 [P] [US3] Frontend test for TestShortcut component in src/**tests**/components/TestShortcut.test.ts
 - [ ] T077 [US3] Manual test: Test shortcut triggers correctly and shows feedback
 
 **Checkpoint**: All user stories should now be independently functional. Full feature set complete.
@@ -183,7 +183,7 @@
 
 - [ ] T078 [P] Create SearchBar component in src/components/SearchBar.svelte
 - [ ] T079 Implement search/filter logic in ShortcutList component
-- [ ] T080 [P] Frontend test for SearchBar component in src/__tests__/components/SearchBar.test.ts
+- [ ] T080 [P] Frontend test for SearchBar component in src/**tests**/components/SearchBar.test.ts
 
 ### File Watching (FR-015, FR-016, FR-017)
 

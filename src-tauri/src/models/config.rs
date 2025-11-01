@@ -1,7 +1,6 @@
-/// Configuration File model
-
-use serde::{Deserialize, Serialize};
 use super::shortcut::Shortcut;
+/// Configuration File model
+use serde::{Deserialize, Serialize};
 
 /// Represents a parse error
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -36,11 +35,26 @@ pub struct ConfigFile {
 
     /// Parse errors encountered (if any)
     pub parse_errors: Vec<ParseError>,
+
+    /// Tracks the currently active file path (where saves will write)
+    /// Differs from file_path when user imports from custom location
+    #[serde(default = "ConfigFile::default_file_path")]
+    pub current_file_path: String,
 }
 
 impl ConfigFile {
+    /// Get the default file path for skhd configuration
+    pub fn default_file_path() -> String {
+        dirs::home_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
+            .join(".config/skhd/skhdrc")
+            .to_string_lossy()
+            .to_string()
+    }
+
     /// Create a new empty config file
     pub fn new(file_path: String) -> Self {
+        let current_file_path = file_path.clone();
         Self {
             file_path,
             shortcuts: Vec::new(),
@@ -49,6 +63,7 @@ impl ConfigFile {
             is_modified: false,
             backup_path: None,
             parse_errors: Vec::new(),
+            current_file_path,
         }
     }
 

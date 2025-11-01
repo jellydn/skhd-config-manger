@@ -1,6 +1,6 @@
 /// Backup service with SHA-256 checksums for configuration files
-
 use crate::models::Backup;
+use crate::services::file_io::write_config_atomic;
 use crate::utils::path::{expand_path, get_backup_dir};
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -88,12 +88,7 @@ pub fn list_backups() -> io::Result<Vec<Backup>> {
             let original_name = filename.split('_').next().unwrap_or("skhdrc");
             let original_path = expand_path(format!("~/.config/skhd/{}", original_name));
 
-            let backup = Backup::new(
-                path,
-                original_path,
-                checksum,
-                content.len() as u64,
-            );
+            let backup = Backup::new(path, original_path, checksum, content.len() as u64);
 
             backups.push(backup);
         }
@@ -136,13 +131,12 @@ pub fn restore_backup<P: AsRef<Path>>(backup: &Backup, target_path: Option<P>) -
         ));
     }
 
-    // Ensure target directory exists
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent)?;
-    }
+    // Convert content to string for atomic write
+    let content_str = String::from_utf8_lossy(&content);
 
-    // Write to target
-    fs::write(&target, &content)?;
+    // Write to target atomically
+    write_config_atomic(&target, &content_str)
+        .map_err(|e| io::Error::new(e.kind(), format!("Failed to restore backup: {}", e)))?;
 
     Ok(())
 }
@@ -168,8 +162,7 @@ mod tests {
         fs::write(&source_path, content).unwrap();
 
         // Create backup (goes to ~/.config/skhd/backups)
-        let backup =
-            create_backup(&source_path, Some("Test backup".to_string())).unwrap();
+        let backup = create_backup(&source_path, Some("Test backup".to_string())).unwrap();
 
         // Small delay to ensure file is fully written
         thread::sleep(Duration::from_millis(10));

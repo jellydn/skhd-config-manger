@@ -1,5 +1,4 @@
 /// Configuration management Tauri commands
-
 use crate::models::{ConfigFile, Shortcut};
 use crate::parser::parse_config;
 use crate::services::file_io::{read_config_safe, write_config_atomic};
@@ -12,6 +11,12 @@ pub struct ConfigState {
     pub config: Mutex<Option<ConfigFile>>,
 }
 
+impl Default for ConfigState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigState {
     pub fn new() -> Self {
         Self {
@@ -20,38 +25,24 @@ impl ConfigState {
     }
 }
 
-/// Load skhd configuration from file
+/// Helper: Load configuration from a specific path
 ///
-/// # Arguments
-/// * `file_path` - Optional custom path (defaults to ~/.config/skhd/skhdrc)
-/// * `state` - Application state
-///
-/// # Returns
-/// * `Ok(ConfigFile)` on success
-/// * `Err(String)` on failure
-#[tauri::command]
-pub fn load_config(
-    file_path: Option<String>,
-    state: State<'_, ConfigState>,
+/// This is the core loading logic used by load_config, import_config, and reload_config
+fn load_config_from_path(
+    path: &std::path::Path,
+    state: &State<'_, ConfigState>,
 ) -> Result<ConfigFile, String> {
-    let path = if let Some(p) = file_path {
-        expand_path(p)
-    } else {
-        get_default_config_path()
-    };
-
     // Read file
-    let content = read_config_safe(&path)
-        .map_err(|e| format!("Failed to read config file: {}", e))?;
+    let content =
+        read_config_safe(path).map_err(|e| format!("Failed to read config file: {}", e))?;
 
     // Parse content
     let parsed = parse_config(&content)
-        .map_err(|errors| {
-            format!("Failed to parse config: {} errors", errors.len())
-        })?;
+        .map_err(|errors| format!("Failed to parse config: {} errors", errors.len()))?;
 
     // Convert parsed config to ConfigFile
-    let mut config = ConfigFile::new(path.to_string_lossy().to_string());
+    let path_str = path.to_string_lossy().to_string();
+    let mut config = ConfigFile::new(path_str);
 
     for parsed_shortcut in parsed.shortcuts() {
         let shortcut = Shortcut::new(
@@ -77,6 +68,159 @@ pub fn load_config(
     Ok(config)
 }
 
+/// Detect the active skhd configuration file path
+///
+/// Checks standard skhd config locations in order:
+/// 1. $XDG_CONFIG_HOME/skhd/skhdrc
+/// 2. ~/.config/skhd/skhdrc
+/// 3. ~/.skhdrc
+///
+/// # Returns
+/// * `Ok(String)` - Path to first existing config file
+/// * `Err(String)` if no config file found
+#[tauri::command]
+pub fn detect_active_config() -> Result<String, String> {
+    use std::env;
+    use std::path::PathBuf;
+
+    // Define config paths in order of precedence (matching skhd behavior)
+    let config_paths: Vec<PathBuf> = vec![
+        // 1. $XDG_CONFIG_HOME/skhd/skhdrc
+        env::var("XDG_CONFIG_HOME")
+            .ok()
+            .map(|xdg| PathBuf::from(xdg).join("skhd/skhdrc"))
+            .unwrap_or_else(|| expand_path("~/.config/skhd/skhdrc")),
+        // 2. ~/.config/skhd/skhdrc
+        expand_path("~/.config/skhd/skhdrc"),
+        // 3. ~/.skhdrc
+        expand_path("~/.skhdrc"),
+    ];
+
+    // Find first existing config file
+    for path in config_paths {
+        if path.exists() {
+            return Ok(path.to_string_lossy().to_string());
+        }
+    }
+
+    // No config file found in any standard location
+    Err("No skhd configuration file found in standard locations".to_string())
+}
+
+/// Load skhd configuration from file
+///
+/// # Arguments
+/// * `file_path` - Optional custom path (defaults to ~/.config/skhd/skhdrc)
+/// * `state` - Application state
+///
+/// # Returns
+/// * `Ok(ConfigFile)` on success
+/// * `Err(String)` on failure
+#[tauri::command]
+pub fn load_config(
+    file_path: Option<String>,
+    state: State<'_, ConfigState>,
+) -> Result<ConfigFile, String> {
+    let path = if let Some(p) = file_path {
+        expand_path(p)
+    } else {
+        get_default_config_path()
+    };
+
+    load_config_from_path(&path, &state)
+}
+
+/// Import configuration from custom file location via file picker
+///
+/// Opens a native macOS file dialog for user to select an skhd configuration file.
+/// Loads and parses the selected file, updates the current configuration state.
+///
+/// # Arguments
+/// * `state` - Application state
+///
+/// # Returns
+/// * `Ok(ConfigFile)` - Loaded configuration with current_file_path set to selected path
+/// * `Err(String)` - "Import cancelled" if user closes dialog, or parse/IO errors
+#[tauri::command]
+pub async fn import_config(state: State<'_, ConfigState>) -> Result<ConfigFile, String> {
+    // Show file picker dialog
+    // Note: skhd config files typically have no extension (just "skhdrc")
+    // So we don't use extension filters - let users pick any file
+    let file = rfd::AsyncFileDialog::new()
+        .set_title("Import skhd Configuration")
+        .set_directory(dirs::home_dir().unwrap_or_default().join(".config/skhd"))
+        .pick_file()
+        .await;
+
+    // Handle user cancellation
+    let file = match file {
+        Some(f) => f,
+        None => return Err("Import cancelled".to_string()),
+    };
+
+    let path = file.path().to_path_buf();
+
+    // Load config from selected path
+    load_config_from_path(&path, &state)
+}
+
+/// Export current configuration to custom file location via file picker
+///
+/// Opens a native macOS save dialog for user to choose export destination.
+/// Serializes and validates the current configuration before writing.
+///
+/// # Arguments
+/// * `state` - Application state
+///
+/// # Returns
+/// * `Ok(String)` - Path where configuration was exported
+/// * `Err(String)` - "Export cancelled" if user closes dialog, or validation/IO errors
+#[tauri::command]
+pub async fn export_config(state: State<'_, ConfigState>) -> Result<String, String> {
+    // Get current config and serialize it (in separate scope to drop lock before await)
+    let content = {
+        let locked_config = state.config.lock().unwrap();
+        let config = locked_config
+            .as_ref()
+            .ok_or("No configuration loaded")?
+            .clone();
+        drop(locked_config); // Release lock
+
+        // Serialize configuration
+        let serialized = serialize_config(&config);
+
+        // Validate by attempting to parse
+        parse_config(&serialized).map_err(|errors| {
+            format!("Validation failed: {} syntax errors detected", errors.len())
+        })?;
+
+        serialized
+    }; // Lock is definitely dropped here
+
+    // Show save file dialog
+    // Note: skhd config files typically have no extension (just "skhdrc")
+    // So we don't use extension filters - just set default filename
+    let file = rfd::AsyncFileDialog::new()
+        .set_title("Export skhd Configuration")
+        .set_file_name("skhdrc")
+        .set_directory(dirs::home_dir().unwrap_or_default().join(".config/skhd"))
+        .save_file()
+        .await;
+
+    // Handle user cancellation
+    let file = match file {
+        Some(f) => f,
+        None => return Err("Export cancelled".to_string()),
+    };
+
+    let path = file.path();
+
+    // Write atomically
+    write_config_atomic(path, &content).map_err(|e| format!("Failed to write config: {}", e))?;
+
+    Ok(path.to_string_lossy().to_string())
+}
+
 /// Save configuration to file
 ///
 /// # Arguments
@@ -87,10 +231,7 @@ pub fn load_config(
 /// * `Ok(())` on success
 /// * `Err(String)` on failure
 #[tauri::command]
-pub fn save_config(
-    config: ConfigFile,
-    state: State<'_, ConfigState>,
-) -> Result<(), String> {
+pub fn save_config(config: ConfigFile, state: State<'_, ConfigState>) -> Result<(), String> {
     // Serialize config back to skhd format
     let content = serialize_config(&config);
 
@@ -163,10 +304,10 @@ pub fn serialize_config(config: &ConfigFile) -> String {
         } else {
             let mut mods = shortcut.modifiers.clone();
             mods.sort(); // Ensure consistent ordering
-            format!("{} + ", mods.join(" + "))
+            format!("{} ", mods.join(" + "))
         };
 
-        // Write shortcut line: [modifiers +] - key : command
+        // Write shortcut line: [modifiers] - key : command
         output.push_str(&format!(
             "{}- {} : {}\n",
             modifier_str, shortcut.key, shortcut.command
@@ -210,20 +351,15 @@ mod tests {
 
         // Verify format
         assert!(serialized.contains("# Global config"));
-        assert!(serialized.contains("cmd + - return : open -a Terminal"));
-        assert!(serialized.contains("cmd + shift + - f : open ~"));
+        assert!(serialized.contains("cmd - return : open -a Terminal"));
+        assert!(serialized.contains("cmd + shift - f : open ~"));
     }
 
     #[test]
     fn test_serialize_config_no_modifiers() {
         let mut config = ConfigFile::new("/test/path".to_string());
 
-        let shortcut = Shortcut::new(
-            vec![],
-            "f1".to_string(),
-            "echo test".to_string(),
-            1,
-        );
+        let shortcut = Shortcut::new(vec![], "f1".to_string(), "echo test".to_string(), 1);
 
         config.add_shortcut(shortcut);
 

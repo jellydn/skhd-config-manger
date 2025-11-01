@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "gui for my config"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - View Existing Configuration (Priority: P1)
 
@@ -64,7 +64,7 @@ Users need to verify that keyboard shortcuts work as intended before committing 
 - What happens with Unicode characters or special symbols in commands or comments?
 - How are multi-line commands or comments handled in the GUI display?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -86,14 +86,14 @@ Users need to verify that keyboard shortcuts work as intended before committing 
 - **FR-016**: Application MUST request necessary file system permissions on first launch
 - **FR-017**: System MUST handle read-only mode gracefully when write permissions are unavailable
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Keyboard Shortcut**: Represents a single skhd configuration entry with a key combination (modifiers + key) and an associated shell command or action
 - **Configuration File**: Represents the entire skhd config file, containing a collection of shortcuts, comments, and metadata (file path, last modified timestamp, backup status)
 - **Key Combination**: Represents a specific keyboard input pattern consisting of zero or more modifiers (cmd, alt, shift, ctrl, fn) and a primary key
 - **Backup**: Represents a timestamped copy of the configuration file created before modifications
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

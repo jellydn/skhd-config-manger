@@ -23,29 +23,34 @@ Build a native macOS GUI application for managing skhd keyboard shortcut configu
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### I. Native macOS Experience ✅
+
 - **Requirement**: Application must feel native to macOS, follow Apple HIG, use native controls
 - **Status**: PASS - Plan specifies Tauri v2 on macOS 11+, Universal binary, native UI patterns
 - **Evidence**: Feature spec requires macOS-specific behavior, dark mode support, accessibility standards
 
 ### II. Configuration Safety (NON-NEGOTIABLE) ✅
+
 - **Requirement**: Never corrupt or lose skhd configuration data. Backup before modification, validate before writing, atomic file operations, undo/redo capability
 - **Status**: PASS - Requirements FR-006, FR-007 mandate validation and automatic backups
 - **Evidence**: FR-007 (automatic backup), FR-006 (validation), FR-009 (undo/redo), atomic file operations planned
 
 ### III. Test Coverage ✅
+
 - **Requirement**: Unit tests for parser/file ops, integration tests for read/write cycles, >80% coverage for parsing and file operations
 - **Status**: PASS - Testing framework specified (cargo test + frontend tests)
 - **Evidence**: Plan includes test structure, constitution allows manual UI testing
 
 ### IV. Performance Standards ✅
+
 - **Requirement**: <2s cold start, <500ms warm start, <100ms parsing, <16ms frame time, <50MB idle, <100MB active, <20MB bundle
 - **Status**: PASS - Performance goals directly match constitution requirements
 - **Evidence**: Technical Context specifies all required performance targets
 
 ### V. Simple Architecture ✅
+
 - **Requirement**: Direct file parsing, no database unless required, Tauri conventions, avoid unnecessary abstraction
 - **Status**: PASS - File-based storage, straightforward Tauri architecture planned
 - **Evidence**: Storage specified as file-based, no database, follows Tauri backend/frontend separation
@@ -130,25 +135,30 @@ src/
 
 ## Post-Design Constitution Re-Check
 
-*Re-evaluation after Phase 1 design completion*
+_Re-evaluation after Phase 1 design completion_
 
 ### I. Native macOS Experience ✅
+
 - **Status**: PASS - Svelte chosen for performance, pest parser for accuracy
 - **Evidence**: Svelte delivers smallest bundle (~5-10MB vs React ~15-20MB), meets <20MB target
 
 ### II. Configuration Safety (NON-NEGOTIABLE) ✅
+
 - **Status**: PASS - Detailed atomic write implementation, backup strategy defined
 - **Evidence**: tempfile + atomic rename pattern documented in research.md, all safety requirements addressed in contracts
 
 ### III. Test Coverage ✅
+
 - **Status**: PASS - Comprehensive testing strategy defined
 - **Evidence**: cargo test + Vitest specified, >80% coverage target for parser/file ops, manual UI testing acceptable
 
 ### IV. Performance Standards ✅
+
 - **Status**: PASS - All performance targets achievable with chosen stack
 - **Evidence**: Svelte performance characteristics, pest parser benchmarks support <100ms parsing target
 
 ### V. Simple Architecture ✅
+
 - **Status**: PASS - No unnecessary abstraction layers introduced
 - **Evidence**: Direct file operations, no database, straightforward Tauri command pattern
 

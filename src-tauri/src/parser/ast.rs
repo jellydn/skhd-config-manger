@@ -1,5 +1,4 @@
 /// Abstract Syntax Tree structures for skhd configuration parsing
-
 use serde::{Deserialize, Serialize};
 
 /// Represents a parsed keyboard shortcut from the skhd config

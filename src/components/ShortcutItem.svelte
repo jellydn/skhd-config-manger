@@ -36,19 +36,13 @@
 
   <div class="shortcut-actions">
     {#if onTest}
-      <button class="btn-test" onclick={() => onTest?.(shortcut.id)}>
-        Test
-      </button>
+      <button type="button" class="btn-test" onclick={() => onTest(shortcut.id)}> Test </button>
     {/if}
     {#if onEdit}
-      <button class="btn-edit" onclick={() => onEdit?.(shortcut)}>
-        Edit
-      </button>
+      <button type="button" class="btn-edit" onclick={() => onEdit(shortcut)}> Edit </button>
     {/if}
     {#if onDelete}
-      <button class="btn-delete" onclick={() => onDelete?.(shortcut.id)}>
-        Delete
-      </button>
+      <button type="button" class="btn-delete" onclick={() => onDelete(shortcut.id)}> Delete </button>
     {/if}
   </div>
 </div>

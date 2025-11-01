@@ -1,7 +1,6 @@
-/// Path resolution utilities for skhd configuration files
-
-use std::path::{Path, PathBuf};
 use std::env;
+/// Path resolution utilities for skhd configuration files
+use std::path::{Path, PathBuf};
 
 /// Expand ~ in path to user's home directory
 ///
@@ -15,10 +14,9 @@ use std::env;
 pub fn expand_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path_str = path.as_ref().to_string_lossy();
 
-    if path_str.starts_with("~/") {
+    if let Some(remainder) = path_str.strip_prefix("~/") {
         if let Ok(home) = env::var("HOME") {
             let home_path = PathBuf::from(home);
-            let remainder = &path_str[2..]; // Skip "~/"
             return home_path.join(remainder);
         }
     } else if path_str == "~" {
@@ -33,9 +31,35 @@ pub fn expand_path<P: AsRef<Path>>(path: P) -> PathBuf {
 
 /// Get the default skhd configuration file path
 ///
-/// Returns ~/.config/skhd/skhdrc (macOS standard location)
+/// Checks in order:
+/// 1. $XDG_CONFIG_HOME/skhd/skhdrc
+/// 2. ~/.config/skhd/skhdrc
+/// 3. ~/.skhdrc
+///
+/// Returns first existing path, or ~/.config/skhd/skhdrc as default for new configs
 pub fn get_default_config_path() -> PathBuf {
-    expand_path("~/.config/skhd/skhdrc")
+    // Check XDG_CONFIG_HOME first if set
+    if let Ok(xdg) = env::var("XDG_CONFIG_HOME") {
+        let xdg_path = PathBuf::from(xdg).join("skhd/skhdrc");
+        if xdg_path.exists() {
+            return xdg_path;
+        }
+    }
+
+    // Check ~/.config/skhd/skhdrc
+    let config_path = expand_path("~/.config/skhd/skhdrc");
+    if config_path.exists() {
+        return config_path;
+    }
+
+    // Check ~/.skhdrc
+    let home_path = expand_path("~/.skhdrc");
+    if home_path.exists() {
+        return home_path;
+    }
+
+    // Default to ~/.config/skhd/skhdrc for new configs
+    config_path
 }
 
 /// Get the directory for skhd configuration files
@@ -86,10 +110,7 @@ mod tests {
     fn test_get_default_config_path() {
         let path = get_default_config_path();
         let home = env::var("HOME").unwrap();
-        assert_eq!(
-            path,
-            PathBuf::from(home).join(".config/skhd/skhdrc")
-        );
+        assert_eq!(path, PathBuf::from(home).join(".config/skhd/skhdrc"));
     }
 
     #[test]

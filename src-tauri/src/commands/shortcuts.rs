@@ -1,5 +1,4 @@
 /// Shortcut management Tauri commands
-
 use crate::commands::config::ConfigState;
 use crate::models::Shortcut;
 use tauri::State;
@@ -40,28 +39,24 @@ pub fn create_shortcut(
     state: State<'_, ConfigState>,
 ) -> Result<Shortcut, String> {
     let mut config_guard = state.config.lock().unwrap();
-    let config = config_guard
-        .as_mut()
-        .ok_or("No config loaded")?;
+    let config = config_guard.as_mut().ok_or("No config loaded")?;
 
     // Determine line number (append to end)
-    let line_number = config.shortcuts.last()
+    let line_number = config
+        .shortcuts
+        .last()
         .map(|s| s.line_number + 1)
         .unwrap_or(1);
 
     // Create shortcut
-    let mut shortcut = Shortcut::new(
-        request.modifiers,
-        request.key,
-        request.command,
-        line_number,
-    );
+    let mut shortcut = Shortcut::new(request.modifiers, request.key, request.command, line_number);
 
     shortcut.mode = request.mode;
     shortcut.comment = request.comment;
 
     // Validate
-    shortcut.validate()
+    shortcut
+        .validate()
         .map_err(|e| format!("Invalid shortcut: {}", e))?;
 
     // Check for duplicates
@@ -75,6 +70,7 @@ pub fn create_shortcut(
 
     // Add to config
     config.add_shortcut(shortcut.clone());
+    config.is_modified = true;
 
     Ok(shortcut)
 }
@@ -94,12 +90,11 @@ pub fn update_shortcut(
     state: State<'_, ConfigState>,
 ) -> Result<Shortcut, String> {
     let mut config_guard = state.config.lock().unwrap();
-    let config = config_guard
-        .as_mut()
-        .ok_or("No config loaded")?;
+    let config = config_guard.as_mut().ok_or("No config loaded")?;
 
     // Find existing shortcut
-    let existing = config.find_shortcut(&request.id)
+    let existing = config
+        .find_shortcut(&request.id)
         .ok_or("Shortcut not found")?;
 
     // Create updated shortcut (preserving line number)
@@ -115,7 +110,8 @@ pub fn update_shortcut(
     updated.comment = request.comment;
 
     // Validate
-    updated.validate()
+    updated
+        .validate()
         .map_err(|e| format!("Invalid shortcut: {}", e))?;
 
     // Check for duplicates (excluding this shortcut)
@@ -129,6 +125,7 @@ pub fn update_shortcut(
 
     // Update in config
     config.update_shortcut(updated.clone());
+    config.is_modified = true;
 
     Ok(updated)
 }
@@ -143,17 +140,12 @@ pub fn update_shortcut(
 /// * `Ok(())` on success
 /// * `Err(String)` on failure
 #[tauri::command]
-pub fn delete_shortcut(
-    id: String,
-    state: State<'_, ConfigState>,
-) -> Result<(), String> {
+pub fn delete_shortcut(id: String, state: State<'_, ConfigState>) -> Result<(), String> {
     let mut config_guard = state.config.lock().unwrap();
-    let config = config_guard
-        .as_mut()
-        .ok_or("No config loaded")?;
+    let config = config_guard.as_mut().ok_or("No config loaded")?;
 
-    config.remove_shortcut(&id)
-        .ok_or("Shortcut not found")?;
+    config.remove_shortcut(&id).ok_or("Shortcut not found")?;
+    config.is_modified = true;
 
     Ok(())
 }

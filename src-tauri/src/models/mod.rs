@@ -1,5 +1,4 @@
 /// Data models module
-
 pub mod backup;
 pub mod config;
 pub mod shortcut;

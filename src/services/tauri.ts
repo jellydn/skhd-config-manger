@@ -19,6 +19,14 @@ import type {
  */
 
 /**
+ * Detect the active skhd configuration file path
+ * Returns the config file path that the running skhd service is using
+ */
+export async function detectActiveConfig(): Promise<string> {
+  return invoke<string>('detect_active_config');
+}
+
+/**
  * Load skhd configuration from file
  * @param filePath Optional custom path (defaults to ~/.config/skhd/skhdrc)
  */
@@ -42,6 +50,21 @@ export async function reloadConfig(): Promise<ConfigFile> {
 }
 
 /**
+ * Import configuration from custom file location via file picker
+ */
+export async function importConfig(): Promise<ConfigFile> {
+  return invoke<ConfigFile>('import_config');
+}
+
+/**
+ * Export configuration to custom file location via file picker
+ * @returns Path where configuration was exported
+ */
+export async function exportConfig(): Promise<string> {
+  return invoke<string>('export_config');
+}
+
+/**
  * Shortcut Management Commands
  */
 
@@ -49,9 +72,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
  * Create a new shortcut
  * @param request Shortcut creation request
  */
-export async function createShortcut(
-  request: CreateShortcutRequest
-): Promise<Shortcut> {
+export async function createShortcut(request: CreateShortcutRequest): Promise<Shortcut> {
   return invoke<Shortcut>('create_shortcut', { request });
 }
 
@@ -59,9 +80,7 @@ export async function createShortcut(
  * Update an existing shortcut
  * @param request Shortcut update request
  */
-export async function updateShortcut(
-  request: UpdateShortcutRequest
-): Promise<Shortcut> {
+export async function updateShortcut(request: UpdateShortcutRequest): Promise<Shortcut> {
   return invoke<Shortcut>('update_shortcut', { request });
 }
 
@@ -81,9 +100,7 @@ export async function deleteShortcut(id: string): Promise<void> {
  * Validate a shortcut
  * @param shortcut Shortcut to validate
  */
-export async function validateShortcut(
-  shortcut: Shortcut
-): Promise<ValidationResult> {
+export async function validateShortcut(shortcut: Shortcut): Promise<ValidationResult> {
   return invoke<ValidationResult>('validate_shortcut', { shortcut });
 }
 
@@ -91,9 +108,7 @@ export async function validateShortcut(
  * Validate entire configuration
  * @param config Configuration to validate
  */
-export async function validateConfig(
-  config: ConfigFile
-): Promise<ValidationResult> {
+export async function validateConfig(config: ConfigFile): Promise<ValidationResult> {
   return invoke<ValidationResult>('validate_config', { config });
 }
 
@@ -132,9 +147,7 @@ export async function restoreBackup(backupPath: string): Promise<void> {
  * Test a shortcut (syntax check and preview)
  * @param shortcutId ID of the shortcut to test
  */
-export async function testShortcut(
-  shortcutId: string
-): Promise<TestResult> {
+export async function testShortcut(shortcutId: string): Promise<TestResult> {
   return invoke<TestResult>('test_shortcut', { shortcutId });
 }
 
@@ -142,8 +155,6 @@ export async function testShortcut(
  * Execute a shortcut's command in test mode
  * @param shortcutId ID of the shortcut to execute
  */
-export async function executeTestCommand(
-  shortcutId: string
-): Promise<TestResult> {
+export async function executeTestCommand(shortcutId: string): Promise<TestResult> {
   return invoke<TestResult>('execute_test_command', { shortcutId });
 }

@@ -1,7 +1,9 @@
 /// Validation Tauri commands
-
 use crate::models::{ConfigFile, Shortcut};
-use crate::services::validation::{validate_config as validate_config_service, validate_shortcut as validate_shortcut_service, ValidationResult};
+use crate::services::validation::{
+    validate_config as validate_config_service, validate_shortcut as validate_shortcut_service,
+    ValidationResult,
+};
 
 /// Validate a shortcut
 ///

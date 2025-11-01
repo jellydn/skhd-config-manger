@@ -13,9 +13,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(ConfigState::new())
         .invoke_handler(tauri::generate_handler![
+            commands::config::detect_active_config,
             commands::config::load_config,
             commands::config::save_config,
             commands::config::reload_config,
+            commands::config::import_config,
+            commands::config::export_config,
             commands::shortcuts::create_shortcut,
             commands::shortcuts::update_shortcut,
             commands::shortcuts::delete_shortcut,

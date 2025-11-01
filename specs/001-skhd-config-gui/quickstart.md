@@ -15,6 +15,7 @@ Before starting implementation, ensure you have:
 - **skhd**: Installed and configured (`brew install koekeishiya/formulae/skhd`)
 
 Optional but recommended:
+
 - **rust-analyzer**: For IDE support
 - **VS Code** with Rust and Svelte extensions
 
@@ -110,6 +111,7 @@ npm install --save-dev vitest @testing-library/svelte @testing-library/jest-dom
 **Goal**: Parse skhd config files into structured data
 
 **Files to Create**:
+
 - `src-tauri/src/parser/mod.rs`
 - `src-tauri/src/parser/grammar.pest`
 - `src-tauri/src/parser/ast.rs`
@@ -172,6 +174,7 @@ fn test_parse_invalid_modifier() {
 **Goal**: Implement safe file I/O with atomic writes and backups
 
 **Files to Create**:
+
 - `src-tauri/src/services/file_io.rs`
 - `src-tauri/src/services/backup.rs`
 
@@ -243,6 +246,7 @@ fn test_save_creates_backup() {
 **Goal**: Expose Rust functions to frontend via Tauri commands
 
 **Files to Create**:
+
 - `src-tauri/src/commands/config.rs`
 - `src-tauri/src/commands/mod.rs`
 
@@ -318,6 +322,7 @@ fn main() {
 **Goal**: Create type-safe wrappers for Tauri commands
 
 **Files to Create**:
+
 - `src/services/tauri.ts`
 - `src/types.ts`
 
@@ -371,7 +376,7 @@ export async function validateShortcut(
   return invoke<ValidationResult>('validate_shortcut', {
     shortcut,
     existingShortcuts,
-    mode
+    mode,
   });
 }
 
@@ -387,6 +392,7 @@ export async function validateShortcut(
 **Goal**: Build Svelte components for viewing and editing shortcuts
 
 **Files to Create**:
+
 - `src/components/ShortcutList.svelte`
 - `src/components/ShortcutEditor.svelte`
 - `src/components/ShortcutItem.svelte`
@@ -464,6 +470,7 @@ export async function validateShortcut(
 **Goal**: Ensure all functionality works and meets success criteria
 
 **Backend Tests**:
+
 ```bash
 # Run all Rust tests
 cargo test
@@ -475,6 +482,7 @@ cargo tarpaulin --out Html
 ```
 
 **Frontend Tests**:
+
 ```bash
 # Run Vitest tests
 npm run test
@@ -484,6 +492,7 @@ npm run test:coverage
 ```
 
 **Manual Testing Checklist**:
+
 - [ ] App launches in <2 seconds
 - [ ] Existing config file loads correctly
 - [ ] Can add new shortcut
@@ -548,15 +557,19 @@ xcrun notarytool submit skhd-gui.dmg \
 ## Troubleshooting
 
 **Issue**: Tauri commands not found
+
 - **Fix**: Ensure commands are registered in `main.rs` with `generate_handler![]`
 
 **Issue**: File permissions errors
+
 - **Fix**: Check `tauri.conf.json` fs.scope includes `$HOME/.config/skhd/*`
 
 **Issue**: Parser errors
+
 - **Fix**: Validate pest grammar with `pest_debugger` tool
 
 **Issue**: Build fails on M1 Mac
+
 - **Fix**: Use `--target universal-apple-darwin` for Universal binary
 
 ---
@@ -564,6 +577,7 @@ xcrun notarytool submit skhd-gui.dmg \
 ## Next Steps
 
 After completing quickstart:
+
 1. Run `/speckit.tasks` to generate detailed implementation tasks
 2. Implement tasks in priority order (P1 → P2 → P3)
 3. Create feature branch per task for code reviews

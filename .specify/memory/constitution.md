@@ -32,6 +32,7 @@ Rationale: Initial constitution for skhd GUI Tauri app on macOS. Focuses on nati
 ## Core Principles
 
 ### I. Native macOS Experience
+
 The application MUST feel native to macOS and integrate seamlessly with system conventions.
 
 - Follow Apple Human Interface Guidelines for all UI/UX decisions
@@ -43,6 +44,7 @@ The application MUST feel native to macOS and integrate seamlessly with system c
 **Rationale**: Users expect macOS apps to behave consistently with system conventions. Generic cross-platform UIs feel foreign and reduce user trust and adoption.
 
 ### II. Configuration Safety (NON-NEGOTIABLE)
+
 The application MUST never corrupt or lose user skhd configuration data.
 
 - Always backup existing configuration before any modification
@@ -56,6 +58,7 @@ The application MUST never corrupt or lose user skhd configuration data.
 **Rationale**: skhd is a critical system tool. Configuration corruption can break user workflows or lock users out of their keyboard shortcuts. Safety is paramount.
 
 ### III. Test Coverage
+
 Testing is required for configuration parsing, file operations, and critical user paths.
 
 - Unit tests MUST cover: skhd config parser, file operations, validation logic
@@ -67,6 +70,7 @@ Testing is required for configuration parsing, file operations, and critical use
 **Rationale**: Configuration safety principle requires robust testing. Parser bugs or file operation errors have high impact. UI testing can be manual given Tauri/native complexity.
 
 ### IV. Performance Standards
+
 The application MUST be responsive and lightweight as a macOS utility.
 
 - Application launch: <2 seconds cold start, <500ms warm start
@@ -79,6 +83,7 @@ The application MUST be responsive and lightweight as a macOS utility.
 **Rationale**: As a system utility, the app must be fast and lightweight. Users expect instant responsiveness when managing keyboard shortcuts.
 
 ### V. Simple Architecture
+
 Prefer straightforward implementations that can evolve over premature abstraction.
 
 - Start with direct skhd config file parsing (text-based)
@@ -92,11 +97,13 @@ Prefer straightforward implementations that can evolve over premature abstractio
 ## Platform Requirements
 
 ### macOS Targets
+
 - **Minimum Version**: macOS 11 (Big Sur) - Tauri v2 requirement
 - **Recommended**: macOS 12+ for optimal experience
 - **Architecture**: Universal binary (Intel + Apple Silicon)
 
 ### Technology Stack
+
 - **Framework**: Tauri v2 (Rust backend + web frontend)
 - **Frontend**: HTML/CSS/JavaScript (or React/Vue/Svelte if complexity warrants)
 - **Backend**: Rust for file operations, skhd parsing, validation
@@ -104,6 +111,7 @@ Prefer straightforward implementations that can evolve over premature abstractio
 - **Distribution**: .dmg installer with code signing (when ready for release)
 
 ### Security & Permissions
+
 - Request file system access explicitly (macOS sandboxing)
 - Code signing required for distribution outside development
 - No network access required (local file operations only)
@@ -112,23 +120,27 @@ Prefer straightforward implementations that can evolve over premature abstractio
 ## Development Workflow
 
 ### Code Organization
+
 - **Tauri Structure**: Follow Tauri conventions (src-tauri/ for Rust, src/ for frontend)
 - **Configuration Logic**: Centralize skhd parsing and validation in Rust backend
 - **UI Components**: Modular components for config editor, syntax highlighting, preview
 - **Tests**: `src-tauri/tests/` for Rust, `src/__tests__/` for frontend
 
 ### Quality Gates
+
 - All Rust code must pass: `cargo clippy`, `cargo fmt --check`, `cargo test`
 - All frontend code must pass framework linting and type checking
 - Pre-commit hook runs linters and tests automatically
 - No warnings in production builds (clippy warnings = errors)
 
 ### Version Control
+
 - Commit atomic changes with descriptive messages
 - Feature branches for new capabilities (e.g., `feature/syntax-highlighting`)
 - Tag releases with semantic versioning (v1.0.0, v1.1.0, etc.)
 
 ### Release Process
+
 - Test on both Intel and Apple Silicon hardware
 - Verify code signing and notarization before public distribution
 - Include release notes with user-facing changes and bug fixes
@@ -138,6 +150,7 @@ Prefer straightforward implementations that can evolve over premature abstractio
 This constitution supersedes all other development practices and guidelines. Any decision conflicting with these principles must be explicitly justified in writing.
 
 ### Amendment Process
+
 1. Propose amendment with clear rationale and impacted sections
 2. Update version following semantic versioning:
    - **MAJOR**: Backward incompatible principle removals or redefinitions
@@ -147,13 +160,16 @@ This constitution supersedes all other development practices and guidelines. Any
 4. Document amendment in Sync Impact Report (at top of this file)
 
 ### Compliance Review
+
 - All feature specifications must reference relevant principles
 - All pull requests must verify compliance with constitution
 - Implementation plans must justify any principle exceptions
 - Retrospectives should identify constitution gaps or needed amendments
 
 ### Runtime Guidance
+
 This constitution defines **what** principles govern the project. For **how** to implement day-to-day development tasks, refer to:
+
 - `.claude/CLAUDE.md` for AI assistant development practices
 - Tauri documentation for framework-specific patterns
 - Apple Human Interface Guidelines for macOS UI/UX standards

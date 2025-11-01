@@ -1,17 +1,22 @@
+use crate::commands::config::ConfigState;
 use crate::models::{Shortcut, TestResult};
 use std::process::Command;
 use tauri::State;
-use crate::commands::config::ConfigState;
 
 /// Test a shortcut by executing its command in dry-run mode
 /// This shows what would be executed without actually triggering the shortcut
 #[tauri::command]
-pub fn test_shortcut(shortcut_id: String, state: State<'_, ConfigState>) -> Result<TestResult, String> {
+pub fn test_shortcut(
+    shortcut_id: String,
+    state: State<'_, ConfigState>,
+) -> Result<TestResult, String> {
     let config_guard = state.config.lock().unwrap();
     let config = config_guard.as_ref().ok_or("No configuration loaded")?;
 
     // Find the shortcut
-    let shortcut = config.shortcuts.iter()
+    let shortcut = config
+        .shortcuts
+        .iter()
         .find(|s| s.id == shortcut_id)
         .ok_or("Shortcut not found")?;
 
@@ -45,19 +50,27 @@ pub fn test_shortcut(shortcut_id: String, state: State<'_, ConfigState>) -> Resu
 
 /// Execute a shortcut's command in a safe test mode (echo only, no actual execution)
 #[tauri::command]
-pub fn execute_test_command(shortcut_id: String, state: State<'_, ConfigState>) -> Result<TestResult, String> {
+pub fn execute_test_command(
+    shortcut_id: String,
+    state: State<'_, ConfigState>,
+) -> Result<TestResult, String> {
     let config_guard = state.config.lock().unwrap();
     let config = config_guard.as_ref().ok_or("No configuration loaded")?;
 
     // Find the shortcut
-    let shortcut = config.shortcuts.iter()
+    let shortcut = config
+        .shortcuts
+        .iter()
         .find(|s| s.id == shortcut_id)
         .ok_or("Shortcut not found")?;
 
     // Execute the command with echo to show what would run
     let output = Command::new("sh")
         .arg("-c")
-        .arg(format!("echo 'Would execute: {}' && {}", shortcut.command, &shortcut.command))
+        .arg(format!(
+            "echo 'Would execute: {}' && {}",
+            shortcut.command, &shortcut.command
+        ))
         .output()
         .map_err(|e| format!("Failed to execute test: {}", e))?;
 

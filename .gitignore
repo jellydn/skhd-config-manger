@@ -38,3 +38,4 @@ vite.config.ts.timestamp-*
 # Testing
 coverage/
 .nyc_output/
+target/rust-analyzer/flycheck0
