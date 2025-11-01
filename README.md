@@ -10,6 +10,7 @@ A modern, user-friendly GUI application for managing [skhd](https://github.com/k
 ## Features
 
 ### Configuration Management
+
 - **Auto-Detection**: Automatically detects skhd configuration from standard locations:
   - `$XDG_CONFIG_HOME/skhd/skhdrc`
   - `~/.config/skhd/skhdrc`
@@ -19,17 +20,20 @@ A modern, user-friendly GUI application for managing [skhd](https://github.com/k
 - **Real-time Validation**: Syntax checking with detailed error messages
 
 ### Shortcut Management
+
 - **Visual Editor**: Clean, modern interface for editing keyboard shortcuts
 - **CRUD Operations**: Create, Read, Update, Delete shortcuts with ease
 - **Duplicate Detection**: Prevents conflicting key combinations
 - **Modifier Support**: Full support for cmd, shift, ctrl, alt, fn modifiers
 
 ### Backup & Safety
+
 - **Atomic Writes**: Safe file operations prevent corruption
 - **Backup System**: Automatic backups before major changes
 - **Unsaved Changes Protection**: Confirmation dialogs prevent accidental data loss
 
 ### User Experience
+
 - **Welcome Screen**: Guided onboarding with clear action paths
 - **Error Handling**: Helpful error messages with actionable solutions
 - **Dark Mode**: Full dark mode support following system preferences
@@ -47,12 +51,14 @@ A modern, user-friendly GUI application for managing [skhd](https://github.com/k
 ### From Source
 
 1. Clone the repository:
+
 ```bash
-git clone https://github.com/yourusername/skhd-gui.git
-cd skhd-gui
+git clone https://github.com/jellydn/skhd-config-manger.git
+cd skhd-config-manger
 ```
 
 2. Install dependencies:
+
 ```bash
 bun install
 # or
@@ -60,6 +66,7 @@ npm install
 ```
 
 3. Build and run:
+
 ```bash
 bun run tauri dev
 # or
@@ -98,11 +105,13 @@ The built app will be in `src-tauri/target/release/bundle/`.
 ### Keyboard Shortcut Format
 
 Shortcuts follow the skhd format:
+
 ```
 [modifiers] - key : command
 ```
 
 Examples:
+
 - `cmd - return : open -a Terminal`
 - `cmd + shift - f : open ~`
 - `ctrl + alt - b : open -a "Brave Browser"`
@@ -110,3 +119,19 @@ Examples:
 ### Importing/Exporting
 
 - **Import**: Click **Import...** to browse for an existing skhd config file
+
+## Author
+
+👤 **Huynh Duc Dung**
+
+- Website: https://productsway.com/
+- Twitter: [@jellydn](https://twitter.com/jellydn)
+- Github: [@jellydn](https://github.com/jellydn)
+
+## Show your support
+
+Give a ⭐️ if this project helped you!
+
+[![kofi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/dunghd)
+[![paypal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/dunghd)
+[![buymeacoffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dunghd)
