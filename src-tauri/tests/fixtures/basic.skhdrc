@@ -1,0 +1,16 @@
+# Basic skhd configuration for testing
+
+# Terminal shortcuts
+cmd - return : open -a Terminal
+cmd + shift - return : open -a iTerm
+
+# Browser shortcuts
+cmd - b : open -a Safari
+cmd + shift - b : open -a "Google Chrome"
+
+# Window management
+cmd + alt - f : yabai -m window --toggle zoom-fullscreen
+cmd + alt - h : yabai -m window --focus west
+cmd + alt - l : yabai -m window --focus east
+cmd + alt - j : yabai -m window --focus south
+cmd + alt - k : yabai -m window --focus north

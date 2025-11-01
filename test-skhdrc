@@ -1,0 +1,42 @@
+# skhd configuration
+# Install:
+#  brew install koekeishiya/formulae/skhd
+#  skhd --start-service
+#  Reload:
+#  skhd --reload
+# Note: Requires Accessibility permissions in System Settings > Privacy & Security
+
+# ============================================================================
+# Application Launcher (Based on leader-key config)
+# Using ctrl + alt as modifier instead of leader key for skhd compatibility
+# ============================================================================
+
+# Quick Launch - Top Level
+ctrl + alt - t : open -a "Ghostty"
+ctrl + alt - b : open -a "Brave Browser"
+ctrl + alt - c : open -a "Cursor"
+ctrl + alt - d : open -a "Navicat Premium Lite"
+ctrl + alt - z : open -a "Zed Preview"
+# Raycast Extensions
+ctrl + alt - p : open "raycast://confetti"
+
+# Communication
+ctrl + alt + shift - z : open -a "zoom.us"
+ctrl + alt + shift - s : open -a "Slack"
+ctrl + alt + shift - m : open -a "Spark Desktop"
+ctrl + alt + shift - f : open -a "Messenger"
+ctrl + alt + shift - t : open -a "Microsoft Teams"
+
+# Media & Tools
+ctrl + alt + shift - r : open -a "Spotify"
+ctrl + alt + shift - o : open -a "OBS"
+ctrl + alt + shift - n : open -a "Notes"
+ctrl + alt + shift - k : open -a "KeyCastr"
+ctrl + alt + shift - y : open -a "spotube"
+
+# Development
+ctrl + alt + shift - c : open -a "Visual Studio Code - Insiders"
+ctrl + alt + shift - w : open -a "Warp"
+ctrl + alt + shift - e : open -a "Finder"
+ctrl + alt + shift - d : open -a "OrbStack"
+ctrl + alt + shift - v : open -a "Vial"

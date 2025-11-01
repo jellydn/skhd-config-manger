@@ -1,0 +1,10 @@
+# Configuration with duplicate shortcuts
+
+# First definition
+cmd - f : open -a Finder
+
+# Some other shortcuts
+cmd - return : open -a Terminal
+
+# Duplicate! (same key combination as first)
+cmd - f : open -a Safari

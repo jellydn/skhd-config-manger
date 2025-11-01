@@ -1,0 +1,13 @@
+# Config with intentional errors for testing
+
+# Valid shortcut
+cmd - return : open -a Terminal
+
+# Missing command (error)
+cmd - t :
+
+# Invalid modifier (error)
+invalid_mod - f : echo "test"
+
+# Valid shortcut
+cmd + shift - b : open -a Safari

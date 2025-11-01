@@ -1,0 +1,44 @@
+// skhd Configuration Grammar
+// Based on skhd syntax: <modifiers> - <key> : <command>
+
+WHITESPACE = _{ " " | "\t" }
+
+// Main structure
+config_file = { SOI ~ (comment | shortcut | empty_line)* ~ EOI }
+empty_line = { WHITESPACE* ~ NEWLINE }
+
+// Comments
+comment = { "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+NEWLINE = { "\r\n" | "\n" }
+
+// Keyboard shortcut
+shortcut = { modifiers? ~ "-" ~ key ~ ":" ~ command ~ NEWLINE }
+
+// Modifiers (can be combined with +)
+modifiers = { modifier ~ ("+" ~ modifier)* }
+modifier = { "cmd" | "alt" | "shift" | "ctrl" | "fn" }
+
+// Key (any alphanumeric, special chars, or function keys)
+key = @{
+    function_key
+    | special_key
+    | alphanumeric_key
+}
+
+function_key = {
+    "f1" | "f2" | "f3" | "f4" | "f5" | "f6" |
+    "f7" | "f8" | "f9" | "f10" | "f11" | "f12" |
+    "f13" | "f14" | "f15" | "f16" | "f17" | "f18" | "f19" | "f20"
+}
+
+special_key = {
+    "return" | "tab" | "space" | "backspace" | "delete" |
+    "escape" | "home" | "end" | "pageup" | "pagedown" |
+    "insert" | "left" | "right" | "up" | "down"
+}
+
+alphanumeric_key = { ASCII_ALPHANUMERIC | "_" | "-" | "=" | "[" | "]" |
+                     "\\" | ";" | "'" | "," | "." | "/" | "`" }
+
+// Command (everything after the colon until end of line)
+command = { (!NEWLINE ~ ANY)+ }

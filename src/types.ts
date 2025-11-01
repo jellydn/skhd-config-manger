@@ -1,0 +1,159 @@
+/**
+ * TypeScript type definitions matching Rust models
+ * These types ensure type safety across the Tauri bridge
+ */
+
+/**
+ * Represents a keyboard shortcut from the skhd config
+ */
+export interface Shortcut {
+  /** Unique identifier for tracking during editing */
+  id: string;
+
+  /** Modifier keys (cmd, alt, shift, ctrl, fn) - order-independent */
+  modifiers: string[];
+
+  /** Primary key being pressed */
+  key: string;
+
+  /** Shell command to execute */
+  command: string;
+
+  /** Optional mode name for modal shortcuts */
+  mode?: string;
+
+  /** Optional inline comment */
+  comment?: string;
+
+  /** Original line number from config file */
+  line_number: number;
+}
+
+/**
+ * Represents a parse error encountered during config parsing
+ */
+export interface ParseError {
+  /** Line number where error occurred */
+  line_number: number;
+
+  /** Column number (if available) */
+  column?: number;
+
+  /** Type of error */
+  error_type: string;
+
+  /** Human-readable error message */
+  message: string;
+
+  /** Content of the line that caused the error */
+  line_content: string;
+}
+
+/**
+ * Represents the complete skhd configuration file
+ */
+export interface ConfigFile {
+  /** Absolute path to config file */
+  file_path: string;
+
+  /** List of keyboard shortcuts (ordered by line number) */
+  shortcuts: Shortcut[];
+
+  /** Global comment lines not associated with shortcuts */
+  global_comments: string[];
+
+  /** Last modification timestamp (ISO 8601) */
+  last_modified: string;
+
+  /** Whether in-memory state differs from file */
+  is_modified: boolean;
+
+  /** Path to latest backup (if any) */
+  backup_path?: string;
+
+  /** Parse errors encountered (if any) */
+  parse_errors: ParseError[];
+}
+
+/**
+ * Represents a backup of a configuration file
+ */
+export interface Backup {
+  /** Absolute path to the backup file */
+  file_path: string;
+
+  /** Path to the original config file */
+  original_path: string;
+
+  /** Timestamp when backup was created (ISO 8601) */
+  created_at: string;
+
+  /** SHA-256 checksum of backup content for integrity verification */
+  checksum: string;
+
+  /** Human-readable description of backup reason */
+  description?: string;
+
+  /** File size in bytes */
+  size_bytes: number;
+}
+
+/**
+ * Validation result containing errors and warnings
+ */
+export interface ValidationResult {
+  /** Whether the validation passed (no errors) */
+  is_valid: boolean;
+
+  /** List of validation errors */
+  errors: string[];
+
+  /** List of validation warnings */
+  warnings: string[];
+}
+
+/**
+ * Request to create a new shortcut
+ */
+export interface CreateShortcutRequest {
+  modifiers: string[];
+  key: string;
+  command: string;
+  mode?: string;
+  comment?: string;
+}
+
+/**
+ * Request to update an existing shortcut
+ */
+export interface UpdateShortcutRequest {
+  id: string;
+  modifiers: string[];
+  key: string;
+  command: string;
+  mode?: string;
+  comment?: string;
+}
+
+/**
+ * Result from testing a shortcut
+ */
+export interface TestResult {
+  /** ID of the shortcut that was tested */
+  shortcut_id: string;
+
+  /** The command that was tested */
+  command: string;
+
+  /** Whether the command syntax is valid */
+  syntax_valid: boolean;
+
+  /** Syntax error message if invalid */
+  syntax_error?: string;
+
+  /** Preview of what the command would do */
+  preview: string;
+
+  /** Timestamp when the test was executed */
+  timestamp: string;
+}

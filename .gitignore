@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+Thumbs.db
+
+# Node/Frontend
+node_modules/
+/build
+/.svelte-kit
+/package
+*.log
+bun.lockb
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Rust/Tauri
+src-tauri/target/
+src-tauri/debug/
+src-tauri/release/
+*.rs.bk
+*.rlib
+*.prof*
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# Build artifacts
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Testing
+coverage/
+.nyc_output/
