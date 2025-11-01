@@ -1,5 +1,4 @@
 /// Validation service for shortcuts and configurations
-
 use crate::models::{ConfigFile, Shortcut};
 use crate::parser::parse_config;
 
@@ -89,12 +88,12 @@ pub fn validate_config(config: &ConfigFile) -> ValidationResult {
 
     // Check for common system shortcuts conflicts
     let system_shortcuts = [
-        ("cmd", "space"),      // Spotlight
-        ("cmd", "tab"),        // App switcher
-        ("cmd", "q"),          // Quit
-        ("cmd + shift", "3"),  // Screenshot
-        ("cmd + shift", "4"),  // Screenshot selection
-        ("cmd + ctrl", "q"),   // Lock screen
+        ("cmd", "space"),     // Spotlight
+        ("cmd", "tab"),       // App switcher
+        ("cmd", "q"),         // Quit
+        ("cmd + shift", "3"), // Screenshot
+        ("cmd + shift", "4"), // Screenshot selection
+        ("cmd + ctrl", "q"),  // Lock screen
     ];
 
     for shortcut in &config.shortcuts {
@@ -239,6 +238,9 @@ mod tests {
         config.add_shortcut(shortcut);
 
         let result = validate_config(&config);
-        assert!(result.warnings.iter().any(|w| w.contains("system shortcut")));
+        assert!(result
+            .warnings
+            .iter()
+            .any(|w| w.contains("system shortcut")));
     }
 }

@@ -28,6 +28,7 @@ rfd = "0.14"  # Native file dialogs (may already be in Tauri deps)
 ```
 
 **Verify**:
+
 ```bash
 cd src-tauri
 cargo check  # Should compile without errors
@@ -40,6 +41,7 @@ cargo check  # Should compile without errors
 **File**: `src-tauri/src/models/config_file.rs`
 
 **Add field to ConfigFile**:
+
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigFile {
@@ -71,6 +73,7 @@ impl ConfigFile {
 ```
 
 **Test**:
+
 ```bash
 cargo test models::config_file
 ```
@@ -82,6 +85,7 @@ cargo test models::config_file
 **File**: `src-tauri/src/commands/config.rs`
 
 **Add import_config function**:
+
 ```rust
 use rfd::AsyncFileDialog;
 
@@ -126,6 +130,7 @@ async fn load_config_from_path(
 ```
 
 **Test**:
+
 ```bash
 # Unit test with mock file
 cargo test import_config
@@ -182,6 +187,7 @@ fn validate_skhd_syntax(text: &str) -> Result<(), String> {
 ```
 
 **Test**:
+
 ```bash
 cargo test export_config
 ```
@@ -211,6 +217,7 @@ pub async fn reload_config(state: State<'_, ConfigState>) -> Result<ConfigFile, 
 **Note**: Frontend will handle unsaved changes warning.
 
 **Test**:
+
 ```bash
 cargo test reload_config
 ```
@@ -256,6 +263,7 @@ pub fn run() {
 ```
 
 **Test**:
+
 ```bash
 cargo build  # Should compile cleanly
 cargo test   # All tests should pass
@@ -276,7 +284,7 @@ export interface ConfigFile {
   is_modified: boolean;
   backup_path?: string;
   parse_errors: ParseError[];
-  current_file_path: string;  // NEW
+  current_file_path: string; // NEW
 }
 ```
 
@@ -334,10 +342,10 @@ export async function reloadConfig(): Promise<ConfigFile> {
     open,
     title,
     message,
-    confirmText = "Confirm",
-    cancelText = "Cancel",
+    confirmText = 'Confirm',
+    cancelText = 'Cancel',
     onConfirm,
-    onCancel
+    onCancel,
   }: Props = $props();
 </script>
 
@@ -369,7 +377,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
     max-width: 400px;
   }
   .btn-confirm {
-    background: #ff3b30;  /* Warning color for destructive action */
+    background: #ff3b30; /* Warning color for destructive action */
   }
 </style>
 ```
@@ -381,6 +389,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 **File**: `src/routes/+page.svelte`
 
 **Add state**:
+
 ```svelte
 <script lang="ts">
   import {
@@ -398,7 +407,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
       config = await importConfigAPI();
       error = null;
     } catch (err) {
-      if (err !== "Import cancelled") {
+      if (err !== 'Import cancelled') {
         error = err instanceof Error ? err.message : String(err);
       }
     }
@@ -410,7 +419,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
       console.log(`Exported to: ${exportedPath}`);
       // TODO: Show success toast
     } catch (err) {
-      if (err !== "Export cancelled") {
+      if (err !== 'Export cancelled') {
         error = err instanceof Error ? err.message : String(err);
       }
     }
@@ -443,22 +452,14 @@ export async function reloadConfig(): Promise<ConfigFile> {
   <h1>skhd Configuration Manager</h1>
   <div class="header-actions">
     <!-- NEW BUTTONS -->
-    <button class="btn-import" onclick={handleImport}>
-      Import...
-    </button>
-    <button class="btn-export" onclick={handleExport}>
-      Export...
-    </button>
+    <button class="btn-import" onclick={handleImport}> Import... </button>
+    <button class="btn-export" onclick={handleExport}> Export... </button>
     <!-- EXISTING BUTTONS -->
     {#if config && config.shortcuts.length > 0}
-      <button class="btn-create" onclick={handleCreate}>
-        + New Shortcut
-      </button>
+      <button class="btn-create" onclick={handleCreate}> + New Shortcut </button>
     {/if}
     {#if config && config.is_modified}
-      <button class="btn-save" onclick={saveConfiguration}>
-        Save Changes
-      </button>
+      <button class="btn-save" onclick={saveConfiguration}> Save Changes </button>
     {/if}
     <!-- EXISTING RELOAD (now with confirmation) -->
     <button class="btn-reload" onclick={handleReloadClick} disabled={loading}>
@@ -480,15 +481,18 @@ export async function reloadConfig(): Promise<ConfigFile> {
 ```
 
 **Add styles**:
+
 ```svelte
 <style>
-  .btn-import, .btn-export {
+  .btn-import,
+  .btn-export {
     background: #f5f5f7;
     color: #1d1d1f;
     border: 1px solid #d2d2d7;
   }
 
-  .btn-import:hover, .btn-export:hover {
+  .btn-import:hover,
+  .btn-export:hover {
     background: #e8e8ed;
   }
 </style>
@@ -501,6 +505,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 ### Manual Testing
 
 **Test 1: Import Custom Config**
+
 1. Start app: `bun run tauri dev`
 2. Click "Import..." button
 3. Select `test-skhdrc` file from project root
@@ -508,6 +513,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 5. Verify: Header shows current file path
 
 **Test 2: Export Configuration**
+
 1. Make edit to any shortcut
 2. Click "Export..." button
 3. Save to Desktop as `test-export.skhdrc`
@@ -516,6 +522,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 6. Verify: Contains all edits correctly
 
 **Test 3: Reload with Unsaved Changes**
+
 1. Edit a shortcut (don't save)
 2. Click "Reload" button
 3. Verify: Confirmation dialog appears
@@ -524,6 +531,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 6. Verify: Changes discarded, config reloaded
 
 **Test 4: Round-Trip Integrity**
+
 1. Import `test-skhdrc`
 2. Export to `/tmp/roundtrip.skhdrc`
 3. Import `/tmp/roundtrip.skhdrc`
@@ -532,6 +540,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 ### Automated Testing
 
 **Run all tests**:
+
 ```bash
 # Backend
 cargo test
@@ -548,15 +557,19 @@ bun run typecheck
 ## Common Issues
 
 ### Issue: File dialog doesn't appear
+
 **Solution**: Check macOS permissions in System Settings > Privacy & Security > Files and Folders
 
 ### Issue: "Permission denied" on export
+
 **Solution**: Choose a directory you own (Documents, Desktop, not /etc)
 
 ### Issue: Import shows parse errors
+
 **Solution**: Verify skhd syntax is valid - this is expected behavior for malformed configs
 
 ### Issue: TypeScript errors on ConfigFile
+
 **Solution**: Run `bun run typecheck` and ensure `current_file_path` added to types
 
 ---
@@ -564,11 +577,13 @@ bun run typecheck
 ## Performance Benchmarks
 
 **Expected timings** (from constitution):
+
 - Import operation: <200ms (dialog + parse)
 - Export operation: <200ms (serialize + write)
 - Reload operation: <150ms (parse + state update)
 
 **Test with large config**:
+
 ```bash
 # Generate 1000-line test config
 for i in {1..1000}; do

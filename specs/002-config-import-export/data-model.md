@@ -17,6 +17,7 @@ This document defines the data model changes required for configuration import/e
 **Location**: `src-tauri/src/models/config_file.rs`
 
 **Existing Fields** (unchanged):
+
 ```rust
 pub struct ConfigFile {
     /// Absolute path to config file (historical, may differ from current_file_path)
@@ -43,6 +44,7 @@ pub struct ConfigFile {
 ```
 
 **New Field**:
+
 ```rust
 /// Tracks the currently active file path (where saves will write)
 /// Differs from file_path when user imports from custom location
@@ -52,6 +54,7 @@ pub current_file_path: String,
 ```
 
 **Field Semantics**:
+
 - `file_path`: Historical field, remains for backward compatibility, represents original load location
 - `current_file_path`: Active file being edited, target for save operations
 - On default load: `file_path == current_file_path`
@@ -59,6 +62,7 @@ pub current_file_path: String,
 - After export: `current_file_path` optionally updated if user wants to switch
 
 **Default Value Function**:
+
 ```rust
 impl ConfigFile {
     fn default_file_path() -> String {
@@ -72,11 +76,13 @@ impl ConfigFile {
 ```
 
 **Validation Rules**:
+
 - `current_file_path` MUST be an absolute path
 - `current_file_path` MUST be writable (checked before save operations)
 - `current_file_path` MAY not exist (allows exporting to new locations)
 
 **State Transitions**:
+
 ```
 [App Start]
   ↓ load_config()
@@ -108,6 +114,7 @@ impl ConfigFile {
 ```
 
 **Backward Compatibility**:
+
 - `#[serde(default)]` ensures old serialized configs deserialize correctly
 - On first load of legacy config: set `current_file_path = file_path`
 
@@ -140,6 +147,7 @@ pub enum ConfigError {
 ```
 
 **Display Implementation**:
+
 ```rust
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -179,6 +187,7 @@ impl std::fmt::Display for ConfigError {
 ```
 
 **Usage in Commands**:
+
 ```rust
 #[tauri::command]
 async fn import_config() -> Result<ConfigFile, String> {
@@ -243,6 +252,7 @@ impl FileDialogOptions {
 ## Data Flow Diagrams
 
 ### Import Flow
+
 ```
 User Click "Import"
   ↓
@@ -269,6 +279,7 @@ Frontend: Update UI with new shortcuts
 ```
 
 ### Export Flow
+
 ```
 User Click "Export"
   ↓
@@ -296,6 +307,7 @@ Optional: Update current_file_path
 ```
 
 ### Reload Flow
+
 ```
 User Click "Reload"
   ↓
@@ -327,12 +339,14 @@ Frontend: Update UI with reloaded data
 **No Database**: This feature maintains the file-based storage model (Constitutional Principle V).
 
 **File Operations**:
+
 - **Import**: Read from user-selected path → Parse → Store in memory
 - **Export**: Serialize from memory → Write to user-selected path
 - **Reload**: Re-read from current_file_path → Replace memory state
 - **Save**: Write to current_file_path (existing behavior)
 
 **Atomic Write Pattern** (reused from Feature 001):
+
 ```rust
 use tempfile::NamedTempFile;
 use std::fs;
@@ -382,15 +396,15 @@ File System [skhdrc file]
 
 ```typescript
 export interface ConfigFile {
-  file_path: string;          // EXISTING
-  shortcuts: Shortcut[];      // EXISTING
-  global_comments: string[];  // EXISTING
-  last_modified: string;      // EXISTING
-  is_modified: boolean;       // EXISTING
-  backup_path?: string;       // EXISTING
+  file_path: string; // EXISTING
+  shortcuts: Shortcut[]; // EXISTING
+  global_comments: string[]; // EXISTING
+  last_modified: string; // EXISTING
+  is_modified: boolean; // EXISTING
+  backup_path?: string; // EXISTING
   parse_errors: ParseError[]; // EXISTING
 
-  current_file_path: string;  // NEW: Currently active file being edited
+  current_file_path: string; // NEW: Currently active file being edited
 }
 ```
 
@@ -400,12 +414,12 @@ export interface ConfigFile {
 
 ## Validation Summary
 
-| Field | Validation Rule | Enforcement |
-|-------|----------------|-------------|
-| `current_file_path` | Must be absolute path | Backend (on import/save) |
-| `current_file_path` | Must be writable | Backend (on save attempt) |
-| Exported content | Must be valid skhd syntax | Backend (before write) |
-| Import content | Must parse without fatal errors | Backend (before accept) |
+| Field               | Validation Rule                 | Enforcement               |
+| ------------------- | ------------------------------- | ------------------------- |
+| `current_file_path` | Must be absolute path           | Backend (on import/save)  |
+| `current_file_path` | Must be writable                | Backend (on save attempt) |
+| Exported content    | Must be valid skhd syntax       | Backend (before write)    |
+| Import content      | Must parse without fatal errors | Backend (before accept)   |
 
 ---
 

@@ -1,10 +1,8 @@
 /// Backup management Tauri commands
-
 use crate::commands::config::ConfigState;
 use crate::models::Backup;
 use crate::services::backup::{
-    create_backup as create_backup_service,
-    list_backups as list_backups_service,
+    create_backup as create_backup_service, list_backups as list_backups_service,
     restore_backup as restore_backup_service,
 };
 use tauri::State;
@@ -25,9 +23,7 @@ pub fn create_backup(
 ) -> Result<Backup, String> {
     let file_path = {
         let config_guard = state.config.lock().unwrap();
-        let config = config_guard
-            .as_ref()
-            .ok_or("No config loaded")?;
+        let config = config_guard.as_ref().ok_or("No config loaded")?;
         config.file_path.clone()
     }; // Lock released here
 
@@ -42,8 +38,7 @@ pub fn create_backup(
 /// * `Err(String)` - Error message
 #[tauri::command]
 pub fn list_backups() -> Result<Vec<Backup>, String> {
-    list_backups_service()
-        .map_err(|e| format!("Failed to list backups: {}", e))
+    list_backups_service().map_err(|e| format!("Failed to list backups: {}", e))
 }
 
 /// Restore configuration from a backup
@@ -56,21 +51,15 @@ pub fn list_backups() -> Result<Vec<Backup>, String> {
 /// * `Ok(())` on success
 /// * `Err(String)` on failure
 #[tauri::command]
-pub fn restore_backup(
-    backup_path: String,
-    state: State<'_, ConfigState>,
-) -> Result<(), String> {
+pub fn restore_backup(backup_path: String, state: State<'_, ConfigState>) -> Result<(), String> {
     let target_path = {
         let config_guard = state.config.lock().unwrap();
-        let config = config_guard
-            .as_ref()
-            .ok_or("No config loaded")?;
+        let config = config_guard.as_ref().ok_or("No config loaded")?;
         config.file_path.clone()
     }; // Lock released here
 
     // Find the backup
-    let backups = list_backups_service()
-        .map_err(|e| format!("Failed to list backups: {}", e))?;
+    let backups = list_backups_service().map_err(|e| format!("Failed to list backups: {}", e))?;
 
     let backup = backups
         .iter()

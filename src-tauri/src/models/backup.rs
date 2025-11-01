@@ -1,5 +1,4 @@
 /// Backup model for config file versioning
-
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

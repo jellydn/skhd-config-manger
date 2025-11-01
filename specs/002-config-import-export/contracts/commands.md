@@ -26,6 +26,7 @@ This file defines the Tauri command signatures (Rust backend ↔ TypeScript fron
 **User Story**: US1 - Import Configuration from Custom Location (P1)
 
 **Rust Signature**:
+
 ```rust
 #[tauri::command]
 async fn import_config(
@@ -50,6 +51,7 @@ async fn import_config(
   - `"Invalid skhd configuration..."` - Parse errors
 
 **Behavior**:
+
 1. Opens AsyncFileDialog with filters: `["skhdrc", "conf", "txt"]`
 2. Default directory: `~/.config/skhd/`
 3. On user selection: Parse file with existing parser
@@ -59,10 +61,12 @@ async fn import_config(
 7. Return ConfigFile to frontend
 
 **Side Effects**:
+
 - Updates global ConfigState
 - Previous unsaved changes are lost (frontend should warn)
 
 **Performance**:
+
 - File dialog: Native macOS (no latency)
 - Parse time: <100ms for typical configs (<1000 lines)
 - Total: <200ms for user-perceived operation
@@ -76,6 +80,7 @@ async fn import_config(
 **User Story**: US2 - Export Current Configuration (P2)
 
 **Rust Signature**:
+
 ```rust
 #[tauri::command]
 async fn export_config(
@@ -97,6 +102,7 @@ async fn export_config(
   - `"File operation failed..."` - I/O error during write
 
 **Behavior**:
+
 1. Get current ConfigFile from state
 2. Serialize to skhd text format
 3. Validate by re-parsing serialized text
@@ -107,10 +113,12 @@ async fn export_config(
 8. Does NOT change `current_file_path` (export is copy operation)
 
 **Side Effects**:
+
 - Creates/overwrites file at user-selected path
 - No changes to ConfigState (export-only operation)
 
 **Performance**:
+
 - Serialization: <10ms
 - Validation: <50ms
 - Write: <50ms
@@ -125,6 +133,7 @@ async fn export_config(
 **User Story**: US3 - Reload from Default Location (P1)
 
 **Rust Signature**:
+
 ```rust
 #[tauri::command]
 async fn reload_config(
@@ -147,6 +156,7 @@ async fn reload_config(
   - `"Invalid skhd configuration..."` - File corrupted externally
 
 **Behavior**:
+
 1. Read `current_file_path` from ConfigState
 2. Re-parse file using existing load logic
 3. Replace `ConfigState.config` with fresh parse
@@ -154,10 +164,12 @@ async fn reload_config(
 5. Return new ConfigFile
 
 **Side Effects**:
+
 - **DESTRUCTIVE**: Discards all unsaved in-memory changes
 - Updates global ConfigState
 
 **Performance**:
+
 - Parse time: <100ms
 - State update: <10ms
 - Total: <150ms
@@ -171,11 +183,13 @@ async fn reload_config(
 ### importConfig
 
 **Signature**:
+
 ```typescript
-export async function importConfig(): Promise<ConfigFile>
+export async function importConfig(): Promise<ConfigFile>;
 ```
 
 **Implementation**:
+
 ```typescript
 import { invoke } from '@tauri-apps/api/core';
 import type { ConfigFile } from '../types';
@@ -186,6 +200,7 @@ export async function importConfig(): Promise<ConfigFile> {
 ```
 
 **Usage Example**:
+
 ```typescript
 // In Svelte component
 async function handleImport() {
@@ -194,7 +209,7 @@ async function handleImport() {
     // Config state updated automatically by Tauri
     // UI reactivity will update display
   } catch (error) {
-    if (error !== "Import cancelled") {
+    if (error !== 'Import cancelled') {
       showError(error);
     }
   }
@@ -206,11 +221,13 @@ async function handleImport() {
 ### exportConfig
 
 **Signature**:
+
 ```typescript
-export async function exportConfig(): Promise<string>
+export async function exportConfig(): Promise<string>;
 ```
 
 **Implementation**:
+
 ```typescript
 export async function exportConfig(): Promise<string> {
   return invoke<string>('export_config');
@@ -218,13 +235,14 @@ export async function exportConfig(): Promise<string> {
 ```
 
 **Usage Example**:
+
 ```typescript
 async function handleExport() {
   try {
     const exportedPath = await exportConfig();
     showSuccess(`Configuration exported to: ${exportedPath}`);
   } catch (error) {
-    if (error !== "Export cancelled") {
+    if (error !== 'Export cancelled') {
       showError(error);
     }
   }
@@ -236,11 +254,13 @@ async function handleExport() {
 ### reloadConfig
 
 **Signature**:
+
 ```typescript
-export async function reloadConfig(): Promise<ConfigFile>
+export async function reloadConfig(): Promise<ConfigFile>;
 ```
 
 **Implementation**:
+
 ```typescript
 export async function reloadConfig(): Promise<ConfigFile> {
   return invoke<ConfigFile>('reload_config');
@@ -248,6 +268,7 @@ export async function reloadConfig(): Promise<ConfigFile> {
 ```
 
 **Usage Example**:
+
 ```typescript
 async function handleReload() {
   // Check for unsaved changes first

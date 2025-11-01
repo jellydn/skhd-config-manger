@@ -24,8 +24,8 @@
 
 **Purpose**: Add dependencies and prepare for file dialog implementation
 
-- [ ] T001 Add rfd dependency to src-tauri/Cargo.toml for native file dialogs
-- [ ] T002 Verify Cargo.toml builds successfully with new dependency
+- [x] T001 Add rfd dependency to src-tauri/Cargo.toml for native file dialogs
+- [x] T002 Verify Cargo.toml builds successfully with new dependency
 
 ---
 
@@ -35,10 +35,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add current_file_path field to ConfigFile struct in src-tauri/src/models/config_file.rs
-- [ ] T004 Add default_file_path() function to ConfigFile impl in src-tauri/src/models/config_file.rs
-- [ ] T005 Update ConfigFile::new() or from_parse() to initialize current_file_path in src-tauri/src/models/config_file.rs
-- [ ] T006 Update current_file_path field in ConfigFile TypeScript interface in src/types.ts
+- [x] T003 Add current_file_path field to ConfigFile struct in src-tauri/src/models/config.rs
+- [x] T004 Add default_file_path() function to ConfigFile impl in src-tauri/src/models/config.rs
+- [x] T005 Update ConfigFile::new() to initialize current_file_path in src-tauri/src/models/config.rs
+- [x] T006 Update current_file_path field in ConfigFile TypeScript interface in src/types.ts
 
 **Checkpoint**: Data model extended - user story implementation can now begin
 
@@ -166,6 +166,7 @@
 - **User Story 3 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories (reload uses existing infrastructure)
 
 **Independence Validation**: Each user story can be tested independently:
+
 - US1 alone: Import works without export or reload
 - US2 alone: Export works without import or reload
 - US3 alone: Reload works without import or export
@@ -180,19 +181,24 @@
 ### Parallel Opportunities
 
 **Within User Story 1**:
+
 - T014 (TypeScript service) + T015-T017 (UI components) can run in parallel
 
 **Within User Story 2**:
+
 - T029 (TypeScript service) + T030-T032 (UI components) can run in parallel
 
 **Within User Story 3**:
+
 - T036-T038 (ConfirmDialog component) can run in parallel with T039-T044 (backend command)
 - T045 (TypeScript service) can run after backend is complete
 
 **Across User Stories**:
+
 - Once Foundational (Phase 2) is complete, all three user stories (US1, US2, US3) can be implemented in parallel
 
 **Polish Phase**:
+
 - T054-T057 (all test/lint commands) can run in parallel
 
 ---

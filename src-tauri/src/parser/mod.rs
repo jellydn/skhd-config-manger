@@ -1,5 +1,4 @@
 /// skhd configuration file parser using pest
-
 pub mod ast;
 
 use pest::Parser;
@@ -66,43 +65,41 @@ pub fn parse_config(content: &str) -> Result<ParsedConfig, Vec<ParseError>> {
     // Process each line
     let mut line_num = 1;
     for pair in pairs {
-        match pair.as_rule() {
-            Rule::config_file => {
-                for line_pair in pair.into_inner() {
-                    match line_pair.as_rule() {
-                        Rule::comment => {
-                            let text = line_pair.as_str()
-                                .trim_end_matches('\n')
-                                .trim_end_matches('\r')
-                                .trim_start_matches('#')
-                                .trim();
-                            parsed_config.lines.push(ConfigLine::Comment(ParsedComment {
-                                line_number: line_num,
-                                text: text.to_string(),
-                            }));
-                            line_num += 1;
-                        }
-                        Rule::shortcut => {
-                            match parse_shortcut(&line_pair, line_num) {
-                                Ok(shortcut) => {
-                                    parsed_config.lines.push(ConfigLine::Shortcut(shortcut));
-                                }
-                                Err(e) => {
-                                    errors.push(e);
-                                }
-                            }
-                            line_num += 1;
-                        }
-                        Rule::empty_line => {
-                            parsed_config.lines.push(ConfigLine::Empty(line_num));
-                            line_num += 1;
-                        }
-                        Rule::EOI => break,
-                        _ => {}
+        if pair.as_rule() == Rule::config_file {
+            for line_pair in pair.into_inner() {
+                match line_pair.as_rule() {
+                    Rule::comment => {
+                        let text = line_pair
+                            .as_str()
+                            .trim_end_matches('\n')
+                            .trim_end_matches('\r')
+                            .trim_start_matches('#')
+                            .trim();
+                        parsed_config.lines.push(ConfigLine::Comment(ParsedComment {
+                            line_number: line_num,
+                            text: text.to_string(),
+                        }));
+                        line_num += 1;
                     }
+                    Rule::shortcut => {
+                        match parse_shortcut(&line_pair, line_num) {
+                            Ok(shortcut) => {
+                                parsed_config.lines.push(ConfigLine::Shortcut(shortcut));
+                            }
+                            Err(e) => {
+                                errors.push(e);
+                            }
+                        }
+                        line_num += 1;
+                    }
+                    Rule::empty_line => {
+                        parsed_config.lines.push(ConfigLine::Empty(line_num));
+                        line_num += 1;
+                    }
+                    Rule::EOI => break,
+                    _ => {}
                 }
             }
-            _ => {}
         }
     }
 
@@ -114,7 +111,10 @@ pub fn parse_config(content: &str) -> Result<ParsedConfig, Vec<ParseError>> {
 }
 
 /// Parse a single shortcut line
-fn parse_shortcut(pair: &pest::iterators::Pair<Rule>, line_num: usize) -> Result<ParsedShortcut, ParseError> {
+fn parse_shortcut(
+    pair: &pest::iterators::Pair<Rule>,
+    line_num: usize,
+) -> Result<ParsedShortcut, ParseError> {
     let mut modifiers = Vec::new();
     let mut key = String::new();
     let mut command = String::new();

@@ -10,12 +10,12 @@
   <div class="empty-icon">⌨️</div>
   <h2>No Shortcuts Found</h2>
   <p>Your skhd configuration file appears to be empty.</p>
-  <p class="hint">Start by creating your first keyboard shortcut to control your macOS environment.</p>
+  <p class="hint">
+    Start by creating your first keyboard shortcut to control your macOS environment.
+  </p>
 
   {#if onCreateFirst}
-    <button class="btn-primary" onclick={onCreateFirst}>
-      Create First Shortcut
-    </button>
+    <button class="btn-primary" onclick={onCreateFirst}> Create First Shortcut </button>
   {/if}
 </div>
 

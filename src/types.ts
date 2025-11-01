@@ -73,6 +73,9 @@ export interface ConfigFile {
 
   /** Parse errors encountered (if any) */
   parse_errors: ParseError[];
+
+  /** Tracks the currently active file path (where saves will write) */
+  current_file_path: string;
 }
 
 /**

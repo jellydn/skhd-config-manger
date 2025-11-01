@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "Allow to load configuration and reload from UI. So I had a way to import or export config."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
@@ -81,7 +81,7 @@ As a user who has made changes I want to discard, I want to reload the configura
 - How does the system behave if the default configuration file doesn't exist on reload?
 - What happens if the file is modified externally while the user is editing in the GUI?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -98,12 +98,12 @@ As a user who has made changes I want to discard, I want to reload the configura
 - **FR-011**: System MUST handle file permission errors gracefully with clear error messages
 - **FR-012**: System MUST validate exported files are valid skhd configuration format
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **ConfigurationSource**: Tracks the file path of the currently loaded configuration (default or custom)
 - **FileMetadata**: Contains file path, last modified timestamp, and file size for tracking
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

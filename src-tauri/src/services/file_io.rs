@@ -1,5 +1,4 @@
 /// Atomic file I/O service for safe configuration file operations
-
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;

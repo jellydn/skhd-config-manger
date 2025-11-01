@@ -23,14 +23,16 @@ This feature adds configuration import/export capabilities to the skhd GUI manag
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### ✅ Native macOS Experience
+
 - **Compliance**: Uses native macOS file dialogs via rfd crate (Tauri standard)
 - **Evidence**: File picker will use system dialog, respects macOS accessibility
 - **UI Impact**: Import/Export/Reload buttons follow existing native button patterns
 
 ### ✅ Configuration Safety (NON-NEGOTIABLE)
+
 - **Compliance**: PASS - Existing atomic write infrastructure will be reused
 - **Evidence**:
   - Import: Validates before displaying (existing parser)
@@ -39,6 +41,7 @@ This feature adds configuration import/export capabilities to the skhd GUI manag
 - **Risk Mitigation**: All file operations go through existing validated ConfigState
 
 ### ✅ Test Coverage
+
 - **Compliance**: PASS - Will add tests for new commands and file dialog paths
 - **Test Plan**:
   - Unit: Test import/export command logic with temp files
@@ -46,6 +49,7 @@ This feature adds configuration import/export capabilities to the skhd GUI manag
   - Manual: File dialog behavior, error messages, permission handling
 
 ### ✅ Performance Standards
+
 - **Compliance**: PASS - File dialog and I/O operations are async, non-blocking
 - **Evidence**:
   - File dialogs run async (rfd AsyncFileDialog)
@@ -53,6 +57,7 @@ This feature adds configuration import/export capabilities to the skhd GUI manag
   - UI updates use Svelte reactivity (non-blocking)
 
 ### ✅ Simple Architecture
+
 - **Compliance**: PASS - Extends existing config command pattern
 - **Justification**: No new abstractions, reuses ConfigState pattern
 - **Design**:

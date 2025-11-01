@@ -1,5 +1,4 @@
 /// Keyboard Shortcut model
-
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -30,12 +29,7 @@ pub struct Shortcut {
 
 impl Shortcut {
     /// Create a new shortcut with generated UUID
-    pub fn new(
-        modifiers: Vec<String>,
-        key: String,
-        command: String,
-        line_number: usize,
-    ) -> Self {
+    pub fn new(modifiers: Vec<String>, key: String, command: String, line_number: usize) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             modifiers,

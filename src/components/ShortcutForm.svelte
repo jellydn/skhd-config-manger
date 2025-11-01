@@ -22,7 +22,7 @@
 
   function toggleModifier(modifier: string) {
     if (selectedModifiers.includes(modifier)) {
-      selectedModifiers = selectedModifiers.filter(m => m !== modifier);
+      selectedModifiers = selectedModifiers.filter((m) => m !== modifier);
     } else {
       selectedModifiers = [...selectedModifiers, modifier];
     }
@@ -68,12 +68,12 @@
 
       // Map special keys
       const keyMap: Record<string, string> = {
-        'enter': 'return',
-        'escape': 'escape',
-        'arrowup': 'up',
-        'arrowdown': 'down',
-        'arrowleft': 'left',
-        'arrowright': 'right',
+        enter: 'return',
+        escape: 'escape',
+        arrowup: 'up',
+        arrowdown: 'down',
+        arrowleft: 'left',
+        arrowright: 'right',
         ' ': 'space',
       };
 
@@ -300,7 +300,7 @@
     margin-top: 2rem;
   }
 
-  button[type="submit"],
+  button[type='submit'],
   .btn-cancel {
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
