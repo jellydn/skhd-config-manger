@@ -29,10 +29,10 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### Tasks
 
-- [ ] T001 Create `.github/workflows/` directory structure
-- [ ] T002 [P] Create `assets/icons/` directory for source icon files
-- [ ] T003 [P] Create `assets/dmg/` directory for DMG background images
-- [ ] T004 [P] Create `.github/workflows/.gitkeep` to track empty workflow directory
+- [x] T001 Create `.github/workflows/` directory structure
+- [x] T002 [P] Create `assets/icons/` directory for source icon files
+- [x] T003 [P] Create `assets/dmg/` directory for DMG background images
+- [x] T004 [P] Create `.github/workflows/.gitkeep` to track empty workflow directory
 
 **Completion Criteria**: Directory structure exists and committed to git
 
@@ -49,15 +49,15 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### CI Workflow Implementation
 
-- [ ] T005 [US1] Create `.github/workflows/ci.yml` with basic workflow structure (name, triggers)
-- [ ] T006 [US1] Configure CI triggers in `ci.yml`: `on: push` for `main` branch
-- [ ] T007 [US1] Add `on: pull_request` trigger for `main` branch in `ci.yml`
-- [ ] T008 [US1] Define `test` job in `ci.yml` with `runs-on: macos-latest`
-- [ ] T009 [US1] Add checkout step in `ci.yml`: `actions/checkout@v4`
-- [ ] T010 [US1] Add Bun setup step in `ci.yml`: `oven-sh/setup-bun@v2`
-- [ ] T011 [US1] Add Rust toolchain step in `ci.yml`: `dtolnay/rust-toolchain@stable`
-- [ ] T012 [US1] Add dependency install step in `ci.yml`: `run: bun install`
-- [ ] T013 [US1] Add test execution step in `ci.yml`: `cargo test && cargo clippy -- -D warnings && bun run typecheck`
+- [x] T005 [US1] Create `.github/workflows/ci.yml` with basic workflow structure (name, triggers)
+- [x] T006 [US1] Configure CI triggers in `ci.yml`: `on: push` for `main` branch
+- [x] T007 [US1] Add `on: pull_request` trigger for `main` branch in `ci.yml`
+- [x] T008 [US1] Define `test` job in `ci.yml` with `runs-on: macos-latest`
+- [x] T009 [US1] Add checkout step in `ci.yml`: `actions/checkout@v4`
+- [x] T010 [US1] Add Bun setup step in `ci.yml`: `oven-sh/setup-bun@v2`
+- [x] T011 [US1] Add Rust toolchain step in `ci.yml`: `dtolnay/rust-toolchain@stable`
+- [x] T012 [US1] Add dependency install step in `ci.yml`: `run: bun install`
+- [x] T013 [US1] Add test execution step in `ci.yml`: `cargo test && cargo clippy -- -D warnings && bun run typecheck`
 
 **Reference Contract**: `specs/004-ci-cd-design/contracts/ci.yml`
 
