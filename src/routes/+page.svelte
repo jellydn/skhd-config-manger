@@ -376,12 +376,6 @@
             </svg>
             Import Existing File
           </button>
-          <button class="btn-retry" onclick={handleDetectAndLoad}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Try Again
-          </button>
         </div>
       </div>
     {:else if !config}
@@ -735,29 +729,6 @@
     flex-shrink: 0;
   }
 
-  .btn-retry {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #f5f5f7;
-    color: #1d1d1f;
-    border: 1px solid #d2d2d7;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-retry:hover {
-    background: #e8e8ed;
-  }
-
-  .btn-retry svg {
-    flex-shrink: 0;
-  }
-
   @media (prefers-color-scheme: dark) {
     :global(body) {
       background: #1d1d1f;
@@ -809,16 +780,6 @@
     .error-help code {
       background: #3a3a3a;
       color: #e0e0e0;
-    }
-
-    .btn-retry {
-      background: #3a3a3a;
-      border-color: #4a4a4a;
-      color: #f5f5f7;
-    }
-
-    .btn-retry:hover {
-      background: #4a4a4a;
     }
   }
 
