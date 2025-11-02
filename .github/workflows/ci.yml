@@ -19,9 +19,26 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      # Step 2.5: Cache Bun dependencies
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       # Step 3: Setup Rust toolchain
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # Step 3.5: Cache Rust dependencies
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
 
       # Step 4: Install project dependencies
       - name: Install dependencies
