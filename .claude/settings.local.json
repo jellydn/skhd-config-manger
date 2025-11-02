@@ -62,13 +62,10 @@
       "Bash(./scripts/generate-icons.sh:*)",
       "Bash(git revert:*)",
       "Bash(make:*)",
-      "Bash(if [ -f tasks.md.bak ])",
-      "Bash(then mv tasks.md.bak tasks.md)",
-      "Bash(else echo \"No backup found\")",
-      "Bash(fi)",
       "Bash(launchctl list:*)",
       "Bash(timeout 5 log stream:*)",
-      "Bash(log show:*)"
+      "Bash(log show:*)",
+      "Bash(bun test:*)"
     ],
     "deny": [],
     "ask": []
