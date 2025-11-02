@@ -136,7 +136,7 @@
       <button
         class="toolbar-btn"
         onclick={handleReload}
-        disabled={isReloading || !status || status.state === 'Error'}
+        disabled={isReloading || !status || status?.state === 'Error'}
         aria-label="Reload skhd service"
       >
         {#if isReloading}

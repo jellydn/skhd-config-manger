@@ -121,8 +121,14 @@ impl ServiceManager {
     }
 
     /// Reload the skhd service
+    ///
+    /// This method acquires a lock to prevent concurrent reloads.
+    /// The lock is automatically released when the function returns (RAII pattern),
+    /// even in case of errors or panics.
     pub async fn reload_service(&self) -> Result<(), String> {
         // Acquire lock to prevent concurrent reloads
+        // The _lock guard will automatically release the mutex when dropped,
+        // either at the end of this function or during error propagation
         let _lock = self.reload_lock.lock().await;
 
         // Stop the service
@@ -131,6 +137,7 @@ impl ServiceManager {
         // Start the service
         self.start_service().await?;
 
+        // Lock is automatically released here when _lock goes out of scope
         Ok(())
     }
 

@@ -20,30 +20,78 @@
   let error = $state<string | null>(null);
   let success = $state<string | null>(null);
   let statusPollInterval: number | null = null;
+  let failureCount = 0;
+  const MAX_FAILURES = 5;
+  const BASE_POLL_INTERVAL = 5000; // 5 seconds
 
   // Lifecycle
   onMount(async () => {
     // Initial status load
     await loadStatus();
 
-    // Poll status every 5 seconds
-    statusPollInterval = window.setInterval(loadStatus, 5000);
+    // Start polling with initial interval
+    startPolling();
   });
 
   onDestroy(() => {
-    if (statusPollInterval) {
-      window.clearInterval(statusPollInterval);
-    }
+    stopPolling();
   });
 
-  // Load service status
+  // Start status polling with exponential backoff
+  function startPolling() {
+    stopPolling(); // Clear any existing interval
+    const interval = Math.min(
+      BASE_POLL_INTERVAL * Math.pow(2, failureCount),
+      30000 // Max 30 seconds
+    );
+    statusPollInterval = window.setInterval(loadStatus, interval);
+  }
+
+  // Stop status polling
+  function stopPolling() {
+    if (statusPollInterval) {
+      window.clearInterval(statusPollInterval);
+      statusPollInterval = null;
+    }
+  }
+
+  // Load service status with circuit breaker
   async function loadStatus() {
+    // Circuit breaker: stop polling after too many failures
+    if (failureCount >= MAX_FAILURES) {
+      console.error(`Status polling stopped after ${MAX_FAILURES} consecutive failures`);
+      error = 'Service monitoring paused due to repeated failures. Please check service status manually.';
+      stopPolling();
+      return;
+    }
+
     try {
-      error = null;
       status = await getServiceStatus();
+
+      // Reset failure count on success
+      if (failureCount > 0) {
+        failureCount = 0;
+        startPolling(); // Reset to normal interval
+      }
+
+      // Clear error on successful load
+      if (error && error.includes('monitoring paused')) {
+        error = null;
+      }
     } catch (err) {
-      error = String(err);
-      console.error('Failed to get service status:', err);
+      failureCount++;
+      const errorMsg = String(err);
+      console.error(`Failed to get service status (attempt ${failureCount}/${MAX_FAILURES}):`, err);
+
+      // Only show error if we haven't hit max failures yet
+      if (failureCount < MAX_FAILURES) {
+        // Don't overwrite existing errors immediately
+        if (!error || !error.includes('monitoring paused')) {
+          error = errorMsg;
+        }
+        // Restart polling with exponential backoff
+        startPolling();
+      }
     }
   }
 
@@ -59,6 +107,10 @@
       await reloadService();
 
       success = 'Service reloaded successfully';
+
+      // Reset failure count and resume polling on successful reload
+      failureCount = 0;
+      startPolling();
 
       // Reload status after a brief delay
       setTimeout(loadStatus, 1000);
@@ -133,7 +185,7 @@
   <button
     class="btn-reload"
     onclick={handleReload}
-    disabled={isReloading || !status || status.state === 'Error'}
+    disabled={isReloading || !status || status?.state === 'Error'}
     aria-label="Reload skhd service"
   >
     {#if isReloading}

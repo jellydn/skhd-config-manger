@@ -72,6 +72,29 @@ pub fn parse_log_line(line: &str) -> Option<LogEntry> {
     }
 }
 
+/// Sanitize username to prevent path traversal attacks
+///
+/// This function filters out any characters that could be used for path traversal
+/// or other malicious purposes, allowing only alphanumeric characters, underscores, and hyphens.
+///
+/// # Arguments
+/// * `username` - Raw username string from environment
+///
+/// # Returns
+/// * Sanitized username string safe for use in file paths
+///
+/// # Examples
+/// ```ignore
+/// let safe = sanitize_username("user/../root");
+/// assert_eq!(safe, "userroot");
+/// ```
+fn sanitize_username(username: &str) -> String {
+    username
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
+        .collect()
+}
+
 /// LogTailer manages the lifecycle of log streaming from the skhd service
 ///
 /// This struct:
@@ -132,7 +155,9 @@ impl LogTailer {
             .or_else(|_| std::env::var("USERNAME"))
             .unwrap_or_else(|_| "unknown".to_string());
 
-        let log_file = format!("/tmp/skhd_{}.err.log", username);
+        // Sanitize username to prevent path traversal attacks
+        let sanitized_username = sanitize_username(&username);
+        let log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
 
         // Spawn tail process to follow skhd log file
         // skhd writes logs to /tmp/skhd_<username>.err.log
@@ -250,5 +275,27 @@ mod tests {
 
         // Should be the same instance
         assert!(std::ptr::eq(pattern1, pattern2));
+    }
+
+    #[test]
+    fn test_sanitize_username_valid() {
+        assert_eq!(sanitize_username("john_doe"), "john_doe");
+        assert_eq!(sanitize_username("user-123"), "user-123");
+        assert_eq!(sanitize_username("TestUser"), "TestUser");
+    }
+
+    #[test]
+    fn test_sanitize_username_path_traversal() {
+        assert_eq!(sanitize_username("user/../root"), "userroot");
+        assert_eq!(sanitize_username("../../../etc/passwd"), "etcpasswd");
+        assert_eq!(sanitize_username("user/../../tmp"), "usertmp");
+    }
+
+    #[test]
+    fn test_sanitize_username_special_chars() {
+        assert_eq!(sanitize_username("user@host.com"), "userhostcom");
+        assert_eq!(sanitize_username("user$name"), "username");
+        assert_eq!(sanitize_username("user;name"), "username");
+        assert_eq!(sanitize_username("user|name"), "username");
     }
 }

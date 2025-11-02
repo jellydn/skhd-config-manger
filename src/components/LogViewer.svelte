@@ -94,11 +94,11 @@
 
       // Set up event listener
       unlisten = await onLogEntry((entry) => {
-        logs = [...logs, entry];
-
-        // Enforce max logs limit
-        if (logs.length > maxLogs) {
-          logs = logs.slice(logs.length - maxLogs);
+        // Enforce max logs limit (FIFO: keep newest, drop oldest)
+        if (logs.length >= maxLogs) {
+          logs = [entry, ...logs.slice(0, maxLogs - 1)];
+        } else {
+          logs = [...logs, entry];
         }
 
         updateVisibleRange();
