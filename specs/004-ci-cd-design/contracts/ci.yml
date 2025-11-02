@@ -32,11 +32,14 @@ jobs:
         run: bun install
 
       # Step 5: Run all tests (cargo test, clippy, typecheck)
-      - name: Run tests
+      - name: Run Rust tests
+        working-directory: src-tauri
         run: |
           cargo test
           cargo clippy -- -D warnings
-          bun run typecheck
+
+      - name: Run TypeScript typecheck
+        run: bun run typecheck
 
 # Requirements Satisfied:
 # - FR-001: Automatic builds on push to main and PRs
