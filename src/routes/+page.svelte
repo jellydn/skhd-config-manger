@@ -30,7 +30,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let showForm = $state(false);
-  let editingShortcut = $state<Shortcut | null>(null);
+  let editingShortcut = $state<Shortcut | undefined>(undefined);
   let formMode = $state<'create' | 'edit' | 'duplicate'>('create');
   let testResult = $state<TestResult | null>(null);
   let showTestResult = $state(false);
@@ -93,9 +93,11 @@
       config = {
         file_path: '', // No path yet - user will choose on first save
         shortcuts: [],
+        global_comments: [],
         parse_errors: [],
         last_modified: new Date().toISOString(),
-        is_modified: true // Mark as modified so user can save with location choice
+        is_modified: true, // Mark as modified so user can save with location choice
+        current_file_path: '' // No current file path yet - will be set on first save
       };
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -163,7 +165,7 @@
   }
 
   function handleCreate() {
-    editingShortcut = null;
+    editingShortcut = undefined;
     formMode = 'create';
     showForm = true;
   }
@@ -267,7 +269,7 @@
       }
 
       showForm = false;
-      editingShortcut = null;
+      editingShortcut = undefined;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : String(err));
     }
@@ -275,7 +277,7 @@
 
   function handleCancelForm() {
     showForm = false;
-    editingShortcut = null;
+    editingShortcut = undefined;
   }
 
   async function handleTest(id: string) {
