@@ -110,7 +110,29 @@ mod tests {
     fn test_get_default_config_path() {
         let path = get_default_config_path();
         let home = env::var("HOME").unwrap();
-        assert_eq!(path, PathBuf::from(home).join(".config/skhd/skhdrc"));
+
+        // The function returns the first existing path, or defaults to ~/.config/skhd/skhdrc
+        // We need to check that the returned path is one of the valid options
+        let valid_paths = vec![
+            PathBuf::from(&home).join(".config/skhd/skhdrc"),
+            PathBuf::from(&home).join(".skhdrc"),
+        ];
+
+        // If XDG_CONFIG_HOME is set, include that path too
+        if let Ok(xdg) = env::var("XDG_CONFIG_HOME") {
+            let xdg_path = PathBuf::from(xdg).join("skhd/skhdrc");
+            assert!(
+                valid_paths.contains(&path) || path == xdg_path,
+                "Expected one of the valid config paths, got: {:?}",
+                path
+            );
+        } else {
+            assert!(
+                valid_paths.contains(&path),
+                "Expected one of the valid config paths, got: {:?}",
+                path
+            );
+        }
     }
 
     #[test]
