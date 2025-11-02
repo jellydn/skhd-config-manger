@@ -16,11 +16,6 @@
     if (modifiers.length === 0) return '';
     return modifiers.join(' + ') + ' +';
   }
-
-  function handleTest() {
-    if (!onTest) return;
-    onTest(shortcut.id);
-  }
 </script>
 
 <div class="shortcut-item">
@@ -42,7 +37,7 @@
         type="button"
         class="btn-test"
         class:executing={isExecuting}
-        onclick={handleTest}
+        onclick={() => onTest(shortcut.id)}
         disabled={isExecuting}
         title={isExecuting ? 'Executing...' : 'Execute'}
         aria-label={isExecuting ? 'Executing command' : 'Execute shortcut command'}
