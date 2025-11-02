@@ -6,6 +6,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-02
 - Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2 (app framework), existing ShortcutForm and ShortcutItem components (003-shortcut-duplicate)
 - YAML (GitHub Actions workflows), Rust 1.75+, TypeScript 5+, macOS 11+ + GitHub Actions (tauri-apps/tauri-action), Tauri CLI v2, cargo, bun, clippy, existing test suite (004-ci-cd-design)
 - N/A (CI/CD infrastructure, assets stored in git) (004-ci-cd-design)
+- Rust 1.75+ (backend), TypeScript 5+ (frontend) + Tauri v2, tokio (async runtime), chrono (timestamps), Svelte 5 (UI framework) (005-command-test)
 
 - Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2, rfd (Rust file dialogs), existing skhd parser (002-config-import-export)
 - File-based (skhd configuration files), no database required (002-config-import-export)
@@ -28,10 +29,10 @@ cargo test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECH
 Rust 1.75+ (backend), Svelte 4 + TypeScript 5 (frontend): Follow standard conventions
 
 ## Recent Changes
+- 005-command-test: Added Rust 1.75+ (backend), TypeScript 5+ (frontend) + Tauri v2, tokio (async runtime), chrono (timestamps), Svelte 5 (UI framework)
 - 004-ci-cd-design: Added YAML (GitHub Actions workflows), Rust 1.75+, TypeScript 5+, macOS 11+ + GitHub Actions (tauri-apps/tauri-action), Tauri CLI v2, cargo, bun, clippy, existing test suite
 - 003-shortcut-duplicate: Added Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2 (app framework), existing ShortcutForm and ShortcutItem components
 
-- 002-config-import-export: Added Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2, rfd (Rust file dialogs), existing skhd parser
 
 
 <!-- MANUAL ADDITIONS START -->

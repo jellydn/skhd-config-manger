@@ -43,6 +43,15 @@ export async function saveConfig(config: ConfigFile): Promise<void> {
 }
 
 /**
+ * Save configuration to a user-selected file location via file picker
+ * @param config Configuration to save
+ * @returns Updated configuration with new file path
+ */
+export async function saveAsConfig(config: ConfigFile): Promise<ConfigFile> {
+  return invoke<ConfigFile>('save_as_config', { config });
+}
+
+/**
  * Reload configuration from disk (discarding in-memory changes)
  */
 export async function reloadConfig(): Promise<ConfigFile> {
@@ -157,4 +166,20 @@ export async function testShortcut(shortcutId: string): Promise<TestResult> {
  */
 export async function executeTestCommand(shortcutId: string): Promise<TestResult> {
   return invoke<TestResult>('execute_test_command', { shortcutId });
+}
+
+/**
+ * Execute a shortcut's command and return detailed execution results
+ * @param shortcutId ID of the shortcut to execute
+ */
+export async function executeShortcutCommand(shortcutId: string): Promise<TestResult> {
+  return invoke<TestResult>('execute_shortcut_command', { shortcutId });
+}
+
+/**
+ * Cancel a running shortcut command execution
+ * @param shortcutId ID of the shortcut to cancel
+ */
+export async function cancelShortcutExecution(shortcutId: string): Promise<void> {
+  return invoke<void>('cancel_shortcut_execution', { shortcutId });
 }

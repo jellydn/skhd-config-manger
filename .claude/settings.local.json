@@ -54,7 +54,13 @@
       "Bash(gh pr checks:*)",
       "Bash(gh pr:*)",
       "Bash(bun run check:*)",
-      "Bash(gh run watch:*)"
+      "Bash(gh run watch:*)",
+      "Bash(cargo update:*)",
+      "Bash(sips:*)",
+      "Bash(iconutil:*)",
+      "Bash(convert:*)",
+      "Bash(./scripts/generate-icons.sh:*)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []
