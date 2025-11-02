@@ -72,6 +72,29 @@ export async function isLogStreamRunning(): Promise<boolean> {
 }
 
 /**
+ * Get recent logs from the skhd log file
+ *
+ * This retrieves historical logs from `/tmp/skhd_<username>.err.log`.
+ * Useful for loading logs that were generated before the stream started.
+ *
+ * @param {number} limit - Maximum number of log lines to retrieve (default: 100)
+ * @returns {Promise<LogEntry[]>} Array of parsed log entries
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const logs = await getRecentLogs(100);
+ *   console.log('Loaded', logs.length, 'historical logs');
+ * } catch (error) {
+ *   console.error('Failed to load logs:', error);
+ * }
+ * ```
+ */
+export async function getRecentLogs(limit?: number): Promise<LogEntry[]> {
+  return invoke<LogEntry[]>('get_recent_logs', { limit });
+}
+
+/**
  * Listen for new log entries from the stream
  *
  * This function sets up an event listener for "log-entry" events

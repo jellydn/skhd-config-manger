@@ -42,6 +42,7 @@ pub fn run() {
             commands::logs::start_log_stream,
             commands::logs::stop_log_stream,
             commands::logs::is_log_stream_running,
+            commands::logs::get_recent_logs,
             commands::service::get_service_status,
             commands::service::reload_service,
         ])

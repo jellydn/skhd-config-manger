@@ -4,14 +4,20 @@
 /// - `start_log_stream`: Begin streaming logs from skhd service
 /// - `stop_log_stream`: Stop the log stream
 /// - `is_log_stream_running`: Check if stream is active
+/// - `get_recent_logs`: Retrieve historical logs from file
 ///
 /// Events emitted:
 /// - `log-entry`: Emitted for each new log entry (payload: LogEntry)
 
-use crate::services::LogTailer;
+use crate::models::LogEntry;
+use crate::services::{log_tailer::parse_log_line, LogTailer};
 use std::sync::Arc;
 use tauri::{AppHandle, State};
-use tokio::sync::Mutex;
+use tokio::{
+    fs::File,
+    io::{AsyncBufReadExt, BufReader},
+    sync::Mutex,
+};
 
 /// Shared state for LogTailer across all commands
 pub struct LogStreamState {
@@ -142,6 +148,94 @@ pub async fn is_log_stream_running(state: State<'_, LogStreamState>) -> Result<b
     } else {
         false
     })
+}
+
+/// Get recent logs from the skhd log file
+///
+/// This command reads historical logs from `/tmp/skhd_<username>.err.log`
+/// and returns them as an array of parsed LogEntry objects. This is useful
+/// for loading logs that were generated before the stream started.
+///
+/// # Arguments
+/// * `limit` - Maximum number of log lines to retrieve (default: 100)
+///
+/// # Returns
+/// * `Ok(Vec<LogEntry>)` - Array of parsed log entries
+/// * `Err(String)` - Failed to read log file
+///
+/// # Frontend Usage
+/// ```typescript
+/// import { invoke } from '@tauri-apps/api/core';
+///
+/// try {
+///   const logs = await invoke<LogEntry[]>('get_recent_logs', { limit: 100 });
+///   console.log('Loaded', logs.length, 'historical logs');
+/// } catch (error) {
+///   console.error('Failed to load logs:', error);
+/// }
+/// ```
+#[tauri::command]
+pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, String> {
+    let limit = limit.unwrap_or(100);
+
+    // Get current username for log file path
+    let username = std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .unwrap_or_else(|_| "unknown".to_string());
+
+    // Sanitize username (same logic as LogTailer)
+    let sanitized_username = username
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
+        .collect::<String>();
+
+    let log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
+
+    // Check if log file exists
+    if !tokio::fs::metadata(&log_file).await.is_ok() {
+        return Err(format!(
+            "Log file not found: {}. \
+             The skhd service may not have been started yet, or logs may not have been generated. \
+             Start the skhd service to begin generating logs.",
+            log_file
+        ));
+    }
+
+    // Open and read the log file
+    let file = File::open(&log_file).await.map_err(|e| {
+        format!(
+            "Failed to open log file {}: {}. \
+             Check that you have permission to read the file.",
+            log_file, e
+        )
+    })?;
+
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines();
+    let mut all_lines = Vec::new();
+
+    // Read all lines from the file
+    while let Ok(Some(line)) = lines.next_line().await {
+        all_lines.push(line);
+    }
+
+    // Take the last N lines (most recent)
+    let recent_lines: Vec<String> = all_lines
+        .into_iter()
+        .rev() // Reverse to get most recent first
+        .take(limit)
+        .rev() // Reverse back to chronological order
+        .collect();
+
+    // Parse lines into LogEntry objects
+    let mut log_entries = Vec::new();
+    for line in recent_lines {
+        if let Some(entry) = parse_log_line(&line) {
+            log_entries.push(entry);
+        }
+    }
+
+    Ok(log_entries)
 }
 
 #[cfg(test)]

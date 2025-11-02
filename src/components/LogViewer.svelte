@@ -17,6 +17,7 @@
   import {
     formatLogTimestamp,
     getLogLevelClass,
+    getRecentLogs,
     onLogEntry,
     startLogStream,
     stopLogStream,
@@ -146,14 +147,22 @@
   }
 
   // Initialize
-  onMount(() => {
+  onMount(async () => {
     // Restore sort order from localStorage
     const savedOrder = localStorage.getItem('logSortOrder');
     if (savedOrder) {
       sortDescending = savedOrder === 'desc';
     }
 
-    updateVisibleRange();
+    // Load recent logs from file (historical logs)
+    try {
+      const recentLogs = await getRecentLogs(100);
+      logs = sortDescending ? recentLogs.reverse() : recentLogs;
+      updateVisibleRange();
+    } catch (err) {
+      console.error('Failed to load recent logs:', err);
+      // Not critical - stream can still work without historical logs
+    }
   });
 
   // Cleanup
