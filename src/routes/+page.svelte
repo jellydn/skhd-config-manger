@@ -135,6 +135,11 @@
     }
   }
 
+  function getNextLineNumber(): number {
+    if (!config || config.shortcuts.length === 0) return 1;
+    return Math.max(...config.shortcuts.map(s => s.line_number)) + 1;
+  }
+
   function handleCreate() {
     editingShortcut = null;
     showForm = true;
@@ -142,6 +147,15 @@
 
   function handleEdit(shortcut: Shortcut) {
     editingShortcut = shortcut;
+    showForm = true;
+  }
+
+  function handleDuplicate(shortcut: Shortcut) {
+    editingShortcut = {
+      ...shortcut,
+      id: crypto.randomUUID(),
+      line_number: getNextLineNumber()
+    };
     showForm = true;
   }
 
@@ -283,16 +297,21 @@
   <header class="app-header">
     <h1>skhd Configuration Manager</h1>
     <div class="header-actions">
-      <button class="btn-home" onclick={handleHomeClick} disabled={loading}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        Home
-      </button>
-      <button class="btn-import" onclick={handleImport} disabled={loading}> Import... </button>
       {#if config}
-        <button class="btn-export" onclick={handleExport}> Export... </button>
+        <button class="btn-home" onclick={handleHomeClick} disabled={loading}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Home
+        </button>
+        <button class="btn-export" onclick={handleExport}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path d="M12 3v6m0 0l3-3m-3 3l-3-3" />
+          </svg>
+          Export...
+        </button>
       {/if}
     </div>
   </header>
@@ -388,6 +407,7 @@
           onEdit={handleEdit}
           onDelete={handleDelete}
           onTest={handleTest}
+          onDuplicate={handleDuplicate}
           onCreate={handleCreate}
           onSave={saveConfiguration}
           isModified={config.is_modified}
@@ -522,11 +542,18 @@
     background: #ff9500;
     color: white;
     border-color: #ff9500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .btn-export:hover {
     background: #d17e00;
     border-color: #d17e00;
+  }
+
+  .btn-export svg {
+    flex-shrink: 0;
   }
 
   .btn-create {
@@ -826,6 +853,7 @@
   .welcome-btn svg {
     flex-shrink: 0;
     color: #007aff;
+    align-self: flex-start;
   }
 
   .welcome-btn div {
