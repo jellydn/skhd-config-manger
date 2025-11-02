@@ -6,7 +6,9 @@ pub mod services;
 pub mod utils;
 
 use commands::config::ConfigState;
+use commands::logs::LogStreamState;
 use commands::testing::ExecutionState;
+use services::ServiceManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,6 +16,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(ConfigState::new())
         .manage(ExecutionState::default())
+        .manage(LogStreamState::default())
+        .manage(ServiceManager::new())
         .invoke_handler(tauri::generate_handler![
             commands::config::detect_active_config,
             commands::config::load_config,
@@ -35,6 +39,11 @@ pub fn run() {
             commands::testing::execute_shortcut_command,
             commands::testing::cancel_shortcut_execution,
             commands::testing::get_execution_config,
+            commands::logs::start_log_stream,
+            commands::logs::stop_log_stream,
+            commands::logs::is_log_stream_running,
+            commands::service::get_service_status,
+            commands::service::reload_service,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

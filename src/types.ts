@@ -198,3 +198,83 @@ export type ExecutionStatus =
   | 'error'
   | 'cancelled'
   | 'timeout';
+
+/**
+ * Log level categorization for visual distinction
+ */
+export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+
+/**
+ * Represents a single log line from skhd service
+ */
+export interface LogEntry {
+  /** Unique identifier for deduplication and tracking */
+  id: string;
+
+  /** When the log entry was generated (ISO 8601) */
+  timestamp: string;
+
+  /** Severity level of the log entry */
+  level: LogLevel;
+
+  /** The actual log message content */
+  message: string;
+
+  /** Original unparsed log line (fallback for display) */
+  raw: string;
+}
+
+/**
+ * skhd service lifecycle states
+ */
+export type ServiceState =
+  | 'Stopped'
+  | 'Starting'
+  | 'Running'
+  | 'Stopping'
+  | 'Reloading'
+  | 'Error'
+  | 'Unknown';
+
+/**
+ * Represents the current state of the skhd service
+ */
+export interface ServiceStatus {
+  /** Current lifecycle state */
+  state: ServiceState;
+
+  /** Process ID if running, null if stopped */
+  pid: number | null;
+
+  /** When status was last checked (ISO 8601) */
+  last_updated: string;
+
+  /** Path to active configuration file */
+  config_path: string | null;
+
+  /** Error details if state is Error */
+  error_message: string | null;
+}
+
+/**
+ * Reference to a stored configuration file
+ */
+export interface ConfigurationReference {
+  /** Unique identifier */
+  id: string;
+
+  /** Human-readable configuration name */
+  name: string;
+
+  /** Absolute path to configuration file */
+  path: string;
+
+  /** Whether this config is currently loaded in skhd */
+  is_active: boolean;
+
+  /** File modification timestamp (ISO 8601) */
+  last_modified: string;
+
+  /** Whether configuration passes syntax validation */
+  valid: boolean;
+}

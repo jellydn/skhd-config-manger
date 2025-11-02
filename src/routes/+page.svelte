@@ -429,27 +429,40 @@
 </script>
 
 <svelte:head>
-  <title>Keybinder</title>
+  <title>Shortcuts - Keybinder</title>
 </svelte:head>
 
-<main class="app-container">
-  <header class="app-header">
-    <h1>Keybinder</h1>
-    <div class="header-actions">
+<div class="page-container">
+  <!-- Toolbar -->
+  <header class="toolbar">
+    <div class="toolbar-title">
+      <h1>Shortcuts</h1>
       {#if config}
-        <button class="btn-home" onclick={handleHomeClick} disabled={loading} aria-label="Return to home screen">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
+        <span class="toolbar-subtitle">{config.shortcuts.length} shortcuts</span>
+      {/if}
+    </div>
+    <div class="toolbar-actions">
+      {#if config}
+        <button class="toolbar-btn toolbar-btn-save" onclick={saveConfiguration} disabled={!config.is_modified} aria-label="Save changes to configuration">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
           </svg>
-          Home
+          Save Changes
         </button>
-        <button class="btn-export" onclick={handleExport} aria-label="Export configuration to file">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            <path d="M12 3v6m0 0l3-3m-3 3l-3-3" />
+        <button class="toolbar-btn toolbar-btn-primary" onclick={handleCreate} aria-label="Create new shortcut">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Export...
+          New Shortcut
+        </button>
+        <button class="toolbar-btn" onclick={handleExport} aria-label="Export configuration">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          Export
         </button>
       {/if}
     </div>
@@ -463,27 +476,33 @@
       </div>
     {:else if error}
       <div class="error-state">
-        <h2>Configuration File Not Found</h2>
-        <p class="error-message">{error}</p>
+        <div class="error-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
 
-        <div class="error-help">
-          <h3>skhd looks for configuration in these locations (in order):</h3>
-          <ul>
-            <li><code>$XDG_CONFIG_HOME/skhd/skhdrc</code></li>
-            <li><code>~/.config/skhd/skhdrc</code></li>
-            <li><code>~/.skhdrc</code></li>
-          </ul>
+        <h2>No Configuration Found</h2>
+        <p class="error-subtitle">Choose an option below to get started</p>
+
+        <div class="config-locations">
+          <div class="locations-header">skhd looks for configuration in these locations:</div>
+          <div class="location-item"><code>$XDG_CONFIG_HOME/skhd/skhdrc</code></div>
+          <div class="location-item"><code>~/.config/skhd/skhdrc</code></div>
+          <div class="location-item"><code>~/.skhdrc</code></div>
         </div>
 
         <div class="error-actions">
-          <button class="btn-create-new" onclick={handleCreateBlank}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="action-btn action-btn-primary" onclick={handleCreateBlank}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 4v16m8-8H4" />
             </svg>
             Create New Config
           </button>
-          <button class="btn-import" onclick={handleImport}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="action-btn action-btn-secondary" onclick={handleImport}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Import Existing File
@@ -541,9 +560,6 @@
           onDelete={handleDelete}
           onTest={handleTest}
           onDuplicate={handleDuplicate}
-          onCreate={handleCreate}
-          onSave={saveConfiguration}
-          isModified={config.is_modified}
           executingShortcutId={executingShortcutId}
           onCancelExecution={handleCancelExecution}
         />
@@ -596,119 +612,118 @@
     onConfirm={confirmDestructiveExecution}
     onCancel={cancelDestructiveExecution}
   />
-</main>
+</div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-      'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background: #f5f5f7;
-    color: #1d1d1f;
-  }
-
-  .app-container {
-    min-height: 100vh;
+  .page-container {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    overflow: hidden;
   }
 
-  .app-header {
-    background: white;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 1.5rem 2rem;
+  /* Toolbar - Native macOS style */
+  .toolbar {
+    background: #1c1c1c;
+    border-bottom: 1px solid #2d2d2d;
+    padding: 20px 20px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    min-height: 52px;
   }
 
-  h1 {
-    margin: 0;
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: #1d1d1f;
-  }
-
-  .header-actions {
+  .toolbar-title {
     display: flex;
-    gap: 0.75rem;
+    align-items: baseline;
+    gap: 12px;
   }
 
-  button {
-    padding: 0.5rem 1.25rem;
-    border: 1px solid #d2d2d7;
+  .toolbar-title h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .toolbar-subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
   }
 
-  .btn-home {
-    background: #f5f5f7;
-    color: #1d1d1f;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
   }
 
-  .btn-home:hover:not(:disabled) {
-    background: #e8e8ed;
+  .toolbar-btn:active {
+    background: rgba(255, 255, 255, 0.06);
   }
 
-  .btn-home:disabled {
-    opacity: 0.5;
+  .toolbar-btn svg {
+    opacity: 0.8;
+  }
+
+  .toolbar-btn:hover svg {
+    opacity: 1;
+  }
+
+  .toolbar-btn-save {
+    background: rgba(52, 199, 89, 0.15);
+    border-color: rgba(52, 199, 89, 0.3);
+    color: #34c759;
+  }
+
+  .toolbar-btn-save:hover:not(:disabled) {
+    background: rgba(52, 199, 89, 0.25);
+    border-color: rgba(52, 199, 89, 0.4);
+  }
+
+  .toolbar-btn-save:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
   }
 
-  .btn-home svg {
-    flex-shrink: 0;
+  .toolbar-btn-primary {
+    background: #0a84ff;
+    border-color: #0a84ff;
+    color: #ffffff;
   }
 
-  .btn-import {
-    background: #5856d6;
-    color: white;
-    border-color: #5856d6;
-  }
-
-  .btn-import:hover:not(:disabled) {
-    background: #4240a8;
-    border-color: #4240a8;
-  }
-
-  .btn-import:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-export {
-    background: #ff9500;
-    color: white;
-    border-color: #ff9500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn-export:hover {
-    background: #d17e00;
-    border-color: #d17e00;
-  }
-
-  .btn-export svg {
-    flex-shrink: 0;
+  .toolbar-btn-primary:hover {
+    background: #0071e3;
+    border-color: #0071e3;
   }
 
   .app-content {
     flex: 1;
-    padding: 2rem;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    background: #1e1e1e;
   }
 
   .loading-state {
@@ -716,15 +731,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 400px;
-    gap: 1rem;
+    min-height: 300px;
+    gap: 16px;
   }
 
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #007aff;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #0a84ff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -739,92 +754,114 @@
   }
 
   .loading-state p {
-    color: #666;
+    color: rgba(255, 255, 255, 0.5);
     margin: 0;
+    font-size: 13px;
   }
 
   .error-state {
-    max-width: 800px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 3rem 2rem;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .error-icon {
+    margin-bottom: 1.5rem;
+    color: rgba(255, 255, 255, 0.3);
   }
 
   .error-state h2 {
-    color: #ff3b30;
-    margin-bottom: 1rem;
-    text-align: center;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
   }
 
-  .error-message {
-    color: #666;
-    margin-bottom: 2rem;
-    text-align: center;
-    font-size: 0.95rem;
+  .error-subtitle {
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0 2rem 0;
+    font-size: 0.9rem;
   }
 
-  .error-help {
-    background: #f8f8f8;
-    border: 1px solid #e0e0e0;
+  .config-locations {
+    width: 100%;
+    background: #252525;
+    border: 1px solid #2d2d2d;
     border-radius: 8px;
-    padding: 1.5rem;
+    padding: 1.25rem;
     margin-bottom: 2rem;
     text-align: left;
   }
 
-  .error-help h3 {
-    font-size: 1rem;
-    margin: 0 0 1rem 0;
-    color: #1d1d1f;
+  .locations-header {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1rem;
+    font-weight: 500;
   }
 
-  .error-help ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .error-help li {
+  .location-item {
     padding: 0.5rem 0;
-    color: #666;
   }
 
-  .error-help code {
-    background: #e8e8e8;
-    padding: 0.25rem 0.5rem;
+  .location-item code {
+    background: #1c1c1c;
+    padding: 0.375rem 0.625rem;
     border-radius: 4px;
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-    font-size: 0.875rem;
-    color: #2c3e50;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #d4d4d4;
+    border: 1px solid #3a3a3a;
   }
 
   .error-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     justify-content: center;
     flex-wrap: wrap;
   }
 
-  .btn-create-new {
+  .action-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #34c759;
-    color: white;
+    padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.15s ease;
   }
 
-  .btn-create-new:hover {
-    background: #28a745;
-  }
-
-  .btn-create-new svg {
+  .action-btn svg {
     flex-shrink: 0;
+  }
+
+  .action-btn-primary {
+    background: #0a84ff;
+    color: white;
+    border: 1px solid #0a84ff;
+  }
+
+  .action-btn-primary:hover {
+    background: #0066cc;
+    border-color: #0066cc;
+  }
+
+  .action-btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .action-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -882,64 +919,62 @@
   }
 
   .welcome-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    max-width: 900px;
+    padding: 60px 40px;
+    max-width: 600px;
     margin: 0 auto;
   }
 
   .welcome-state h2 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #1d1d1f;
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-weight: 600;
   }
 
   .welcome-state > p {
-    color: #666;
-    margin-bottom: 3rem;
-    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+    font-size: 14px;
   }
 
   .welcome-actions {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    max-width: 600px;
-    margin: 0 auto;
+    gap: 12px;
   }
 
   .welcome-btn {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background: white;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
+    gap: 16px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
   }
 
   .welcome-btn:hover {
-    border-color: #007aff;
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(10, 132, 255, 0.5);
+    transform: translateY(-1px);
   }
 
   .welcome-btn-primary {
-    border-color: #007aff;
-    background: #f0f7ff;
+    border-color: rgba(10, 132, 255, 0.3);
+    background: rgba(10, 132, 255, 0.1);
   }
 
   .welcome-btn-primary:hover {
-    background: #e0f0ff;
-    box-shadow: 0 6px 16px rgba(0, 122, 255, 0.25);
+    background: rgba(10, 132, 255, 0.15);
+    border-color: rgba(10, 132, 255, 0.5);
   }
 
   .welcome-btn svg {
     flex-shrink: 0;
-    color: #007aff;
+    color: #0a84ff;
     align-self: flex-start;
   }
 
@@ -948,16 +983,16 @@
   }
 
   .welcome-btn h3 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.1rem;
+    margin: 0 0 4px 0;
+    font-size: 14px;
     font-weight: 600;
-    color: #1d1d1f;
+    color: #ffffff;
   }
 
   .welcome-btn p {
     margin: 0;
-    font-size: 0.9rem;
-    color: #666;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
   }
 
   @media (prefers-color-scheme: dark) {
