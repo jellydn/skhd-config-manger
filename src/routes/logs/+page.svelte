@@ -8,9 +8,9 @@
 
   import { onMount, onDestroy } from 'svelte';
   import LogViewer from '../../components/LogViewer.svelte';
-  import type { ServiceStatus } from '../../types';
+  import type { ServiceStatus, ConfigFile } from '../../types';
   import { getServiceStatus, reloadService } from '../../services/service';
-  import { detectActiveConfig, importConfig } from '../../services/tauri';
+  import { detectActiveConfig, importConfig, saveConfig } from '../../services/tauri';
 
   // Service status state
   let status = $state<ServiceStatus | null>(null);
@@ -20,6 +20,7 @@
   // Configuration state
   let activeConfigPath = $state<string>('');
   let loadedConfigPath = $state<string>(''); // Config loaded in app (may differ from service config)
+  let loadedConfig = $state<ConfigFile | null>(null); // The actual imported config
   let isImporting = $state(false);
   let importFeedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -68,7 +69,8 @@
 
       const config = await importConfig();
 
-      // Update loaded config path (what's in the app)
+      // Store the imported config
+      loadedConfig = config;
       loadedConfigPath = config.file_path;
 
       importFeedback = {
@@ -100,6 +102,12 @@
     if (isReloading) return;
     try {
       isReloading = true;
+
+      // If there's a loaded config (from import), save it first
+      if (loadedConfig) {
+        await saveConfig(loadedConfig);
+      }
+
       await reloadService();
 
       // After reload, update what skhd service is actually using
@@ -108,6 +116,7 @@
         await loadActiveConfig();
         // Clear loaded config since it's now active
         loadedConfigPath = '';
+        loadedConfig = null;
       }, 1000);
     } catch (err) {
       console.error('Failed to reload service:', err);
