@@ -103,9 +103,13 @@
     try {
       isReloading = true;
 
-      // If there's a loaded config (from import), save it first
-      if (loadedConfig) {
-        await saveConfig(loadedConfig);
+      // If there's a loaded config (from import), save it to the active config path first
+      // This ensures skhd reads the imported config when it reloads
+      if (loadedConfig && activeConfigPath) {
+        // Update the config's file_path to the active skhd config location
+        // so it gets saved where skhd will actually read it from
+        const configToSave = { ...loadedConfig, file_path: activeConfigPath };
+        await saveConfig(configToSave);
       }
 
       await reloadService();
