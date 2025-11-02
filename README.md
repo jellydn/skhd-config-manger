@@ -229,14 +229,61 @@ specs/
 
 **Note**: Files in `specs/` are **reference documentation** for feature planning. Don't expect them to match current code exactly—they represent the initial plan, not the evolved implementation.
 
+### Spec-Kit Decision Framework
+
+When working with spec-kit, use this framework to decide whether to update specs:
+
+#### ✅ Update Specs When:
+
+- **Missing requirements discovered** (accessibility, security, performance)
+  - Example: PR feedback reveals missing aria-labels → Add NFR to spec
+- **Acceptance criteria incomplete/wrong**
+  - Example: Edge case not covered → Update scenarios
+- **New constraint for ALL future features**
+  - Example: File size limits, browser compatibility
+- **Production incident reveals spec gap**
+  - Example: Crash on large files → Add performance NFR
+- **API contract changes**
+  - Example: New required parameter → Update contracts
+
+#### ❌ Don't Update Specs (Just Fix Code):
+
+- Typos or syntax errors
+- Better variable naming
+- Code refactoring (same behavior)
+- Performance optimization (already meets spec)
+- Bug in implementation logic (spec was correct)
+- UI polish/styling tweaks
+
+#### 🔄 Real Example from This Project:
+
+**PR Feedback**: "Missing aria-labels on icon buttons"
+
+**Spec-Kit Approach:**
+1. Recognized as **spec gap** (accessibility requirement missing)
+2. Updated `specs/003-shortcut-duplicate/spec.md` with NFR-A01 to NFR-A04
+3. Fixed code (added aria-labels)
+4. Updated checklist (marked accessibility complete)
+5. **Result**: Future features won't miss this requirement
+
+#### 📚 Full Methodology Guide
+
+See [`claudedocs/spec-kit-methodology-summary.md`](claudedocs/spec-kit-methodology-summary.md) for:
+- Complete decision frameworks
+- Handling PR comments, bug fixes, production issues
+- When spec-kit works well vs. when to adapt
+- Team collaboration workflows
+- Lessons learned from real implementation
+
 ### Contributing
 
 When adding features:
 
-1. Use spec-kit for initial planning (see above)
-2. Create clear, focused PRs with "what, why, how" descriptions
-3. Run tests before committing: `bun run typecheck && cargo test && cargo clippy`
-4. Handle feedback pragmatically (fix code, update relevant docs, don't obsess over spec sync)
+1. Use spec-kit for initial planning (specify → plan → tasks)
+2. **During PR review**: If feedback reveals missing requirements, update specs
+3. Create clear, focused PRs with "what, why, how" descriptions
+4. Run tests before committing: `bun run typecheck && cargo test && cargo clippy`
+5. Use judgment: Update specs for missing requirements, just fix code for implementation bugs
 
 ## Author
 
