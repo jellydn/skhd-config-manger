@@ -167,7 +167,7 @@ Content to Avoid:
 ```
 
 **Standard Layout**:
-```
+```text
 ┌─────────────────────────────────────────┐
 │                                         │
 │     [App Icon]              [Apps]      │
@@ -207,7 +207,7 @@ Before implementation, the DMG background must satisfy:
 
 ### 3.1 Icon Creation Process
 
-```
+```text
 Step 1: Design Source Icon
   Tool: Figma, Sketch, AI generation (DALL-E, Midjourney)
   Output: 1024x1024 PNG with transparency
@@ -234,7 +234,7 @@ Step 5: Test Build
 
 ### 3.2 DMG Background Creation Process
 
-```
+```text
 Step 1: Design Background Image
   Tool: Figma, Sketch, Photoshop
   Output: 660x400 PNG (standard resolution)

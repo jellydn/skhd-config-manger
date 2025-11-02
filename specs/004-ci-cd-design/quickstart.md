@@ -98,7 +98,7 @@ bun run typecheck # TypeScript checks
 
 ### Release Process Overview
 
-```
+```text
 Tag Version → Push Tag → GitHub Actions → Build DMG → Create Release → Publish
                           (10-15 minutes)
 ```
@@ -515,10 +515,10 @@ After implementing this feature:
 
 ## Additional Resources
 
-- **GitHub Actions Documentation**: https://docs.github.com/en/actions
-- **Tauri Build Documentation**: https://tauri.app/v1/guides/building/
-- **Apple HIG**: https://developer.apple.com/design/human-interface-guidelines/macos
-- **Semantic Versioning**: https://semver.org/
+- **GitHub Actions Documentation**: [https://docs.github.com/en/actions](https://docs.github.com/en/actions)
+- **Tauri Build Documentation**: [https://tauri.app/v1/guides/building/](https://tauri.app/v1/guides/building/)
+- **Apple HIG**: [https://developer.apple.com/design/human-interface-guidelines/macos](https://developer.apple.com/design/human-interface-guidelines/macos)
+- **Semantic Versioning**: [https://semver.org/](https://semver.org/)
 
 ---
 

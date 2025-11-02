@@ -152,7 +152,7 @@ interface TauriActionConfig {
 
 ### 1.3 Workflow State Transitions
 
-```
+```text
 Tag Push (v*)
     ↓
 Release Workflow Triggered
@@ -405,7 +405,7 @@ interface PreReleaseTag {
 ```
 
 **State Transitions** (FR-013):
-```
+```text
 v1.0.0-alpha.1 → v1.0.0-alpha.2 → v1.0.0-beta.1 → v1.0.0-rc.1 → v1.0.0
 ```
 
@@ -458,7 +458,7 @@ v1.0.0-alpha.1 → v1.0.0-alpha.2 → v1.0.0-beta.1 → v1.0.0-rc.1 → v1.0.0
 
 ### 5.1 Asset Generation Flow
 
-```
+```text
 Source Icon (1024x1024 PNG)
     ↓
 tauri icon command
@@ -476,7 +476,7 @@ DMG with custom background
 
 ### 5.2 Release Flow
 
-```
+```text
 Git Tag (v1.0.0)
     ↓
 GitHub Push
@@ -502,7 +502,7 @@ Release Published ✅
 
 ### 5.3 CI Flow
 
-```
+```text
 Code Push / PR
     ↓
 CI Workflow Triggered

@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated quality checks (cargo test, clippy, typecheck)
 - GitHub releases automation on version tags
 
-## [0.1.0] - 2024-11-02
+## [0.1.0] - 2025-11-02
 
 ### Added
 - Initial release of skhd GUI

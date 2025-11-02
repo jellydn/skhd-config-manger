@@ -40,3 +40,7 @@ jobs:
 
       - name: Run TypeScript typecheck
         run: bun run check
+        # Note: Uses 'check' instead of 'typecheck' because:
+        # - 'check': svelte-kit sync && svelte-check (validates Svelte components)
+        # - 'typecheck': tsc --noEmit (TypeScript only, doesn't check .svelte files)
+        # SvelteKit projects require 'check' for full type validation

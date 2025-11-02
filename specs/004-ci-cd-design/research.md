@@ -190,7 +190,7 @@ Tauri v2 supports comprehensive DMG customization through `tauri.conf.json`:
 5. Build process automatically bundles correct icons
 
 **Directory Structure**:
-```
+```text
 assets/
 └── icons/
     └── app-icon.png           # Source (1024x1024)
