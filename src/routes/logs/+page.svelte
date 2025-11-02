@@ -10,11 +10,17 @@
   import LogViewer from '../../components/LogViewer.svelte';
   import type { ServiceStatus } from '../../types';
   import { getServiceStatus, reloadService } from '../../services/service';
+  import { detectActiveConfig, importConfig } from '../../services/tauri';
 
   // Service status state
   let status = $state<ServiceStatus | null>(null);
   let isReloading = $state(false);
   let statusPollInterval: number | null = null;
+
+  // Configuration state
+  let activeConfigPath = $state<string>('');
+  let isImporting = $state(false);
+  let importFeedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Log viewer state that we'll pass down
   let logViewerRef: any = null;
@@ -25,7 +31,7 @@
 
   // Lifecycle
   onMount(async () => {
-    await loadStatus();
+    await Promise.all([loadStatus(), loadActiveConfig()]);
     statusPollInterval = window.setInterval(loadStatus, 5000);
   });
 
@@ -40,6 +46,52 @@
       status = await getServiceStatus();
     } catch (err) {
       console.error('Failed to get service status:', err);
+    }
+  }
+
+  async function loadActiveConfig() {
+    try {
+      activeConfigPath = await detectActiveConfig();
+    } catch (err) {
+      console.error('Failed to detect active config:', err);
+      activeConfigPath = 'Unable to detect config path';
+    }
+  }
+
+  async function handleImportConfig() {
+    if (isImporting) return;
+
+    try {
+      isImporting = true;
+      importFeedback = null;
+
+      const config = await importConfig();
+
+      // Update active config path
+      await loadActiveConfig();
+
+      importFeedback = {
+        type: 'success',
+        message: `Imported: ${config.file_path}`
+      };
+
+      // Clear feedback after 5 seconds
+      setTimeout(() => {
+        importFeedback = null;
+      }, 5000);
+    } catch (err) {
+      console.error('Failed to import config:', err);
+      importFeedback = {
+        type: 'error',
+        message: `Failed to import: ${err}`
+      };
+
+      // Clear feedback after 10 seconds for errors
+      setTimeout(() => {
+        importFeedback = null;
+      }, 10000);
+    } finally {
+      isImporting = false;
     }
   }
 
@@ -132,6 +184,23 @@
       {/if}
     </div>
     <div class="toolbar-actions">
+      <!-- Configuration Import -->
+      <button
+        class="toolbar-btn"
+        onclick={handleImportConfig}
+        disabled={isImporting}
+        aria-label="Import configuration"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="12" y1="18" x2="12" y2="12"></line>
+          <line x1="9" y1="15" x2="12" y2="12"></line>
+          <line x1="15" y1="15" x2="12" y2="12"></line>
+        </svg>
+        Import Config
+      </button>
+
       <!-- Service Control -->
       <button
         class="toolbar-btn"
@@ -193,6 +262,32 @@
   </header>
 
   <main class="logs-page__content">
+    <!-- Active Configuration Display -->
+    {#if activeConfigPath}
+      <div class="config-path-display">
+        <span class="config-path-label">Active Config:</span>
+        <code class="config-path-value">{activeConfigPath}</code>
+      </div>
+    {/if}
+
+    <!-- Import Feedback -->
+    {#if importFeedback}
+      <div class="import-feedback import-feedback-{importFeedback.type}">
+        {#if importFeedback.type === 'success'}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        {:else}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        {/if}
+        <span>{importFeedback.message}</span>
+      </div>
+    {/if}
+
     <LogViewer bind:this={logViewerRef} maxLogs={1000} bind:autoScroll showControls={false} />
   </main>
 </div>
@@ -383,5 +478,78 @@
     overflow: hidden;
     padding: 20px;
     background: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Active Configuration Display */
+  .config-path-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #252525;
+    border: 1px solid #2d2d2d;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .config-path-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+  }
+
+  .config-path-value {
+    flex: 1;
+    padding: 4px 10px;
+    background: #1c1c1c;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #d4d4d4;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Import Feedback */
+  .import-feedback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .import-feedback svg {
+    flex-shrink: 0;
+  }
+
+  .import-feedback-success {
+    background: rgba(48, 209, 88, 0.15);
+    border: 1px solid rgba(48, 209, 88, 0.3);
+    color: #30d158;
+  }
+
+  .import-feedback-error {
+    background: rgba(255, 59, 48, 0.15);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>
