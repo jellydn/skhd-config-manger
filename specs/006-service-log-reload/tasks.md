@@ -150,49 +150,35 @@
 - [ ] T058 [US2] Add periodic status polling (every 5 seconds) in `ServiceControl.svelte` when mounted
 - [ ] T059 [US2] Integrate `ServiceControl` component into `src/routes/logs/+page.svelte` above log viewer
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - logs viewable and service reloadable
+**Checkpoint**: At this point, both user stories work independently - logs viewable and service reloadable
 
 ---
 
-## Phase 5: User Story 3 - Select Configuration Before Reload (Priority: P3)
+## Phase 5: User Story 3 - Import Configuration Before Reload (Priority: P3)
 
-**Goal**: Users can select from available configurations before reloading the service
+**Goal**: Users can import a different configuration file before reloading the service
 
-**Independent Test**: Open config selector, see list of available configs with active one highlighted, select different config, reload service, verify service uses new config
+**Independent Test**: Click "Import Config" button, select a config file, see active config path displayed, reload service, verify service uses imported config
 
-### Tests for User Story 3
+**Note**: This uses existing `import_config` command - no new backend needed
 
-- [ ] T060 [P] [US3] Create component test `src/__tests__/components/ConfigSelector.test.ts` for configuration list rendering, selection handling, active highlighting
+### Frontend - Configuration Import UI
 
-### Implementation for User Story 3
+- [ ] T060 [US3] Add active config path display to `src/routes/logs/+page.svelte` service control section
+- [ ] T061 [US3] Add "Import Config" button next to reload button in service control toolbar
+- [ ] T062 [US3] Wire up "Import Config" button to existing `importConfig()` in `src/services/tauri.ts`
+- [ ] T063 [US3] Update active config path display after successful import
+- [ ] T064 [US3] Add visual feedback for import success/failure (toast notification or inline message)
+- [ ] T065 [US3] Style config path display with monospace font and subtle background
+- [ ] T066 [US3] Add icon to "Import Config" button (folder or document icon)
 
-#### Backend - Configuration Query
-
-- [ ] T061 [US3] Create `get_available_configs` command in `src-tauri/src/commands/service.rs` that queries feature 002 storage
-- [ ] T062 [US3] Add configuration validation in `get_available_configs` using existing skhd parser to set `valid` field
-- [ ] T063 [US3] Add active configuration detection in `get_available_configs` (compare with current skhd config path)
-- [ ] T064 [US3] Register `get_available_configs` command in `src-tauri/src/lib.rs`
-
-#### Frontend - Configuration Selection
-
-- [ ] T065 [US3] Add `getAvailableConfigs()` wrapper in `src/services/service.ts` for configuration query command
-- [ ] T066 [US3] Create Svelte store in `src/services/service.ts`: `availableConfigs` (array of ConfigurationReference)
-- [ ] T067 [US3] Create `ConfigSelector.svelte` component in `src/components/` with configuration dropdown/list
-- [ ] T068 [US3] Add configuration list rendering in `ConfigSelector.svelte` with name, last modified date, validation status
-- [ ] T069 [US3] Add active configuration highlighting in `ConfigSelector.svelte` (bold, checkmark, or different background)
-- [ ] T070 [US3] Add invalid configuration indication in `ConfigSelector.svelte` (red text, warning icon)
-- [ ] T071 [US3] Implement configuration selection handler in `ConfigSelector.svelte` that updates selected config state
-- [ ] T072 [US3] Update `ServiceControl.svelte` to use selected config from `ConfigSelector` when reloading
-- [ ] T073 [US3] Integrate `ConfigSelector` component into `src/routes/logs/+page.svelte` in service control section
-- [ ] T074 [US3] Add config refresh on component mount in `ConfigSelector.svelte` to load latest configs
-
-**Checkpoint**: All three user stories should now be independently functional - log viewing, service reload, configuration selection
+**Checkpoint**: All three user stories now functional - log viewing, service reload, and config import before reload
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-**Purpose**: Improvements that affect multiple user stories and final validation
+**Purpose**: Improvements that affect all user stories and final validation
 
 - [ ] T075 [P] Add comprehensive error messages for all error scenarios in `src-tauri/src/services/service_manager.rs` and `log_tailer.rs`
 - [ ] T076 [P] Add debouncing for rapid log bursts in `src-tauri/src/services/log_tailer.rs` (100ms batch)
@@ -218,22 +204,23 @@
 - **User Stories (Phase 3-5)**: All depend on Foundational phase completion
   - User Story 1 can proceed independently after Phase 2
   - User Story 2 can proceed independently after Phase 2 (uses US1 log viewer for verification but doesn't block)
-  - User Story 3 depends on User Story 2 (needs reload functionality to test config selection)
+  - User Story 3 can proceed independently after Phase 2 (uses existing import_config command)
 - **Polish (Phase 6)**: Depends on all user stories being complete
 
 ### User Story Dependencies
 
 - **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
 - **User Story 2 (P2)**: Can start after Foundational (Phase 2) - Independent of US1 (though benefits from log viewer for validation)
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - Extends US2 reload functionality
+- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - Uses existing `import_config` command, extends US2 reload UI
 
 ### Within Each User Story
 
-- Tests MUST be written and FAIL before implementation (T011-T013, T035-T037, T060)
+- Tests MUST be written and FAIL before implementation (T011-T013, T035-T037)
 - Models before services (Phase 2 completes all models)
 - Services before commands (service_manager/log_tailer before Tauri commands)
 - Backend before frontend (commands registered before frontend wrappers)
 - Core components before page integration
+- User Story 3 is frontend-only using existing `import_config` command
 
 ### Parallel Opportunities
 
@@ -252,7 +239,7 @@
 - Frontend: T053 can start as soon as T049-T052 complete
 
 **User Story 3**:
-- Frontend: T067-T069 can be developed in parallel with T065-T066
+- Frontend: All tasks (T060-T066) are frontend-only and can run in parallel once UI structure is in place
 
 **Phase 6 (Polish)**: T075-T078 can run in parallel
 
@@ -309,17 +296,18 @@ With multiple developers:
 
 ## Task Summary
 
-**Total Tasks**: 87
+**Total Tasks**: 80
 - Phase 1 (Setup): 3 tasks
 - Phase 2 (Foundational): 7 tasks (CRITICAL PATH)
 - Phase 3 (User Story 1 - P1): 25 tasks (3 tests, 22 implementation)
 - Phase 4 (User Story 2 - P2): 25 tasks (3 tests, 22 implementation)
-- Phase 5 (User Story 3 - P3): 15 tasks (1 test, 14 implementation)
-- Phase 6 (Polish): 12 tasks
+- Phase 5 (User Story 3 - P3): 7 tasks (frontend-only, uses existing backend)
+- Phase 6 (Polish): 13 tasks
 
 **Parallel Opportunities**: 27 tasks marked [P] across all phases
-**Test Tasks**: 7 (per constitution >80% coverage requirement)
+**Test Tasks**: 6 (per constitution >80% coverage requirement)
 **MVP Scope**: Phase 1 + Phase 2 + Phase 3 = 35 tasks
+**Full Feature Scope**: All 80 tasks
 
 ---
 

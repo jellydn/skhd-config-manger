@@ -41,20 +41,20 @@ Users need to apply configuration changes by reloading the skhd service with the
 
 ---
 
-### User Story 3 - Select Configuration Before Reload (Priority: P3)
+### User Story 3 - Import Configuration Before Reload (Priority: P3)
 
-Users need to choose which configuration file to use when reloading the service, enabling testing of different configurations without manual file management.
+Users need to import a different configuration file before reloading the service, enabling testing of different configurations without manual file management.
 
-**Why this priority**: Configuration selection enhances flexibility but depends on reload functionality (P2) to be useful.
+**Why this priority**: Configuration import enhances flexibility but depends on reload functionality (P2) to be useful.
 
-**Independent Test**: Can be tested by importing multiple configuration files, selecting one from a list, and reloading the service with the selected configuration. Delivers value by supporting multi-configuration workflows.
+**Independent Test**: Can be tested by clicking "Import Config", selecting a configuration file, and reloading the service with the imported configuration. Delivers value by supporting configuration switching workflows.
 
 **Acceptance Scenarios**:
 
-1. **Given** multiple configuration files are available, **When** user opens configuration selector, **Then** all available configurations are listed with identifiable names
-2. **Given** configuration list is displayed, **When** user selects a configuration, **Then** selected configuration becomes the active configuration
-3. **Given** a configuration is selected, **When** user clicks reload service, **Then** skhd service reloads with the selected configuration
-4. **Given** user switches between configurations, **When** viewing the configuration list, **Then** currently active configuration is clearly indicated
+1. **Given** user is viewing the service control page, **When** user clicks "Import Config", **Then** a file picker dialog opens to select a configuration file
+2. **Given** file picker is open, **When** user selects a valid skhd configuration file, **Then** the file is imported and becomes the active configuration
+3. **Given** a configuration is imported, **When** user views the service control section, **Then** the currently active configuration path is displayed
+4. **Given** a new configuration is imported, **When** user clicks reload service, **Then** skhd service reloads with the imported configuration
 
 ---
 
@@ -77,8 +77,8 @@ Users need to choose which configuration file to use when reloading the service,
 - **FR-004**: System MUST provide a reload button that restarts the skhd service
 - **FR-005**: System MUST reload skhd service with the currently active configuration file when reload is triggered
 - **FR-006**: System MUST display success or failure feedback after reload attempt
-- **FR-007**: System MUST allow users to select from available configuration files before reloading
-- **FR-008**: System MUST indicate which configuration is currently active
+- **FR-007**: System MUST allow users to import a configuration file before reloading
+- **FR-008**: System MUST display the currently active configuration path
 - **FR-009**: System MUST handle reload failures gracefully and provide actionable error messages
 - **FR-010**: System MUST detect if skhd service is running or stopped
 - **FR-011**: System MUST prevent concurrent reload operations
@@ -99,7 +99,7 @@ Users need to choose which configuration file to use when reloading the service,
 - **SC-003**: Service reload completes within 5 seconds for typical configuration files
 - **SC-004**: Users can successfully reload the service on first attempt in 95% of cases with valid configurations
 - **SC-005**: Error messages provide sufficient information for users to resolve 80% of reload failures without external documentation
-- **SC-006**: Users can switch between configurations and reload without using terminal commands
+- **SC-006**: Users can import a different configuration and reload without using terminal commands
 
 ## Assumptions
 
@@ -112,13 +112,13 @@ Users need to choose which configuration file to use when reloading the service,
 
 ## Dependencies
 
-- Existing configuration management features (import/export from feature 002)
 - System permissions to read skhd logs and restart the service
 - skhd service must support restart/reload operations
 - Access to skhd service control mechanisms (launchctl on macOS or equivalent)
 
 ## Out of Scope
 
+- Multiple configuration storage/management (uses existing import/export functionality)
 - Log filtering and search capabilities (may be future enhancement)
 - Log export functionality
 - Custom log level configuration

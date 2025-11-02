@@ -5,7 +5,7 @@
 
 ## Summary
 
-This feature adds a real-time log viewer for the skhd service and provides GUI controls to reload the service with a selected configuration. Users can monitor skhd service activity through a live log display and restart the service without using terminal commands. The implementation focuses on seamless macOS service integration using launchctl, real-time log tailing, and safe configuration switching.
+This feature adds a real-time log viewer for the skhd service and provides GUI controls to reload the service and import configurations. Users can monitor skhd service activity through a live log display, import different configuration files, and restart the service without using terminal commands. The implementation focuses on seamless macOS service integration using launchctl, real-time log tailing, and leveraging existing configuration import functionality.
 
 ## Technical Context
 
@@ -28,8 +28,8 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - **Actions Required**: Design log viewer with native macOS patterns (monospaced font, color coding)
 
 ### ✅ Configuration Safety (NON-NEGOTIABLE)
-- **Compliance**: Service reload uses existing atomic configuration switching from feature 002
-- **Actions Required**: Validate configuration before reload, provide rollback if service fails to start
+- **Compliance**: Service reload uses existing import_config command with built-in validation
+- **Actions Required**: Leverage existing configuration validation, provide clear error messages if service fails to start
 
 ### ✅ Test Coverage
 - **Compliance**: Will test service control logic, log parsing, error handling
@@ -56,9 +56,9 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - No constitution violations introduced
 
 ✅ **Configuration Safety** - CONFIRMED
-- Validation before reload enforced in design
-- Automatic rollback on failure implemented
-- Atomic configuration switching via feature 002
+- Validation before import enforced by existing import_config command
+- Configuration parsing errors shown to user before reload
+- Uses battle-tested import_config from existing codebase
 - No constitution violations introduced
 
 ✅ **Test Coverage** - CONFIRMED
@@ -120,13 +120,13 @@ src-tauri/
 src/
 ├── components/
 │   ├── LogViewer.svelte          # NEW: Log display component
-│   ├── ServiceControl.svelte     # NEW: Reload/status controls
-│   └── ConfigSelector.svelte     # NEW: Configuration selection UI
+│   └── (ServiceControl integrated in logs page)
 ├── services/
-│   └── service.ts                # NEW: Frontend service client
+│   ├── service.ts                # NEW: Frontend service client
+│   └── tauri.ts                  # UPDATE: Uses existing import_config
 └── routes/
     └── logs/
-        └── +page.svelte          # NEW: Log viewer page
+        └── +page.svelte          # NEW: Log viewer page with integrated controls
 
 tests/
 └── __tests__/
