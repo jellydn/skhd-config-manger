@@ -1918,12 +1918,10 @@ version = "0.2.2"
 dependencies = [
  "chrono",
  "dirs 5.0.1",
- "lazy_static",
  "mockall",
  "notify",
  "pest",
  "pest_derive",
- "regex",
  "rfd",
  "serde",
  "serde_json",

@@ -183,3 +183,11 @@ export async function executeShortcutCommand(shortcutId: string): Promise<TestRe
 export async function cancelShortcutExecution(shortcutId: string): Promise<void> {
   return invoke<void>('cancel_shortcut_execution', { shortcutId });
 }
+
+/**
+ * Get execution configuration constants
+ * @returns Object with timeout_seconds and max_output_length
+ */
+export async function getExecutionConfig(): Promise<{ timeout_seconds: number; max_output_length: number }> {
+  return invoke('get_execution_config');
+}

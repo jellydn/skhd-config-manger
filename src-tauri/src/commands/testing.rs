@@ -10,6 +10,12 @@ use tokio::process::Command as TokioCommand;
 use tokio::sync::oneshot;
 use tokio::time::{timeout, Duration};
 
+/// Maximum execution time for commands in seconds
+pub const COMMAND_TIMEOUT_SECS: u64 = 30;
+
+/// Maximum output length before truncation
+pub const MAX_OUTPUT_LENGTH: usize = 10000;
+
 /// State for tracking running command executions
 pub struct ExecutionState {
     /// Map of shortcut IDs to cancellation senders
@@ -226,7 +232,7 @@ pub async fn execute_shortcut_command(
     // 8. Wait with timeout and cancellation support
     let wait_result = tokio::select! {
         // Command completes or times out
-        result = timeout(Duration::from_secs(30), child.wait()) => {
+        result = timeout(Duration::from_secs(COMMAND_TIMEOUT_SECS), child.wait()) => {
             result
         }
         // Cancellation requested
@@ -298,8 +304,8 @@ pub async fn execute_shortcut_command(
             let stdout_raw = String::from_utf8_lossy(&stdout_data).to_string();
             let stderr_raw = String::from_utf8_lossy(&stderr_data).to_string();
 
-            let (stdout, stdout_truncated) = truncate_output(stdout_raw, 10000);
-            let (stderr, stderr_truncated) = truncate_output(stderr_raw, 10000);
+            let (stdout, stdout_truncated) = truncate_output(stdout_raw, MAX_OUTPUT_LENGTH);
+            let (stderr, stderr_truncated) = truncate_output(stderr_raw, MAX_OUTPUT_LENGTH);
 
             Ok(TestResult {
                 shortcut_id: shortcut.id.clone(),
@@ -372,6 +378,16 @@ pub async fn cancel_shortcut_execution(
         // which is what the user wanted
         Ok(())
     }
+}
+
+/// Get execution configuration constants
+/// Returns timeout_seconds and max_output_length for the frontend
+#[tauri::command]
+pub fn get_execution_config() -> serde_json::Value {
+    serde_json::json!({
+        "timeout_seconds": COMMAND_TIMEOUT_SECS,
+        "max_output_length": MAX_OUTPUT_LENGTH,
+    })
 }
 
 fn format_command_preview(shortcut: &Shortcut) -> String {

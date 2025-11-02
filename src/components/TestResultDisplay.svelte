@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { TestResult } from '../types';
+  import { getExecutionConfig } from '../services/tauri';
+  import { onMount } from 'svelte';
 
   interface Props {
     result: TestResult;
@@ -7,6 +9,19 @@
   }
 
   let { result, onClose }: Props = $props();
+  let timeoutSeconds = $state(30); // Default fallback
+  let maxOutputLength = $state(10000); // Default fallback
+
+  onMount(async () => {
+    try {
+      const config = await getExecutionConfig();
+      timeoutSeconds = config.timeout_seconds;
+      maxOutputLength = config.max_output_length;
+    } catch (error) {
+      console.error('Failed to load execution config:', error);
+      // Keep default values on error
+    }
+  });
 
   function getExitCodeDescription(code: number | null | undefined): string {
     if (code === null || code === undefined) return '';
@@ -31,7 +46,7 @@
     <!-- Execution Results -->
     <div class="result-status" class:valid={result.exit_code === 0} class:invalid={result.exit_code !== 0 || result.timed_out}>
       {#if result.timed_out}
-        ⏱️ Command timed out (30 seconds)
+        ⏱️ Command timed out ({timeoutSeconds} seconds)
       {:else if result.exit_code === 0}
         ✅ Command executed successfully
       {:else}
@@ -62,7 +77,7 @@
     {#if result.output_truncated}
       <div class="truncation-notice">
         <strong>⚠️ Output Truncated</strong>
-        <p>Output was limited to 10,000 characters. The full output may be longer.</p>
+        <p>Output was limited to {maxOutputLength.toLocaleString()} characters. The full output may be longer.</p>
       </div>
     {/if}
   {:else}
