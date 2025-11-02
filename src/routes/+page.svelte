@@ -302,15 +302,15 @@
     <h1>skhd Configuration Manager</h1>
     <div class="header-actions">
       {#if config}
-        <button class="btn-home" onclick={handleHomeClick} disabled={loading}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="btn-home" onclick={handleHomeClick} disabled={loading} aria-label="Return to home screen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
           Home
         </button>
-        <button class="btn-export" onclick={handleExport}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="btn-export" onclick={handleExport} aria-label="Export configuration to file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             <path d="M12 3v6m0 0l3-3m-3 3l-3-3" />
           </svg>

@@ -21,22 +21,31 @@
   let validationWarnings = $state<string[]>([]);
   let saving = $state(false);
 
+  // Helper to compare arrays efficiently without JSON.stringify
+  function arraysEqual(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((val, index) => val === b[index]);
+  }
+
   // Track if form has changes (for duplicate mode)
   let hasChanges = $derived(
     mode === 'duplicate' ? (
-      JSON.stringify(selectedModifiers) !== JSON.stringify(shortcut?.modifiers || []) ||
+      !arraysEqual(selectedModifiers, shortcut?.modifiers || []) ||
       key !== (shortcut?.key || '') ||
       command !== (shortcut?.command || '') ||
       comment !== (shortcut?.comment || '')
     ) : true
   );
 
-  // Get form title based on mode
-  let formTitle = $derived(
-    mode === 'duplicate' ? 'Duplicate Shortcut' :
-    mode === 'edit' ? 'Edit Shortcut' :
-    'Create Shortcut'
-  );
+  // Form configuration by mode
+  const formConfig = {
+    duplicate: { title: 'Duplicate Shortcut', buttonText: 'Create' },
+    edit: { title: 'Edit Shortcut', buttonText: 'Update' },
+    create: { title: 'Create Shortcut', buttonText: 'Create' }
+  };
+
+  let formTitle = $derived(formConfig[mode].title);
+  let buttonText = $derived(formConfig[mode].buttonText);
 
   function toggleModifier(modifier: string) {
     if (selectedModifiers.includes(modifier)) {
@@ -177,7 +186,7 @@
         Cancel
       </button>
       <button type="submit" class="btn-save" disabled={saving || (mode === 'duplicate' && !hasChanges)}>
-        {saving ? 'Saving...' : mode === 'duplicate' ? 'Create' : shortcut ? 'Update' : 'Create'}
+        {saving ? 'Saving...' : buttonText}
       </button>
     </div>
   </form>

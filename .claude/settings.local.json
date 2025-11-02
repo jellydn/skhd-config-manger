@@ -31,7 +31,18 @@
       "Bash(cargo clippy:*)",
       "Bash(cargo fmt:*)",
       "Bash(make lint:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(bun run dev:*)",
+      "Bash(git log:*)",
+      "Bash(git push:*)",
+      "Bash(cargo clean:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []
