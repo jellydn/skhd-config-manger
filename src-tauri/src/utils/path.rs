@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 ///
 /// # Examples
 /// ```
-/// use skhd_gui_lib::utils::path::expand_path;
+/// use keybinder_lib::utils::path::expand_path;
 ///
 /// let path = expand_path("~/.config/skhd/skhdrc");
 /// assert!(path.starts_with("/Users/") || path.starts_with("/home/"));
