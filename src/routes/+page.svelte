@@ -584,33 +584,6 @@
     flex-shrink: 0;
   }
 
-  .btn-create {
-    background: #007aff;
-    color: white;
-    border-color: #007aff;
-  }
-
-  .btn-create:hover {
-    background: #0051d5;
-    border-color: #0051d5;
-  }
-
-  .btn-save {
-    background: #34c759;
-    color: white;
-    border-color: #34c759;
-  }
-
-  .btn-save:hover:not(:disabled) {
-    background: #28a745;
-    border-color: #28a745;
-  }
-
-  .btn-save:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .app-content {
     flex: 1;
     padding: 2rem;
