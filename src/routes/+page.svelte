@@ -94,9 +94,9 @@
         file_path: '', // No path yet - user will choose on first save
         shortcuts: [],
         parse_errors: [],
-        last_modified: new Date().toISOString()
+        last_modified: new Date().toISOString(),
+        is_modified: true // Mark as modified so user can save with location choice
       };
-      isModified = true; // Mark as modified so user can save with location choice
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
       console.error('Failed to create blank config:', err);
