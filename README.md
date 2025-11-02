@@ -120,6 +120,171 @@ Examples:
 
 - **Import**: Click **Import...** to browse for an existing skhd config file
 
+## Development Workflow
+
+This project uses [spec-kit](https://github.com/github/spec-kit) for specification-driven development. Each feature is documented in the `specs/` directory.
+
+### Understanding Spec-Kit
+
+**TL;DR**: Spec-kit is great for greenfield projects, less practical for ongoing development. Use it for initial feature planning, but expect to deviate during implementation.
+
+**What it's good for:**
+- ✅ Initial feature planning and requirements gathering
+- ✅ Creating structured documentation for new features
+- ✅ Establishing project constitution and coding standards
+- ✅ Generating implementation tasks from specifications
+
+**Limitations in real-world usage:**
+- ❌ Assumes specs remain static during implementation (rarely true)
+- ❌ No clear guidance for handling PR feedback or bug fixes
+- ❌ Designed for research/academic contexts, not production workflows
+- ❌ Spec-to-code sync breaks down quickly in iterative development
+
+### How We Use Spec-Kit
+
+We use a **pragmatic subset** of spec-kit for initial planning only:
+
+#### 1. **Initial Feature Specification**
+```bash
+# Create a new feature spec (creates branch and spec directory)
+/speckit.specify <description of what you want to build>
+
+# Example: /speckit.specify Add configuration import/export functionality
+# Creates: specs/002-config-import-export/spec.md
+# Creates branch: 002-config-import-export
+```
+
+#### 2. **Implementation Planning**
+```bash
+# Generate technical plan from specification
+/speckit.plan <tech stack and architecture decisions>
+
+# Example: /speckit.plan Use Rust rfd crate for file dialogs, existing parser
+# Creates: specs/002-config-import-export/plan.md
+```
+
+#### 3. **Task Breakdown**
+```bash
+# Generate implementation tasks
+/speckit.tasks
+
+# Creates: specs/002-config-import-export/tasks.md
+```
+
+#### 4. **After That: Normal Development**
+
+Once specs and tasks are generated, we **abandon strict spec-kit workflow**:
+
+- ✅ Implement features based on tasks.md
+- ✅ Fix bugs as they're discovered (don't update specs retroactively)
+- ✅ Handle PR feedback directly in code
+- ✅ Make UX improvements based on testing
+- ✅ Update CLAUDE.md with tech stack changes (not specs)
+
+**Why?** Because real development is iterative, specs get stale quickly, and maintaining spec-to-code sync is overhead without value.
+
+### Feature Development Process
+
+Our actual workflow (spec-kit + pragmatic deviations):
+
+```bash
+# 1. Plan feature with spec-kit
+/speckit.specify <feature description>
+/speckit.plan <technical approach>
+/speckit.tasks
+
+# 2. Normal development
+git checkout -b <feature-branch>
+# Implement features from tasks.md
+# Run tests: bun run typecheck, cargo test, cargo clippy
+# Iterate based on feedback
+
+# 3. PR and review
+git commit -m "Implement <feature>: what, why, how"
+gh pr create --title "Feature: <name>" --body "..."
+
+# 4. Handle feedback PRAGMATICALLY
+# - Fix bugs in code (don't update specs)
+# - Address PR comments directly
+# - Update docs/checklists with lessons learned
+# - Specs are historical record, not living docs
+```
+
+### Directory Structure
+
+```
+specs/
+  001-skhd-config-gui/       # Initial GUI feature
+    spec.md                   # Requirements and user stories
+    plan.md                   # Technical implementation plan
+    tasks.md                  # Task breakdown
+    data-model.md            # Data structures
+    contracts/               # API contracts
+  002-config-import-export/  # Import/export feature
+    spec.md
+    plan.md
+    tasks.md
+    ...
+```
+
+**Note**: Files in `specs/` are **reference documentation** for feature planning. Don't expect them to match current code exactly—they represent the initial plan, not the evolved implementation.
+
+### Spec-Kit Decision Framework
+
+When working with spec-kit, use this framework to decide whether to update specs:
+
+#### ✅ Update Specs When:
+
+- **Missing requirements discovered** (accessibility, security, performance)
+  - Example: PR feedback reveals missing aria-labels → Add NFR to spec
+- **Acceptance criteria incomplete/wrong**
+  - Example: Edge case not covered → Update scenarios
+- **New constraint for ALL future features**
+  - Example: File size limits, browser compatibility
+- **Production incident reveals spec gap**
+  - Example: Crash on large files → Add performance NFR
+- **API contract changes**
+  - Example: New required parameter → Update contracts
+
+#### ❌ Don't Update Specs (Just Fix Code):
+
+- Typos or syntax errors
+- Better variable naming
+- Code refactoring (same behavior)
+- Performance optimization (already meets spec)
+- Bug in implementation logic (spec was correct)
+- UI polish/styling tweaks
+
+#### 🔄 Real Example from This Project:
+
+**PR Feedback**: "Missing aria-labels on icon buttons"
+
+**Spec-Kit Approach:**
+1. Recognized as **spec gap** (accessibility requirement missing)
+2. Updated `specs/003-shortcut-duplicate/spec.md` with NFR-A01 to NFR-A04
+3. Fixed code (added aria-labels)
+4. Updated checklist (marked accessibility complete)
+5. **Result**: Future features won't miss this requirement
+
+#### 📚 Full Methodology Guide
+
+See [`claudedocs/spec-kit-methodology-summary.md`](claudedocs/spec-kit-methodology-summary.md) for:
+- Complete decision frameworks
+- Handling PR comments, bug fixes, production issues
+- When spec-kit works well vs. when to adapt
+- Team collaboration workflows
+- Lessons learned from real implementation
+
+### Contributing
+
+When adding features:
+
+1. Use spec-kit for initial planning (specify → plan → tasks)
+2. **During PR review**: If feedback reveals missing requirements, update specs
+3. Create clear, focused PRs with "what, why, how" descriptions
+4. Run tests before committing: `bun run typecheck && cargo test && cargo clippy`
+5. Use judgment: Update specs for missing requirements, just fix code for implementation bugs
+
 ## Author
 
 👤 **Huynh Duc Dung**

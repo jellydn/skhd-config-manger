@@ -4,11 +4,12 @@
 
   interface Props {
     shortcut?: Shortcut;
+    mode?: 'create' | 'edit' | 'duplicate';
     onSave: (data: CreateShortcutRequest & { id?: string }) => Promise<void>;
     onCancel: () => void;
   }
 
-  let { shortcut, onSave, onCancel }: Props = $props();
+  let { shortcut, mode = shortcut ? 'edit' : 'create', onSave, onCancel }: Props = $props();
 
   const AVAILABLE_MODIFIERS = ['cmd', 'alt', 'shift', 'ctrl', 'fn'];
 
@@ -19,6 +20,32 @@
   let validationErrors = $state<string[]>([]);
   let validationWarnings = $state<string[]>([]);
   let saving = $state(false);
+
+  // Helper to compare arrays efficiently without JSON.stringify
+  function arraysEqual(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((val, index) => val === b[index]);
+  }
+
+  // Track if form has changes (for duplicate mode)
+  let hasChanges = $derived(
+    mode === 'duplicate' ? (
+      !arraysEqual(selectedModifiers, shortcut?.modifiers || []) ||
+      key !== (shortcut?.key || '') ||
+      command !== (shortcut?.command || '') ||
+      comment !== (shortcut?.comment || '')
+    ) : true
+  );
+
+  // Form configuration by mode
+  const formConfig = {
+    duplicate: { title: 'Duplicate Shortcut', buttonText: 'Create' },
+    edit: { title: 'Edit Shortcut', buttonText: 'Update' },
+    create: { title: 'Create Shortcut', buttonText: 'Create' }
+  };
+
+  let formTitle = $derived(formConfig[mode].title);
+  let buttonText = $derived(formConfig[mode].buttonText);
 
   function toggleModifier(modifier: string) {
     if (selectedModifiers.includes(modifier)) {
@@ -48,7 +75,8 @@
         comment: comment.trim() || undefined,
       };
 
-      if (shortcut) {
+      // Only set ID for edit mode (not for duplicate or create)
+      if (shortcut && mode === 'edit') {
         data.id = shortcut.id;
       }
 
@@ -83,7 +111,7 @@
 </script>
 
 <div class="shortcut-form">
-  <h3>{shortcut ? 'Edit Shortcut' : 'Create Shortcut'}</h3>
+  <h3>{formTitle}</h3>
 
   {#if validationErrors.length > 0}
     <div class="validation-errors">
@@ -157,8 +185,8 @@
       <button type="button" class="btn-cancel" onclick={onCancel} disabled={saving}>
         Cancel
       </button>
-      <button type="submit" class="btn-save" disabled={saving}>
-        {saving ? 'Saving...' : shortcut ? 'Update' : 'Create'}
+      <button type="submit" class="btn-save" disabled={saving || (mode === 'duplicate' && !hasChanges)}>
+        {saving ? 'Saving...' : buttonText}
       </button>
     </div>
   </form>

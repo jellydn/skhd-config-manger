@@ -31,6 +31,7 @@
   let error = $state<string | null>(null);
   let showForm = $state(false);
   let editingShortcut = $state<Shortcut | null>(null);
+  let formMode = $state<'create' | 'edit' | 'duplicate'>('create');
   let testResult = $state<TestResult | null>(null);
   let showTestResult = $state(false);
   let showReloadConfirm = $state(false);
@@ -78,6 +79,27 @@
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
       console.error('Failed to load config:', err);
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function handleCreateBlank() {
+    try {
+      loading = true;
+      error = null;
+      // Create a truly blank configuration without auto-detection
+      // This always creates an empty config regardless of existing files
+      config = {
+        file_path: '', // No path yet - user will choose on first save
+        shortcuts: [],
+        parse_errors: [],
+        last_modified: new Date().toISOString(),
+        is_modified: true // Mark as modified so user can save with location choice
+      };
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      console.error('Failed to create blank config:', err);
     } finally {
       loading = false;
     }
@@ -135,13 +157,30 @@
     }
   }
 
+  function getNextLineNumber(): number {
+    if (!config || config.shortcuts.length === 0) return 1;
+    return Math.max(...config.shortcuts.map(s => s.line_number)) + 1;
+  }
+
   function handleCreate() {
     editingShortcut = null;
+    formMode = 'create';
     showForm = true;
   }
 
   function handleEdit(shortcut: Shortcut) {
     editingShortcut = shortcut;
+    formMode = 'edit';
+    showForm = true;
+  }
+
+  function handleDuplicate(shortcut: Shortcut) {
+    editingShortcut = {
+      ...shortcut,
+      id: crypto.randomUUID(),
+      line_number: getNextLineNumber()
+    };
+    formMode = 'duplicate';
     showForm = true;
   }
 
@@ -283,16 +322,21 @@
   <header class="app-header">
     <h1>skhd Configuration Manager</h1>
     <div class="header-actions">
-      <button class="btn-home" onclick={handleHomeClick} disabled={loading}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        Home
-      </button>
-      <button class="btn-import" onclick={handleImport} disabled={loading}> Import... </button>
       {#if config}
-        <button class="btn-export" onclick={handleExport}> Export... </button>
+        <button class="btn-home" onclick={handleHomeClick} disabled={loading} aria-label="Return to home screen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Home
+        </button>
+        <button class="btn-export" onclick={handleExport} aria-label="Export configuration to file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path d="M12 3v6m0 0l3-3m-3 3l-3-3" />
+          </svg>
+          Export...
+        </button>
       {/if}
     </div>
   </header>
@@ -364,13 +408,13 @@
             </div>
           </button>
 
-          <button class="welcome-btn" onclick={loadConfiguration}>
+          <button class="welcome-btn" onclick={handleCreateBlank}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 4v16m8-8H4" />
             </svg>
             <div>
-              <h3>Create New Config</h3>
-              <p>Start with an empty configuration file</p>
+              <h3>Create Blank Config</h3>
+              <p>Start with an empty configuration (never auto-detects existing configs)</p>
             </div>
           </button>
         </div>
@@ -388,6 +432,7 @@
           onEdit={handleEdit}
           onDelete={handleDelete}
           onTest={handleTest}
+          onDuplicate={handleDuplicate}
           onCreate={handleCreate}
           onSave={saveConfiguration}
           isModified={config.is_modified}
@@ -399,6 +444,7 @@
   <Modal open={showForm} onClose={handleCancelForm}>
     <ShortcutForm
       shortcut={editingShortcut}
+      mode={formMode}
       onSave={handleSaveShortcut}
       onCancel={handleCancelForm}
     />
@@ -522,11 +568,18 @@
     background: #ff9500;
     color: white;
     border-color: #ff9500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .btn-export:hover {
     background: #d17e00;
     border-color: #d17e00;
+  }
+
+  .btn-export svg {
+    flex-shrink: 0;
   }
 
   .btn-create {
@@ -826,6 +879,7 @@
   .welcome-btn svg {
     flex-shrink: 0;
     color: #007aff;
+    align-self: flex-start;
   }
 
   .welcome-btn div {

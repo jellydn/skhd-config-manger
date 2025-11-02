@@ -55,6 +55,39 @@ Users need to verify that keyboard shortcuts work as intended before committing 
 
 ---
 
+### User Story 4 - Configuration Initialization (Priority: P1)
+
+Users need clear, unambiguous control over how configurations are initialized - whether detecting existing configs or creating blank ones.
+
+**Why this priority**: Foundation for user workflow. Ambiguous initialization leads to confusion and potential data loss. Critical for first-run experience.
+
+**Independent Test**: Can be tested by launching app with and without existing config, verifying each action does exactly what it promises.
+
+**Acceptance Scenarios**:
+
+1. **Given** user launches app with no existing config, **When** they click "Detect Active Config", **Then** system searches standard locations and displays "No configuration found" message with option to create new
+2. **Given** user launches app with existing config at `~/.config/skhd/skhdrc`, **When** they click "Detect Active Config", **Then** system loads the existing configuration
+3. **Given** user launches app (regardless of existing config), **When** they click "Create Blank Config", **Then** system creates an empty configuration without checking for existing files
+4. **Given** user has existing config, **When** they click "Create Blank Config", **Then** system creates blank config and allows user to choose save location (preventing accidental overwrite of existing config)
+5. **Given** user clicks "Import Existing File...", **When** they select a file, **Then** system loads that specific file regardless of standard locations
+
+**Design Decision (Discovered Edge Case)**:
+
+**Problem**: Original spec ambiguous - "Create New Config" button auto-detected existing config, conflicting with user's explicit intent to create new.
+
+**Solution**: Separate actions with clear intent:
+- **"Detect Active Config"**: Auto-detection of standard locations
+- **"Create Blank Config"**: Always blank, never auto-detect
+- **"Import Existing File..."**: Manual file selection
+
+**Rationale**:
+- Respects explicit user choice (no surprises)
+- Supports experimentation without touching existing config
+- Allows recovery from corrupted config (start fresh)
+- Clear, predictable behavior for each action
+
+---
+
 ### Edge Cases
 
 - What happens when the skhd config file is being edited by another process while the GUI is open?
@@ -63,6 +96,7 @@ Users need to verify that keyboard shortcuts work as intended before committing 
 - How does the app behave when the skhd service is not running or not installed?
 - What happens with Unicode characters or special symbols in commands or comments?
 - How are multi-line commands or comments handled in the GUI display?
+- **RESOLVED**: What happens when user clicks "Create New Config" but existing config detected? → Separated into distinct "Detect Active" vs "Create Blank" actions (User Story 4)
 
 ## Requirements _(mandatory)_
 
@@ -85,6 +119,13 @@ Users need to verify that keyboard shortcuts work as intended before committing 
 - **FR-015**: System MUST reload configuration when external changes to the config file are detected
 - **FR-016**: Application MUST request necessary file system permissions on first launch
 - **FR-017**: System MUST handle read-only mode gracefully when write permissions are unavailable
+- **FR-018**: System MUST provide separate "Detect Active Config" action that searches standard locations for existing configuration
+- **FR-019**: "Detect Active Config" MUST NOT create new files - only detect and load existing configurations
+- **FR-020**: System MUST provide separate "Create Blank Config" action that creates empty configuration
+- **FR-021**: "Create Blank Config" MUST NOT auto-detect existing configs - always creates blank regardless of existing files
+- **FR-022**: "Create Blank Config" MUST allow user to specify save location to prevent accidental overwrite of existing config
+- **FR-023**: System MUST provide "Import Existing File..." action for manual file selection
+- **FR-024**: Welcome screen MUST clearly label each action to communicate intent: "Detect Active Config", "Create Blank Config", "Import Existing File..."
 
 ### Key Entities _(include if feature involves data)_
 
