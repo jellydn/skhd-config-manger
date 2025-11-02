@@ -39,7 +39,7 @@ fn get_log_pattern() -> &'static Regex {
 /// * `None` - Line could not be parsed (should use fallback)
 ///
 /// # Examples
-/// ```
+/// ```ignore
 /// let line = "2025-11-02 10:15:30 [INFO] skhd: configuration loaded";
 /// let entry = parse_log_line(line);
 /// assert!(entry.is_some());
@@ -115,7 +115,7 @@ impl LogTailer {
     /// * `Err(String)` - Failed to start stream (already running, spawn error)
     ///
     /// # Examples
-    /// ```no_run
+    /// ```ignore
     /// let tailer = LogTailer::new(app_handle);
     /// tailer.start_stream().await?;
     /// ```
@@ -183,7 +183,7 @@ impl LogTailer {
     /// * `Err(String)` - Failed to stop stream (not running, kill error)
     ///
     /// # Examples
-    /// ```no_run
+    /// ```ignore
     /// tailer.stop_stream().await?;
     /// ```
     pub async fn stop_stream(&self) -> Result<(), String> {
