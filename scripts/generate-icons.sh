@@ -59,11 +59,27 @@ echo ""
 mkdir -p "$ICONS_DIR"
 
 #########################################
-# Step 1: Copy master icon
+# Step 1: Copy and ensure RGBA format for master icon
 #########################################
-echo -e "${BLUE}[1/5]${NC} Copying master icon (1024x1024)..."
-cp "$SOURCE_IMAGE" "$ICONS_DIR/icon.png"
-echo -e "${GREEN}✓${NC} Created icon.png"
+echo -e "${BLUE}[1/5]${NC} Preparing master icon (1024x1024)..."
+
+# Use ImageMagick to ensure RGBA format if available, otherwise use sips
+if command -v magick &> /dev/null || command -v convert &> /dev/null; then
+    if command -v magick &> /dev/null; then
+        CONVERT_CMD="magick"
+    else
+        CONVERT_CMD="convert"
+    fi
+    # Convert to RGBA PNG format
+    $CONVERT_CMD "$SOURCE_IMAGE" -resize 1024x1024 -background none -gravity center -extent 1024x1024 "$ICONS_DIR/icon.png"
+    echo -e "${GREEN}✓${NC} Created icon.png (RGBA with ImageMagick)"
+else
+    # Fallback to sips
+    cp "$SOURCE_IMAGE" "$ICONS_DIR/icon.png"
+    sips -z 1024 1024 "$ICONS_DIR/icon.png" &> /dev/null
+    echo -e "${GREEN}✓${NC} Created icon.png (with sips)"
+    echo -e "${YELLOW}⚠${NC}  ImageMagick not found - alpha channel may not be preserved"
+fi
 
 #########################################
 # Step 2: Generate macOS PNG icons
@@ -71,14 +87,27 @@ echo -e "${GREEN}✓${NC} Created icon.png"
 echo ""
 echo -e "${BLUE}[2/5]${NC} Generating macOS PNG icons..."
 
-sips -z 32 32 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/32x32.png" &> /dev/null
-echo -e "${GREEN}✓${NC} Created 32x32.png"
+if command -v magick &> /dev/null || command -v convert &> /dev/null; then
+    # Use ImageMagick for proper RGBA handling
+    $CONVERT_CMD "$ICONS_DIR/icon.png" -resize 32x32 "$ICONS_DIR/32x32.png"
+    echo -e "${GREEN}✓${NC} Created 32x32.png (RGBA)"
 
-sips -z 128 128 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/128x128.png" &> /dev/null
-echo -e "${GREEN}✓${NC} Created 128x128.png"
+    $CONVERT_CMD "$ICONS_DIR/icon.png" -resize 128x128 "$ICONS_DIR/128x128.png"
+    echo -e "${GREEN}✓${NC} Created 128x128.png (RGBA)"
 
-sips -z 256 256 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/128x128@2x.png" &> /dev/null
-echo -e "${GREEN}✓${NC} Created 128x128@2x.png"
+    $CONVERT_CMD "$ICONS_DIR/icon.png" -resize 256x256 "$ICONS_DIR/128x128@2x.png"
+    echo -e "${GREEN}✓${NC} Created 128x128@2x.png (RGBA)"
+else
+    # Fallback to sips
+    sips -z 32 32 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/32x32.png" &> /dev/null
+    echo -e "${GREEN}✓${NC} Created 32x32.png"
+
+    sips -z 128 128 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/128x128.png" &> /dev/null
+    echo -e "${GREEN}✓${NC} Created 128x128.png"
+
+    sips -z 256 256 "$ICONS_DIR/icon.png" --out "$ICONS_DIR/128x128@2x.png" &> /dev/null
+    echo -e "${GREEN}✓${NC} Created 128x128@2x.png"
+fi
 
 #########################################
 # Step 3: Generate macOS .icns

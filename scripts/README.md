@@ -78,6 +78,13 @@ chmod +x scripts/generate-icons.sh
 **Source image not square:**
 The script will still work, but icons may appear stretched. Use a square source image for best results.
 
+**Icons don't update after regeneration (macOS):**
+macOS aggressively caches app icons. After generating new icons, use the refresh script:
+```bash
+./scripts/refresh-mac-icons.sh
+```
+See the "Icon Cache Refresh" section below for details.
+
 #### Output Structure
 
 ```
@@ -98,6 +105,83 @@ src-tauri/icons/
 ├── Square284x284Logo.png # Windows Store tile
 ├── Square310x310Logo.png # Windows Store tile
 └── StoreLogo.png        # Windows Store logo (50x50)
+```
+
+## Icon Cache Refresh
+
+### `refresh-mac-icons.sh`
+
+Clears macOS icon caches to show updated app icons. macOS caches icons in multiple locations (Dock, Icon Services, app bundles), which prevents new icons from appearing immediately.
+
+#### When to Use
+
+Run this script when:
+- Icons don't update after running `generate-icons.sh`
+- Alt-Tab still shows old app icon
+- Dock shows old icon even after rebuild
+- You want to ensure new icons are visible system-wide
+
+#### Requirements
+
+- **macOS only** (uses macOS-specific cache locations)
+- **sudo access** (required to clear system-level caches)
+
+#### Usage
+
+```bash
+./scripts/refresh-mac-icons.sh
+```
+
+#### What It Does
+
+1. **Restarts Dock** - Clears Dock icon cache
+2. **Clears Icon Services** - Removes system and user icon caches
+3. **Updates timestamps** - Touches icon files to force refresh
+4. **Cleans build cache** - Removes old app bundles
+5. **Rebuilds app** - Creates new bundle with updated icons
+
+#### Complete Icon Update Workflow
+
+```bash
+# 1. Generate new icons from source
+./scripts/generate-icons.sh ~/Downloads/new-icon.png
+
+# 2. Clear caches and rebuild
+./scripts/refresh-mac-icons.sh
+
+# 3. Install the new app bundle
+open src-tauri/target/release/bundle/macos/
+
+# 4. If icon still doesn't show, log out and back in
+```
+
+#### Why Icon Caching Happens
+
+macOS caches icons for performance:
+- **Development mode** (`bun run tauri dev`) uses temporary bundles that macOS caches
+- **Icon Services** caches all app icons system-wide
+- **Dock** maintains its own icon cache
+- **Launch Services** database caches app metadata
+
+The refresh script clears all these caches to ensure new icons are visible.
+
+#### Alternative Manual Steps
+
+If you prefer manual cache clearing:
+
+```bash
+# Kill Dock
+killall Dock
+
+# Clear Icon Services cache (requires sudo)
+sudo rm -rf /Library/Caches/com.apple.iconservices.store
+rm -rf ~/Library/Caches/com.apple.iconservices.store
+
+# Rebuild app
+bun run tauri build
+
+# If needed, clear Launch Services database
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
 ```
 
 ## Adding New Scripts
