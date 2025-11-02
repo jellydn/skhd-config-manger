@@ -1,6 +1,6 @@
 [package]
 name = "keybinder"
-version = "0.1.0"
+version = "0.2.0"
 description = "A modern, intuitive macOS app for managing skhd keyboard shortcuts"
 authors = ["Keybinder contributors"]
 edition = "2021"

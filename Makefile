@@ -167,7 +167,7 @@ audit:
 info:
 	@echo "$(CYAN)Project Information:$(NC)"
 	@echo "  Name: skhd-gui"
-	@echo "  Version: 0.1.0"
+	@echo "  Version: 0.2.0"
 	@echo "  Description: Native macOS GUI for managing skhd keyboard shortcuts"
 	@echo ""
 	@echo "$(CYAN)Rust:$(NC)"
