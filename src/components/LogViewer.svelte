@@ -230,11 +230,16 @@
     class="log-viewer__container"
     style="height: {viewportHeight}px; overflow-y: auto;"
     on:scroll={handleScroll}
+    role="log"
+    aria-live="polite"
+    aria-atomic="false"
+    aria-label="Service logs output"
+    tabindex="0"
   >
     <div style="height: {totalHeight}px; position: relative;">
       <div style="transform: translateY({offsetY}px);">
         {#if logs.length === 0}
-          <div class="log-viewer__empty">
+          <div class="log-viewer__empty" role="status">
             {#if isStreaming}
               <p>Waiting for logs...</p>
             {:else}
@@ -243,14 +248,14 @@
           </div>
         {:else}
           {#each visibleLogs as log (log.id)}
-            <div class="log-entry" style="height: {itemHeight}px;">
-              <span class="log-entry__timestamp">
+            <div class="log-entry" style="height: {itemHeight}px;" role="article" aria-label="{log.level} log entry">
+              <span class="log-entry__timestamp" aria-label="Timestamp">
                 {formatLogTimestamp(log.timestamp)}
               </span>
-              <span class="log-entry__level {getLogLevelClass(log.level)}">
+              <span class="log-entry__level {getLogLevelClass(log.level)}" aria-label="Log level">
                 [{log.level}]
               </span>
-              <span class="log-entry__message">
+              <span class="log-entry__message" aria-label="Message">
                 {log.message}
               </span>
             </div>

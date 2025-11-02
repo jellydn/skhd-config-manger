@@ -191,12 +191,12 @@
 
 <div class="logs-page">
   <!-- Toolbar -->
-  <header class="toolbar">
+  <header class="toolbar" role="banner">
     <div class="toolbar-left">
       <h1>Service Manager</h1>
       {#if status}
-        <div class="service-status">
-          <div class="status-indicator {getStatusClass(status.state)}"></div>
+        <div class="service-status" role="status" aria-label="Service status: {status.state}">
+          <div class="status-indicator {getStatusClass(status.state)}" aria-hidden="true"></div>
           <span class="status-text">{status.state}</span>
           {#if status.pid}
             <span class="status-pid">PID: {status.pid}</span>
@@ -282,32 +282,37 @@
     </div>
   </header>
 
-  <main class="logs-page__content">
+  <main class="logs-page__content" role="main">
     <!-- Active Configuration Display -->
     {#if loadedConfigPath || activeConfigPath}
-      <div class="config-path-display">
+      <div class="config-path-display" role="status" aria-label="Configuration status">
         {#if loadedConfigPath && loadedConfigPath !== activeConfigPath}
           <!-- Show loaded config (not yet applied to service) -->
           <span class="config-path-label">Loaded Config:</span>
-          <code class="config-path-value config-path-pending">{loadedConfigPath}</code>
-          <span class="config-path-hint">(Click "Reload Service" to apply)</span>
+          <code class="config-path-value config-path-pending" aria-label="Pending configuration path">{loadedConfigPath}</code>
+          <span class="config-path-hint" aria-live="polite">(Click "Reload Service" to apply)</span>
         {:else}
           <!-- Show active service config -->
           <span class="config-path-label">Active Config:</span>
-          <code class="config-path-value">{activeConfigPath}</code>
+          <code class="config-path-value" aria-label="Active configuration path">{activeConfigPath}</code>
         {/if}
       </div>
     {/if}
 
     <!-- Import Feedback -->
     {#if importFeedback}
-      <div class="import-feedback import-feedback-{importFeedback.type}">
+      <div
+        class="import-feedback import-feedback-{importFeedback.type}"
+        role={importFeedback.type === 'error' ? 'alert' : 'status'}
+        aria-live={importFeedback.type === 'error' ? 'assertive' : 'polite'}
+        aria-atomic="true"
+      >
         {#if importFeedback.type === 'success'}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         {:else}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
