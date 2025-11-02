@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "skhd GUI",
+        "title": "skhd Configuration Manager",
         "width": 1400,
         "height": 800,
         "resizable": true,
