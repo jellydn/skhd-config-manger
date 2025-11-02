@@ -1,12 +1,12 @@
 [package]
-name = "skhd-gui"
+name = "keybinder"
 version = "0.1.0"
-description = "Native macOS GUI for managing skhd keyboard shortcuts"
-authors = ["skhd-gui contributors"]
+description = "A modern, intuitive macOS app for managing skhd keyboard shortcuts"
+authors = ["Keybinder contributors"]
 edition = "2021"
 
 [lib]
-name = "skhd_gui_lib"
+name = "keybinder_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

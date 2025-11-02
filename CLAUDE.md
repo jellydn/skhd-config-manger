@@ -1,6 +1,6 @@
-# 2025-11-01-skhd-gui Development Guidelines
+# Keybinder Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-11-01
+Auto-generated from all feature plans. Last updated: 2025-11-02
 
 ## Active Technologies
 - Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2 (app framework), existing ShortcutForm and ShortcutItem components (003-shortcut-duplicate)

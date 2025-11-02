@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to skhd GUI will be documented in this file.
+All notable changes to Keybinder will be documented in this file.
 
 **Note**: Starting from version 0.1.0, release notes are automatically generated from git commit messages when creating new releases. See individual [GitHub Releases](https://github.com/jellydn/skhd-config-manger/releases) for detailed changelogs.
 
@@ -19,11 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-11-02
 
 ### Added
-- Initial release of skhd GUI
+- Initial release of Keybinder
 - Visual editor for skhd keyboard shortcuts
 - Import/export skhd configuration files
 - Shortcut duplication functionality
-- Basic configuration management interface
+- Intuitive configuration management interface
 
 ### Technical
 - Built with Tauri v2

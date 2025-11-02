@@ -86,7 +86,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'skhd-gui ${{ github.ref_name }}'
+          releaseName: 'Keybinder ${{ github.ref_name }}'
           releaseBody: |
             ## What's Changed
 
@@ -96,7 +96,7 @@ jobs:
 
             1. Download the DMG file below
             2. Open the DMG
-            3. Drag skhd-gui to your Applications folder
+            3. Drag Keybinder to your Applications folder
             4. Launch from Applications or Spotlight
 
             ## System Requirements

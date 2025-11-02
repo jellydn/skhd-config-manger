@@ -1,10 +1,10 @@
-# skhd Configuration Manager
+# Keybinder
 
-A modern, user-friendly GUI application for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts on macOS.
+A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts.
 
 ![CI](https://github.com/jellydn/skhd-config-manger/workflows/CI/badge.svg)
 ![Release](https://github.com/jellydn/skhd-config-manger/workflows/Release/badge.svg)
-![skhd GUI Manager](https://img.shields.io/badge/platform-macOS-blue)
+![Keybinder](https://img.shields.io/badge/platform-macOS-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-v2-orange)
 ![Svelte](https://img.shields.io/badge/Svelte-5-red)
 ![Rust](https://img.shields.io/badge/Rust-1.75+-brown)
@@ -54,7 +54,7 @@ A modern, user-friendly GUI application for managing [skhd](https://github.com/k
 
 1. Go to the [Releases page](https://github.com/jellydn/skhd-config-manger/releases)
 2. Download the latest `.dmg` file (works on both Intel and Apple Silicon Macs)
-3. Open the DMG and drag skhd GUI to your Applications folder
+3. Open the DMG and drag Keybinder to your Applications folder
 4. Launch from Applications or Spotlight
 
 **Note**: On first launch, you may need to right-click → Open to bypass macOS Gatekeeper.
