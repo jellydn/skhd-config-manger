@@ -317,12 +317,12 @@
 </script>
 
 <svelte:head>
-  <title>skhd Configuration Manager</title>
+  <title>Keybinder</title>
 </svelte:head>
 
 <main class="app-container">
   <header class="app-header">
-    <h1>skhd Configuration Manager</h1>
+    <h1>Keybinder</h1>
     <div class="header-actions">
       {#if config}
         <button class="btn-home" onclick={handleHomeClick} disabled={loading} aria-label="Return to home screen">
@@ -364,7 +364,7 @@
         </div>
 
         <div class="error-actions">
-          <button class="btn-create-new" onclick={handleCreateNew}>
+          <button class="btn-create-new" onclick={handleCreateBlank}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 4v16m8-8H4" />
             </svg>
@@ -386,7 +386,7 @@
       </div>
     {:else if !config}
       <div class="welcome-state">
-        <h2>Welcome to skhd Configuration Manager</h2>
+        <h2>Welcome to Keybinder</h2>
         <p>Choose how you'd like to get started:</p>
 
         <div class="welcome-actions">
