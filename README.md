@@ -28,6 +28,15 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Duplicate Detection**: Prevents conflicting key combinations
 - **Modifier Support**: Full support for cmd, shift, ctrl, alt, fn modifiers
 
+### Command Testing & Execution
+
+- **Test Execution**: Execute commands directly from the GUI with real-time feedback
+- **Safety Controls**: Automatic detection and confirmation for destructive commands (rm, sudo, etc.)
+- **Output Capture**: View stdout, stderr, and exit codes for debugging
+- **Cancellation**: Stop long-running commands instantly with the cancel button
+- **Timeout Protection**: Automatic 30-second timeout prevents hanging commands
+- **Execution Status**: Visual indicators (spinner, duration) during command execution
+
 ### Backup & Safety
 
 - **Atomic Writes**: Safe file operations prevent corruption
@@ -113,6 +122,13 @@ The built app will be in `src-tauri/target/release/bundle/`.
    - Click **Save** to write changes to disk
    - Click **Home** to return to the welcome screen (warns if unsaved changes)
 
+4. **Test Commands**:
+   - Click the **▶ Execute** button next to any shortcut to test it
+   - View real-time output (stdout, stderr, exit code, duration)
+   - **Safety confirmations** for destructive commands (rm, sudo, kill, etc.)
+   - **Cancel button** appears during execution to stop long-running commands
+   - Commands timeout automatically after 30 seconds
+
 ### Keyboard Shortcut Format
 
 Shortcuts follow the skhd format:
@@ -126,6 +142,23 @@ Examples:
 - `cmd - return : open -a Terminal`
 - `cmd + shift - f : open ~`
 - `ctrl + alt - b : open -a "Brave Browser"`
+
+### Command Testing Safety
+
+Keybinder automatically detects potentially destructive commands and requires confirmation:
+
+**Destructive patterns detected:**
+- File operations: `rm`, `mv`, `cp` with system paths
+- System commands: `sudo`, `shutdown`, `reboot`, `killall`
+- Permission changes: `chmod`, `chown`
+- Package management: `brew uninstall`, `npm uninstall`
+
+**Example workflow:**
+1. Create shortcut: `cmd + shift - t : rm -rf /tmp/test`
+2. Click **Execute** button
+3. ⚠️ **Warning modal appears**: "This command may be destructive"
+4. Review command and click **Execute Anyway** to proceed
+5. View results: exit code, output, duration
 
 ### Importing/Exporting
 
