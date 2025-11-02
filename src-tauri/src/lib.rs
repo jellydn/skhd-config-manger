@@ -33,6 +33,7 @@ pub fn run() {
             commands::testing::test_shortcut,
             commands::testing::execute_test_command,
             commands::testing::execute_shortcut_command,
+            commands::testing::cancel_shortcut_execution,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -175,3 +175,11 @@ export async function executeTestCommand(shortcutId: string): Promise<TestResult
 export async function executeShortcutCommand(shortcutId: string): Promise<TestResult> {
   return invoke<TestResult>('execute_shortcut_command', { shortcutId });
 }
+
+/**
+ * Cancel a running shortcut command execution
+ * @param shortcutId ID of the shortcut to cancel
+ */
+export async function cancelShortcutExecution(shortcutId: string): Promise<void> {
+  return invoke<void>('cancel_shortcut_execution', { shortcutId });
+}

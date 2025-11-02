@@ -12,6 +12,7 @@
     deleteShortcut as deleteShortcutAPI,
     testShortcut as testShortcutAPI,
     executeShortcutCommand,
+    cancelShortcutExecution,
   } from '../services/tauri';
   import type {
     ConfigFile,
@@ -378,6 +379,17 @@
     }
   }
 
+  async function handleCancelExecution(id: string) {
+    try {
+      await cancelShortcutExecution(id);
+      executingShortcutId = null;
+      console.log('Execution cancelled successfully');
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      console.error('Failed to cancel execution:', err);
+    }
+  }
+
   function confirmDestructiveExecution() {
     if (pendingDestructiveCommand) {
       executeCommand(pendingDestructiveCommand.shortcutId);
@@ -533,6 +545,7 @@
           onSave={saveConfiguration}
           isModified={config.is_modified}
           executingShortcutId={executingShortcutId}
+          onCancelExecution={handleCancelExecution}
         />
       {/if}
     {/if}

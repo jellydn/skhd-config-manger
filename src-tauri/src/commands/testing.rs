@@ -1,55 +1,26 @@
 use crate::commands::config::ConfigState;
 use crate::models::{Shortcut, TestResult};
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tauri::State;
+use tokio::io::AsyncReadExt;
 use tokio::process::Command as TokioCommand;
+use tokio::sync::oneshot;
 use tokio::time::{timeout, Duration};
 
 /// State for tracking running command executions
 pub struct ExecutionState {
-    /// Set of shortcut IDs currently executing
-    pub running_ids: Arc<Mutex<HashSet<String>>>,
+    /// Map of shortcut IDs to cancellation senders
+    pub cancel_senders: Arc<Mutex<HashMap<String, oneshot::Sender<()>>>>,
 }
 
 impl Default for ExecutionState {
     fn default() -> Self {
         Self {
-            running_ids: Arc::new(Mutex::new(HashSet::new())),
+            cancel_senders: Arc::new(Mutex::new(HashMap::new())),
         }
-    }
-}
-
-/// RAII guard that ensures a shortcut ID is removed from execution tracking when dropped
-struct ExecutionGuard {
-    shortcut_id: String,
-    running_ids: Arc<Mutex<HashSet<String>>>,
-}
-
-impl ExecutionGuard {
-    /// Create a new execution guard
-    /// Returns Some(guard) if the ID was successfully added (not already running)
-    /// Returns None if the ID is already being executed
-    fn new(shortcut_id: String, running_ids: Arc<Mutex<HashSet<String>>>) -> Option<Self> {
-        let mut ids = running_ids.lock().unwrap();
-        if ids.insert(shortcut_id.clone()) {
-            drop(ids); // Release lock immediately
-            Some(Self {
-                shortcut_id,
-                running_ids,
-            })
-        } else {
-            None
-        }
-    }
-}
-
-impl Drop for ExecutionGuard {
-    fn drop(&mut self) {
-        let mut ids = self.running_ids.lock().unwrap();
-        ids.remove(&self.shortcut_id);
     }
 }
 
@@ -196,22 +167,38 @@ pub async fn execute_shortcut_command(
             .ok_or("Shortcut not found")?
     }; // Lock released here
 
-    // 2. Check if already running and acquire execution guard
-    let _guard = ExecutionGuard::new(shortcut_id.clone(), exec_state.running_ids.clone())
-        .ok_or_else(|| format!("Command already executing for shortcut: {}", shortcut_id))?;
-    // Guard will automatically remove ID when dropped (on error or completion)
+    // 2. Check if already running
+    {
+        let senders = exec_state.cancel_senders.lock().unwrap();
+        if senders.contains_key(&shortcut_id) {
+            return Err(format!("Command already executing for shortcut: {}", shortcut_id));
+        }
+    }
 
-    // 3. Start timing
+    // 3. Create cancellation channel
+    let (cancel_tx, cancel_rx) = oneshot::channel::<()>();
+
+    // 4. Store cancellation sender
+    {
+        let mut senders = exec_state.cancel_senders.lock().unwrap();
+        senders.insert(shortcut_id.clone(), cancel_tx);
+    }
+
+    // 5. Start timing
     let start = Instant::now();
 
-    // 4. Spawn command
-    let child = TokioCommand::new("sh")
+    // 6. Spawn command
+    let mut child = TokioCommand::new("sh")
         .arg("-c")
         .arg(&shortcut.command)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .map_err(|e| {
+            // Clean up sender on spawn failure
+            let mut senders = exec_state.cancel_senders.lock().unwrap();
+            senders.remove(&shortcut_id);
+
             match e.kind() {
                 std::io::ErrorKind::NotFound => format!("Command not found: {}", shortcut.command),
                 std::io::ErrorKind::PermissionDenied => format!("Permission denied: {}", shortcut.command),
@@ -219,18 +206,97 @@ pub async fn execute_shortcut_command(
             }
         })?;
 
-    // 5. Wait with timeout
-    let output_result = timeout(Duration::from_secs(30), child.wait_with_output()).await;
+    // 7. Spawn tasks to read output streams concurrently
+    let stdout_handle = child.stdout.take().map(|mut stdout| {
+        tokio::spawn(async move {
+            let mut data = Vec::new();
+            let _ = stdout.read_to_end(&mut data).await;
+            data
+        })
+    });
 
-    // 6. Calculate duration
+    let stderr_handle = child.stderr.take().map(|mut stderr| {
+        tokio::spawn(async move {
+            let mut data = Vec::new();
+            let _ = stderr.read_to_end(&mut data).await;
+            data
+        })
+    });
+
+    // 8. Wait with timeout and cancellation support
+    let wait_result = tokio::select! {
+        // Command completes or times out
+        result = timeout(Duration::from_secs(30), child.wait()) => {
+            result
+        }
+        // Cancellation requested
+        _ = cancel_rx => {
+            // Kill the process immediately
+            let _ = child.start_kill();
+
+            // Abort the stdout/stderr reading tasks to avoid waiting for them
+            if let Some(handle) = stdout_handle {
+                handle.abort();
+            }
+            if let Some(handle) = stderr_handle {
+                handle.abort();
+            }
+
+            // Clean up sender
+            {
+                let mut senders = exec_state.cancel_senders.lock().unwrap();
+                senders.remove(&shortcut_id);
+            }
+
+            let duration_ms = start.elapsed().as_millis() as u64;
+
+            return Ok(TestResult {
+                shortcut_id: shortcut.id.clone(),
+                command: shortcut.command.clone(),
+                syntax_valid: true,
+                syntax_error: None,
+                preview: String::new(),
+                timestamp: chrono::Local::now().to_rfc3339(),
+                executed: true,
+                exit_code: None,
+                stdout: Some(String::new()),
+                stderr: Some(String::from("Command execution cancelled by user")),
+                execution_duration_ms: Some(duration_ms),
+                cancelled: true,
+                timed_out: false,
+                output_truncated: false,
+            });
+        }
+    };
+
+    // 9. Collect output from the spawned tasks
+    let stdout_data = if let Some(handle) = stdout_handle {
+        handle.await.unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    let stderr_data = if let Some(handle) = stderr_handle {
+        handle.await.unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    // 10. Clean up sender
+    {
+        let mut senders = exec_state.cancel_senders.lock().unwrap();
+        senders.remove(&shortcut_id);
+    }
+
+    // 11. Calculate duration
     let duration_ms = start.elapsed().as_millis() as u64;
 
-    // 7. Build result based on outcome
-    match output_result {
-        Ok(Ok(output)) => {
+    // 12. Build result based on outcome
+    match wait_result {
+        Ok(Ok(status)) => {
             // Successful execution (or failed with exit code)
-            let stdout_raw = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr_raw = String::from_utf8_lossy(&output.stderr).to_string();
+            let stdout_raw = String::from_utf8_lossy(&stdout_data).to_string();
+            let stderr_raw = String::from_utf8_lossy(&stderr_data).to_string();
 
             let (stdout, stdout_truncated) = truncate_output(stdout_raw, 10000);
             let (stderr, stderr_truncated) = truncate_output(stderr_raw, 10000);
@@ -243,7 +309,7 @@ pub async fn execute_shortcut_command(
                 preview: String::new(),
                 timestamp: chrono::Local::now().to_rfc3339(),
                 executed: true,
-                exit_code: output.status.code(),
+                exit_code: status.code(),
                 stdout: Some(stdout),
                 stderr: Some(stderr),
                 execution_duration_ms: Some(duration_ms),
@@ -282,6 +348,29 @@ pub async fn execute_shortcut_command(
                 output_truncated: false,
             })
         }
+    }
+}
+
+/// Cancel a running shortcut command execution
+#[tauri::command]
+pub async fn cancel_shortcut_execution(
+    shortcut_id: String,
+    exec_state: State<'_, ExecutionState>,
+) -> Result<(), String> {
+    // Remove the cancellation sender and trigger cancellation
+    let sender = {
+        let mut senders = exec_state.cancel_senders.lock().unwrap();
+        senders.remove(&shortcut_id)
+    };
+
+    if let Some(sender) = sender {
+        // Send cancellation signal (ignore error if receiver already dropped)
+        let _ = sender.send(());
+        Ok(())
+    } else {
+        // Process already completed/timed out - this is fine, the execution is stopped
+        // which is what the user wanted
+        Ok(())
     }
 }
 

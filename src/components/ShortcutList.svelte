@@ -12,9 +12,10 @@
     isModified?: boolean;
     onDuplicate?: (shortcut: Shortcut) => void;
     executingShortcutId?: string | null;
+    onCancelExecution?: (id: string) => void;
   }
 
-  let { shortcuts, onEdit, onDelete, onTest, onCreate, onSave, isModified, onDuplicate, executingShortcutId }: Props =
+  let { shortcuts, onEdit, onDelete, onTest, onCreate, onSave, isModified, onDuplicate, executingShortcutId, onCancelExecution }: Props =
     $props();
 
   // Group shortcuts by category (you can enhance this later)
@@ -83,6 +84,7 @@
         {onDelete}
         {onTest}
         {onDuplicate}
+        {onCancelExecution}
         isExecuting={executingShortcutId === shortcut.id}
       />
     {/each}

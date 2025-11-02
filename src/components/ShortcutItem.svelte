@@ -7,10 +7,11 @@
     onDelete?: (id: string) => void;
     onTest?: (id: string) => void;
     onDuplicate?: (shortcut: Shortcut) => void;
+    onCancelExecution?: (id: string) => void;
     isExecuting?: boolean;
   }
 
-  let { shortcut, onEdit, onDelete, onTest, onDuplicate, isExecuting = false }: Props = $props();
+  let { shortcut, onEdit, onDelete, onTest, onDuplicate, onCancelExecution, isExecuting = false }: Props = $props();
 
   function formatModifiers(modifiers: string[]): string {
     if (modifiers.length === 0) return '';
@@ -20,6 +21,11 @@
   function handleTest() {
     if (!onTest) return;
     onTest(shortcut.id);
+  }
+
+  function handleCancelClick() {
+    if (!onCancelExecution) return;
+    onCancelExecution(shortcut.id);
   }
 </script>
 
@@ -38,6 +44,21 @@
 
     <div class="shortcut-actions">
     {#if onTest}
+      {#if isExecuting && onCancelExecution}
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick={handleCancelClick}
+          title="Cancel execution"
+          aria-label="Cancel command execution"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </button>
+      {/if}
       <button
         type="button"
         class="btn-test"
@@ -224,6 +245,15 @@
 
   .spinner {
     animation: spin 1s linear infinite;
+  }
+
+  .btn-cancel {
+    background: #ff9500;
+    color: white;
+  }
+
+  .btn-cancel:hover {
+    background: #d17e00;
   }
 
   .btn-edit {
