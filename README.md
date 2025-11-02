@@ -43,6 +43,20 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Backup System**: Automatic backups before major changes
 - **Unsaved Changes Protection**: Confirmation dialogs prevent accidental data loss
 
+### Service Manager
+
+- **Real-time Log Viewer**: Live streaming of skhd service logs with automatic updates
+- **Historical Logs**: Load up to 100 recent logs from before the app opened
+- **Virtual Scrolling**: Smooth performance with thousands of logs (1000+ entries)
+- **Color-Coded Levels**: Visual distinction for ERROR (red), WARN (yellow), INFO (blue), DEBUG (gray)
+- **Service Status**: Real-time monitoring of skhd service state and PID
+- **Service Reload**: One-click service restart to apply configuration changes
+- **Configuration Import**: Import external configs with visual pending state before reload
+- **Auto-scroll Control**: Smart auto-scroll that pauses when scrolling manually
+- **Sort Options**: Toggle between newest-first and oldest-first log display
+- **Clear Logs**: Remove all logs from viewer with one click
+- **Accessibility**: Full ARIA support for screen readers and keyboard navigation
+
 ### User Experience
 
 - **Welcome Screen**: Guided onboarding with clear action paths
@@ -163,6 +177,50 @@ Keybinder automatically detects potentially destructive commands and requires co
 ### Importing/Exporting
 
 - **Import**: Click **Import...** to browse for an existing skhd config file
+
+### Service Manager
+
+The Service Manager provides comprehensive monitoring and control of the skhd service:
+
+#### Viewing Logs
+
+1. **Navigate to Service Manager** via the navigation menu
+2. **Start Log Stream** - Click to begin real-time log monitoring
+3. **Historical Logs** - Automatically loads the last 100 logs on page load
+4. **Color-Coded Levels**:
+   - 🔴 ERROR: Critical issues requiring attention
+   - 🟡 WARN: Warnings and potential problems
+   - 🔵 INFO: General information messages
+   - ⚪ DEBUG: Detailed debugging information
+
+#### Log Controls
+
+- **Sort Order**: Toggle between newest-first (↓) and oldest-first (↑)
+- **Auto-scroll**: Enable/disable automatic scrolling to new logs
+- **Clear Logs**: Remove all logs from the viewer
+- **Stop/Start Stream**: Pause or resume log streaming
+
+#### Service Management
+
+1. **Monitor Status**: View real-time service state (Running, Stopped, Error) and PID
+2. **Reload Service**:
+   - Click **Reload Service** to restart skhd with current configuration
+   - Service automatically reloads and displays new PID
+   - Check logs for reload confirmation messages
+
+#### Configuration Import Workflow
+
+1. **Import Config**: Click **Import Config** to select an external skhd configuration file
+2. **Pending State**: Imported config shows in orange with "(Click 'Reload Service' to apply)" hint
+3. **Apply Changes**: Click **Reload Service** to activate the imported configuration
+4. **Active State**: Config path returns to normal styling, service uses new configuration
+
+#### Accessibility Features
+
+- **Keyboard Navigation**: Tab through all controls, Enter/Space to activate
+- **Screen Reader Support**: Full ARIA labels and live region announcements
+- **Log Viewer Focus**: Press Tab to focus log viewer, use arrow keys to scroll
+- **Status Announcements**: Service state changes announced automatically
 
 ## Development Workflow
 
