@@ -5,6 +5,7 @@
     message: string;
     confirmLabel?: string;
     cancelLabel?: string;
+    variant?: 'default' | 'danger';
     onConfirm: () => void;
     onCancel: () => void;
   }
@@ -15,6 +16,7 @@
     message,
     confirmLabel = 'Confirm',
     cancelLabel = 'Cancel',
+    variant = 'default',
     onConfirm,
     onCancel,
   }: Props = $props();
@@ -50,7 +52,7 @@
         <button class="btn-cancel" onclick={onCancel}>
           {cancelLabel}
         </button>
-        <button class="btn-confirm" onclick={onConfirm}>
+        <button class="btn-confirm" class:btn-danger={variant === 'danger'} onclick={onConfirm}>
           {confirmLabel}
         </button>
       </div>
@@ -143,6 +145,28 @@
   .btn-confirm:hover {
     background: #d93025;
     border-color: #d93025;
+  }
+
+  .btn-danger {
+    background: #ff3b30 !important;
+    color: white !important;
+    border-color: #ff3b30 !important;
+    font-weight: 600 !important;
+    animation: pulseWarning 2s infinite;
+  }
+
+  .btn-danger:hover {
+    background: #d93025 !important;
+    border-color: #d93025 !important;
+  }
+
+  @keyframes pulseWarning {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(255, 59, 48, 0.1);
+    }
   }
 
   @media (prefers-color-scheme: dark) {

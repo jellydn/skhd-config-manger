@@ -7,6 +7,18 @@
   }
 
   let { result, onClose }: Props = $props();
+
+  function getExitCodeDescription(code: number | null): string {
+    if (code === null) return '';
+    if (code === 0) return '✓ Success';
+    if (code === 1) return '✗ General error';
+    if (code === 2) return '✗ Misuse of shell command';
+    if (code === 126) return '✗ Command cannot execute (permission denied)';
+    if (code === 127) return '✗ Command not found';
+    if (code === 128) return '✗ Invalid exit argument';
+    if (code >= 129 && code <= 159) return `✗ Terminated by signal ${code - 128}`;
+    return `✗ Failed (exit code ${code})`;
+  }
 </script>
 
 <div class="test-result-display">
@@ -23,7 +35,7 @@
       {:else if result.exit_code === 0}
         ✅ Command executed successfully
       {:else}
-        ❌ Command failed with exit code {result.exit_code ?? 'unknown'}
+        {getExitCodeDescription(result.exit_code)}
       {/if}
     </div>
 
@@ -49,7 +61,8 @@
 
     {#if result.output_truncated}
       <div class="truncation-notice">
-        ⚠️ Output was truncated to 10,000 characters
+        <strong>⚠️ Output Truncated</strong>
+        <p>Output was limited to 10,000 characters. The full output may be longer.</p>
       </div>
     {/if}
   {:else}
@@ -238,6 +251,15 @@
     color: #856404;
     font-size: 0.875rem;
     margin-top: 1rem;
+  }
+
+  .truncation-notice strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .truncation-notice p {
+    margin: 0;
   }
 
   @media (prefers-color-scheme: dark) {

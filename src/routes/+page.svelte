@@ -39,6 +39,8 @@
   let showDeleteConfirm = $state(false);
   let deletingShortcutId = $state<string | null>(null);
   let executingShortcutId = $state<string | null>(null);
+  let showDestructiveWarning = $state(false);
+  let pendingDestructiveCommand = $state<{ shortcutId: string; command: string } | null>(null);
 
   // Don't auto-load - let user choose which file to open
   onMount(() => {
@@ -282,7 +284,77 @@
     editingShortcut = undefined;
   }
 
+  // Check if command is potentially destructive
+  function isDestructiveCommand(command: string): boolean {
+    const destructivePatterns = [
+      // Recursive delete
+      /rm\s+-rf/i,
+      /rm\s+-fr/i,
+      /rm\s+.*-r/i,
+
+      // rm with critical paths
+      /\brm\b.*\s+\/\s*$/,           // rm / (root) - catches "rm /" at end of string
+      /\brm\b.*\s+\/\s+/,            // rm / with more args
+      /\brm\b.*\/\*/,                // rm with wildcards in root
+      /\brm\b.*~\//,                 // rm in home directory
+      /\brm\b.*\/usr/i,
+      /\brm\b.*\/etc/i,
+      /\brm\b.*\/var/i,
+      /\brm\b.*\/bin/i,
+      /\brm\b.*\/sbin/i,
+      /\brm\b.*\/System/i,           // macOS system folder
+      /\brm\b.*\/Library/i,          // macOS library folder
+
+      // Privileged commands
+      /\bsudo\b/i,
+
+      // Process killing
+      /\bkillall\b/i,
+      /\bpkill\b/i,
+      /\bkill\b.*-9/,
+
+      // Disk operations
+      />\s*\/dev\//i,
+      /mkfs/i,
+      /dd\s+if=/i,
+      /dd\s+of=/i,
+      /format\s+/i,
+      /diskutil.*erase/i,
+
+      // Dangerous redirects
+      />\s*\/etc\//i,
+      />\s*\/usr\//i,
+      />\s*\/var\//i,
+
+      // Fork bomb and similar
+      /:\(\)\{.*:\|:/,
+      /\bwhile\s+true\b/i,
+
+      // Chmod/chown on critical paths
+      /chmod.*\/\s*$/,
+      /chown.*\/\s*$/,
+    ];
+
+    return destructivePatterns.some(pattern => pattern.test(command));
+  }
+
   async function handleTest(id: string) {
+    // Find the shortcut to check if it's destructive
+    const shortcut = config?.shortcuts.find(s => s.id === id);
+    if (!shortcut) return;
+
+    if (isDestructiveCommand(shortcut.command)) {
+      // Show warning dialog instead of executing immediately
+      pendingDestructiveCommand = { shortcutId: id, command: shortcut.command };
+      showDestructiveWarning = true;
+      return;
+    }
+
+    // Execute non-destructive commands immediately
+    await executeCommand(id);
+  }
+
+  async function executeCommand(id: string) {
     try {
       executingShortcutId = id;
       const result = await executeShortcutCommand(id);
@@ -294,6 +366,19 @@
     } finally {
       executingShortcutId = null;
     }
+  }
+
+  function confirmDestructiveExecution() {
+    if (pendingDestructiveCommand) {
+      executeCommand(pendingDestructiveCommand.shortcutId);
+    }
+    showDestructiveWarning = false;
+    pendingDestructiveCommand = null;
+  }
+
+  function cancelDestructiveExecution() {
+    showDestructiveWarning = false;
+    pendingDestructiveCommand = null;
   }
 
   function handleCloseTestResult() {
@@ -476,6 +561,17 @@
     cancelLabel="Cancel"
     onConfirm={confirmDelete}
     onCancel={cancelDelete}
+  />
+
+  <ConfirmDialog
+    open={showDestructiveWarning}
+    title="⚠️ DANGER: Potentially Destructive Command!"
+    message={pendingDestructiveCommand ? `Command: ${pendingDestructiveCommand.command}\n\nThis command may:\n• Delete important files or directories\n• Modify system files\n• Terminate critical processes\n• Cause data loss or system instability\n\nAre you ABSOLUTELY SURE you want to execute this command?` : ''}
+    confirmLabel="Execute Anyway"
+    cancelLabel="Cancel"
+    variant="danger"
+    onConfirm={confirmDestructiveExecution}
+    onCancel={cancelDestructiveExecution}
   />
 </main>
 
