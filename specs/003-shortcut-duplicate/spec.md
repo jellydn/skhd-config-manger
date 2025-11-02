@@ -74,6 +74,24 @@ Users want to use the same key combination in different modes or create similar 
 - **FR-007**: System MUST mark the configuration as modified when a duplicated shortcut is saved
 - **FR-008**: System MUST allow users to cancel duplication without affecting the original shortcut or creating a new one
 
+### Non-Functional Requirements
+
+#### Accessibility Requirements
+- **NFR-A01**: All icon-only buttons MUST include descriptive `aria-label` attributes for screen reader accessibility
+- **NFR-A02**: Decorative SVG icons MUST include `aria-hidden="true"` to prevent redundant screen reader announcements
+- **NFR-A03**: Interactive elements MUST be keyboard accessible with clear focus indicators
+- **NFR-A04**: Button labels MUST clearly describe the action (e.g., "Duplicate shortcut" not just "Duplicate")
+
+#### Performance Requirements
+- **NFR-P01**: Array comparisons MUST use efficient element-by-element comparison, not JSON serialization
+- **NFR-P02**: Form change detection MUST complete in under 1ms for typical shortcut configurations
+- **NFR-P03**: Duplicate action MUST respond within 100ms to maintain perceived instant feedback
+
+#### Code Quality Requirements
+- **NFR-Q01**: Conditional rendering logic MUST use object lookup patterns instead of nested ternary operators when mapping modes to configuration
+- **NFR-Q02**: Form configuration (titles, button text) MUST be centralized in a single source of truth
+- **NFR-Q03**: Helper functions MUST be created for reusable logic (e.g., array comparison) rather than inline implementations
+
 ### Key Entities
 
 - **Shortcut Duplicate**: A new shortcut instance initialized with values copied from an existing shortcut, maintaining independence from the source
