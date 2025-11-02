@@ -158,3 +158,11 @@ export async function testShortcut(shortcutId: string): Promise<TestResult> {
 export async function executeTestCommand(shortcutId: string): Promise<TestResult> {
   return invoke<TestResult>('execute_test_command', { shortcutId });
 }
+
+/**
+ * Execute a shortcut's command and return detailed execution results
+ * @param shortcutId ID of the shortcut to execute
+ */
+export async function executeShortcutCommand(shortcutId: string): Promise<TestResult> {
+  return invoke<TestResult>('execute_shortcut_command', { shortcutId });
+}

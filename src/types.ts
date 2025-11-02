@@ -159,4 +159,42 @@ export interface TestResult {
 
   /** Timestamp when the test was executed */
   timestamp: string;
+
+  // ===== NEW EXECUTION FIELDS =====
+
+  /** Whether this was an actual execution (true) or syntax validation only (false) */
+  executed: boolean;
+
+  /** Exit code from command execution (undefined for syntax-only tests) */
+  exit_code?: number;
+
+  /** Standard output from command execution (undefined for syntax-only tests) */
+  stdout?: string;
+
+  /** Standard error from command execution (undefined for syntax-only tests) */
+  stderr?: string;
+
+  /** Execution duration in milliseconds (undefined for syntax-only tests) */
+  execution_duration_ms?: number;
+
+  /** Whether the command was cancelled by the user */
+  cancelled: boolean;
+
+  /** Whether the command timed out */
+  timed_out: boolean;
+
+  /** Whether output was truncated due to size limit */
+  output_truncated: boolean;
 }
+
+/**
+ * Execution status for UI state management
+ */
+export type ExecutionStatus =
+  | 'idle'
+  | 'confirming'
+  | 'executing'
+  | 'success'
+  | 'error'
+  | 'cancelled'
+  | 'timeout';

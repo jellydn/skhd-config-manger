@@ -7,9 +7,10 @@
     onDelete?: (id: string) => void;
     onTest?: (id: string) => void;
     onDuplicate?: (shortcut: Shortcut) => void;
+    isExecuting?: boolean;
   }
 
-  let { shortcut, onEdit, onDelete, onTest, onDuplicate }: Props = $props();
+  let { shortcut, onEdit, onDelete, onTest, onDuplicate, isExecuting = false }: Props = $props();
 
   function formatModifiers(modifiers: string[]): string {
     if (modifiers.length === 0) return '';
@@ -32,10 +33,31 @@
 
     <div class="shortcut-actions">
     {#if onTest}
-      <button type="button" class="btn-test" onclick={() => onTest(shortcut.id)} title="Test" aria-label="Test shortcut">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
+      <button
+        type="button"
+        class="btn-test"
+        class:executing={isExecuting}
+        onclick={() => onTest(shortcut.id)}
+        disabled={isExecuting}
+        title={isExecuting ? 'Executing...' : 'Execute'}
+        aria-label={isExecuting ? 'Executing command' : 'Execute shortcut command'}
+      >
+        {#if isExecuting}
+          <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="18" x2="12" y2="22"></line>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+            <line x1="2" y1="12" x2="6" y2="12"></line>
+            <line x1="18" y1="12" x2="22" y2="12"></line>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+          </svg>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        {/if}
       </button>
     {/if}
     {#if onDuplicate}
@@ -173,8 +195,30 @@
     color: white;
   }
 
-  .btn-test:hover {
+  .btn-test:hover:not(:disabled) {
     background: #28a745;
+  }
+
+  .btn-test:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn-test.executing {
+    background: #28a745;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
   }
 
   .btn-edit {

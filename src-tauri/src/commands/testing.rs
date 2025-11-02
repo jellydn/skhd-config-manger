@@ -1,7 +1,35 @@
 use crate::commands::config::ConfigState;
 use crate::models::{Shortcut, TestResult};
+use std::collections::HashMap;
 use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use tauri::State;
+use tokio::process::Command as TokioCommand;
+use tokio::time::{timeout, Duration};
+
+/// State for tracking running command executions
+pub struct ExecutionState {
+    /// Map of shortcut ID to running process child
+    pub running_processes: Arc<Mutex<HashMap<String, tokio::process::Child>>>,
+}
+
+impl Default for ExecutionState {
+    fn default() -> Self {
+        Self {
+            running_processes: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+/// Truncate output to a maximum length
+pub fn truncate_output(output: String, limit: usize) -> (String, bool) {
+    if output.len() > limit {
+        (output[..limit].to_string(), true)
+    } else {
+        (output, false)
+    }
+}
 
 /// Escape a string for safe shell usage
 fn shell_escape(s: &str) -> String {
@@ -52,6 +80,14 @@ pub fn test_shortcut(
         syntax_error,
         preview,
         timestamp: chrono::Local::now().to_rfc3339(),
+        executed: false,
+        exit_code: None,
+        stdout: None,
+        stderr: None,
+        execution_duration_ms: None,
+        cancelled: false,
+        timed_out: false,
+        output_truncated: false,
     })
 }
 
@@ -96,10 +132,120 @@ pub fn execute_test_command(
         shortcut_id: shortcut.id.clone(),
         command: shortcut.command.clone(),
         syntax_valid: success,
-        syntax_error: if !success { Some(stderr) } else { None },
+        syntax_error: if !success { Some(stderr.clone()) } else { None },
         preview,
         timestamp: chrono::Local::now().to_rfc3339(),
+        executed: false,
+        exit_code: None,
+        stdout: None,
+        stderr: None,
+        execution_duration_ms: None,
+        cancelled: false,
+        timed_out: false,
+        output_truncated: false,
     })
+}
+
+/// Execute a shortcut's command and return detailed execution results
+#[tauri::command]
+pub async fn execute_shortcut_command(
+    shortcut_id: String,
+    state: State<'_, ConfigState>,
+    exec_state: State<'_, ExecutionState>,
+) -> Result<TestResult, String> {
+    // 1. Find shortcut
+    let shortcut = {
+        let config_guard = state.config.lock().unwrap();
+        let config = config_guard.as_ref().ok_or("No configuration loaded")?;
+        config
+            .shortcuts
+            .iter()
+            .find(|s| s.id == shortcut_id)
+            .cloned()
+            .ok_or("Shortcut not found")?
+    };
+
+    // 2. Check if already running
+    {
+        let processes = exec_state.running_processes.lock().unwrap();
+        if processes.contains_key(&shortcut_id) {
+            return Err(format!("Command already executing for shortcut: {}", shortcut_id));
+        }
+    }
+
+    // 3. Start timing
+    let start = Instant::now();
+
+    // 4. Spawn command
+    let child = TokioCommand::new("sh")
+        .arg("-c")
+        .arg(&shortcut.command)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn command: {}", e))?;
+
+    // 5. Store child in execution state
+    // Note: We can't store the child since it's moved by wait_with_output
+    // Instead, cancellation will be implemented in a future enhancement
+
+    // 6. Wait with timeout
+    let output_result = timeout(Duration::from_secs(30), child.wait_with_output()).await;
+
+    // 7. Calculate duration
+    let duration_ms = start.elapsed().as_millis() as u64;
+
+    // 8. Build result based on outcome
+    match output_result {
+        Ok(Ok(output)) => {
+            // Successful execution (or failed with exit code)
+            let stdout_raw = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr_raw = String::from_utf8_lossy(&output.stderr).to_string();
+
+            let (stdout, stdout_truncated) = truncate_output(stdout_raw, 10000);
+            let (stderr, stderr_truncated) = truncate_output(stderr_raw, 10000);
+
+            Ok(TestResult {
+                shortcut_id: shortcut.id.clone(),
+                command: shortcut.command.clone(),
+                syntax_valid: true,
+                syntax_error: None,
+                preview: String::new(),
+                timestamp: chrono::Local::now().to_rfc3339(),
+                executed: true,
+                exit_code: output.status.code(),
+                stdout: Some(stdout),
+                stderr: Some(stderr),
+                execution_duration_ms: Some(duration_ms),
+                cancelled: false,
+                timed_out: false,
+                output_truncated: stdout_truncated || stderr_truncated,
+            })
+        }
+        Ok(Err(e)) => {
+            // Failed to wait for output
+            Err(format!("Execution failed: {}", e))
+        }
+        Err(_) => {
+            // Timeout
+            Ok(TestResult {
+                shortcut_id: shortcut.id.clone(),
+                command: shortcut.command.clone(),
+                syntax_valid: true,
+                syntax_error: None,
+                preview: String::new(),
+                timestamp: chrono::Local::now().to_rfc3339(),
+                executed: true,
+                exit_code: None,
+                stdout: Some(String::new()),
+                stderr: Some(String::new()),
+                execution_duration_ms: Some(30000),
+                cancelled: false,
+                timed_out: true,
+                output_truncated: false,
+            })
+        }
+    }
 }
 
 fn format_command_preview(shortcut: &Shortcut) -> String {

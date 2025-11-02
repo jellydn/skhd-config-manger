@@ -6,12 +6,14 @@ pub mod services;
 pub mod utils;
 
 use commands::config::ConfigState;
+use commands::testing::ExecutionState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(ConfigState::new())
+        .manage(ExecutionState::default())
         .invoke_handler(tauri::generate_handler![
             commands::config::detect_active_config,
             commands::config::load_config,
@@ -29,6 +31,7 @@ pub fn run() {
             commands::backups::restore_backup,
             commands::testing::test_shortcut,
             commands::testing::execute_test_command,
+            commands::testing::execute_shortcut_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

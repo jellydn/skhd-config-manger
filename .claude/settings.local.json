@@ -54,7 +54,8 @@
       "Bash(gh pr checks:*)",
       "Bash(gh pr:*)",
       "Bash(bun run check:*)",
-      "Bash(gh run watch:*)"
+      "Bash(gh run watch:*)",
+      "Bash(cargo update:*)"
     ],
     "deny": [],
     "ask": []

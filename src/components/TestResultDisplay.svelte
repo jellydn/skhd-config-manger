@@ -11,32 +11,72 @@
 
 <div class="test-result-display">
   <div class="result-header">
-    <h3>Test Result</h3>
+    <h3>{result.executed ? 'Execution Result' : 'Test Result'}</h3>
     <button class="btn-close" onclick={onClose}>✕</button>
   </div>
 
-  <div class="result-status" class:valid={result.syntax_valid} class:invalid={!result.syntax_valid}>
-    {#if result.syntax_valid}
-      ✅ Command syntax is valid
-    {:else}
-      ❌ Command has syntax errors
-    {/if}
-  </div>
+  {#if result.executed}
+    <!-- Execution Results -->
+    <div class="result-status" class:valid={result.exit_code === 0} class:invalid={result.exit_code !== 0 || result.timed_out}>
+      {#if result.timed_out}
+        ⏱️ Command timed out (30 seconds)
+      {:else if result.exit_code === 0}
+        ✅ Command executed successfully
+      {:else}
+        ❌ Command failed with exit code {result.exit_code ?? 'unknown'}
+      {/if}
+    </div>
 
-  {#if result.syntax_error}
-    <div class="syntax-error">
-      <h4>Syntax Error:</h4>
-      <pre>{result.syntax_error}</pre>
+    {#if result.execution_duration_ms !== undefined}
+      <div class="execution-info">
+        <strong>Duration:</strong> {result.execution_duration_ms}ms
+      </div>
+    {/if}
+
+    {#if result.stdout}
+      <div class="output-section">
+        <h4>Standard Output (stdout):</h4>
+        <pre class="stdout">{result.stdout}</pre>
+      </div>
+    {/if}
+
+    {#if result.stderr}
+      <div class="output-section">
+        <h4>Standard Error (stderr):</h4>
+        <pre class="stderr">{result.stderr}</pre>
+      </div>
+    {/if}
+
+    {#if result.output_truncated}
+      <div class="truncation-notice">
+        ⚠️ Output was truncated to 10,000 characters
+      </div>
+    {/if}
+  {:else}
+    <!-- Syntax Check Results -->
+    <div class="result-status" class:valid={result.syntax_valid} class:invalid={!result.syntax_valid}>
+      {#if result.syntax_valid}
+        ✅ Command syntax is valid
+      {:else}
+        ❌ Command has syntax errors
+      {/if}
+    </div>
+
+    {#if result.syntax_error}
+      <div class="syntax-error">
+        <h4>Syntax Error:</h4>
+        <pre>{result.syntax_error}</pre>
+      </div>
+    {/if}
+
+    <div class="command-preview">
+      <h4>Command Preview:</h4>
+      <pre>{result.preview}</pre>
     </div>
   {/if}
 
-  <div class="command-preview">
-    <h4>Command Preview:</h4>
-    <pre>{result.preview}</pre>
-  </div>
-
   <div class="result-footer">
-    <small>Tested at: {new Date(result.timestamp).toLocaleString()}</small>
+    <small>{result.executed ? 'Executed' : 'Tested'} at: {new Date(result.timestamp).toLocaleString()}</small>
   </div>
 </div>
 
@@ -155,6 +195,51 @@
     font-size: 0.75rem;
   }
 
+  .execution-info {
+    padding: 0.75rem;
+    background: #f8f8f8;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .execution-info strong {
+    color: #1d1d1f;
+    margin-right: 0.5rem;
+  }
+
+  .output-section {
+    margin-bottom: 1rem;
+  }
+
+  .output-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .stdout {
+    background: #f8f8f8;
+    border-left: 3px solid #34c759;
+  }
+
+  .stderr {
+    background: #fff3f3;
+    border-left: 3px solid #ff3b30;
+    color: #d32f2f;
+  }
+
+  .truncation-notice {
+    padding: 0.75rem;
+    background: #fff9e6;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    color: #856404;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+
   @media (prefers-color-scheme: dark) {
     .test-result-display {
       background: #2a2a2a;
@@ -210,6 +295,35 @@
 
     .result-footer small {
       color: #999;
+    }
+
+    .execution-info {
+      background: #1e1e1e;
+    }
+
+    .execution-info strong {
+      color: #f5f5f7;
+    }
+
+    .output-section h4 {
+      color: #999;
+    }
+
+    .stdout {
+      background: #1e1e1e;
+      border-left-color: #34c759;
+    }
+
+    .stderr {
+      background: #3a1a1a;
+      border-left-color: #ff3b30;
+      color: #ff5c5c;
+    }
+
+    .truncation-notice {
+      background: #3a3020;
+      border-color: #ffc107;
+      color: #ffd966;
     }
   }
 </style>

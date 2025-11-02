@@ -10,6 +10,7 @@
     updateShortcut as updateShortcutAPI,
     deleteShortcut as deleteShortcutAPI,
     testShortcut as testShortcutAPI,
+    executeShortcutCommand,
   } from '../services/tauri';
   import type {
     ConfigFile,
@@ -37,6 +38,7 @@
   let showReloadConfirm = $state(false);
   let showDeleteConfirm = $state(false);
   let deletingShortcutId = $state<string | null>(null);
+  let executingShortcutId = $state<string | null>(null);
 
   // Don't auto-load - let user choose which file to open
   onMount(() => {
@@ -282,12 +284,15 @@
 
   async function handleTest(id: string) {
     try {
-      const result = await testShortcutAPI(id);
+      executingShortcutId = id;
+      const result = await executeShortcutCommand(id);
       testResult = result;
       showTestResult = true;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
-      console.error('Failed to test shortcut:', err);
+      console.error('Failed to execute shortcut:', err);
+    } finally {
+      executingShortcutId = null;
     }
   }
 
@@ -432,6 +437,7 @@
           onCreate={handleCreate}
           onSave={saveConfiguration}
           isModified={config.is_modified}
+          executingShortcutId={executingShortcutId}
         />
       {/if}
     {/if}
