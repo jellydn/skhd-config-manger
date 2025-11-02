@@ -8,8 +8,8 @@
 
   let { result, onClose }: Props = $props();
 
-  function getExitCodeDescription(code: number | null): string {
-    if (code === null) return '';
+  function getExitCodeDescription(code: number | null | undefined): string {
+    if (code === null || code === undefined) return '';
     if (code === 0) return '✓ Success';
     if (code === 1) return '✗ General error';
     if (code === 2) return '✗ Misuse of shell command';
