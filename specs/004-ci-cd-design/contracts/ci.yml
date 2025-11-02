@@ -1,0 +1,54 @@
+# CI Workflow Contract
+# This file defines the expected CI workflow structure for Feature 004
+# Implementation file: .github/workflows/ci.yml
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Bun (JavaScript package manager)
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # Step 3: Setup Rust toolchain
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Step 4: Install project dependencies
+      - name: Install dependencies
+        run: bun install
+
+      # Step 5: Run all tests (cargo test, clippy, typecheck)
+      - name: Run tests
+        run: |
+          cargo test
+          cargo clippy -- -D warnings
+          bun run typecheck
+
+# Requirements Satisfied:
+# - FR-001: Automatic builds on push to main and PRs
+# - FR-002: Runs all existing tests (cargo test, clippy, typecheck)
+# - FR-003: Blocks PR merges when CI fails (GitHub branch protection)
+# - FR-007: CI configuration version-controlled
+
+# Success Criteria:
+# - SC-001: Build completes within 10 minutes
+# - SC-005: Failed builds prevent bad code merges (0 broken builds in main)
+
+# Constitution Compliance:
+# - III. Test Coverage: Runs all required tests automatically
+# - IV. Performance Standards: <10 minute build target
+# - Quality Gates: Clippy warnings treated as errors (-D warnings)
