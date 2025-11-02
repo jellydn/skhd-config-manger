@@ -84,6 +84,27 @@
     }
   }
 
+  async function handleCreateBlank() {
+    try {
+      loading = true;
+      error = null;
+      // Create a truly blank configuration without auto-detection
+      // This always creates an empty config regardless of existing files
+      config = {
+        file_path: '', // No path yet - user will choose on first save
+        shortcuts: [],
+        parse_errors: [],
+        last_modified: new Date().toISOString()
+      };
+      isModified = true; // Mark as modified so user can save with location choice
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      console.error('Failed to create blank config:', err);
+    } finally {
+      loading = false;
+    }
+  }
+
   async function handleImport() {
     try {
       loading = true;
@@ -387,13 +408,13 @@
             </div>
           </button>
 
-          <button class="welcome-btn" onclick={loadConfiguration}>
+          <button class="welcome-btn" onclick={handleCreateBlank}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 4v16m8-8H4" />
             </svg>
             <div>
-              <h3>Create New Config</h3>
-              <p>Start with an empty configuration file</p>
+              <h3>Create Blank Config</h3>
+              <p>Start with an empty configuration (never auto-detects existing configs)</p>
             </div>
           </button>
         </div>
