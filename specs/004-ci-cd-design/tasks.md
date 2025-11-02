@@ -63,7 +63,7 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### Validation & Testing
 
-- [ ] T014 [US1] Commit `ci.yml` and push to trigger first CI run
+- [x] T014 [US1] Commit `ci.yml` and push to trigger first CI run
 - [ ] T015 [US1] Verify CI workflow appears in GitHub Actions tab
 - [ ] T016 [US1] Verify all tests run successfully in CI (cargo test, clippy, typecheck)
 - [ ] T017 [US1] Create test PR to verify CI runs on pull requests
