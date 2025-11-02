@@ -31,6 +31,7 @@
   let error = $state<string | null>(null);
   let showForm = $state(false);
   let editingShortcut = $state<Shortcut | null>(null);
+  let formMode = $state<'create' | 'edit' | 'duplicate'>('create');
   let testResult = $state<TestResult | null>(null);
   let showTestResult = $state(false);
   let showReloadConfirm = $state(false);
@@ -142,11 +143,13 @@
 
   function handleCreate() {
     editingShortcut = null;
+    formMode = 'create';
     showForm = true;
   }
 
   function handleEdit(shortcut: Shortcut) {
     editingShortcut = shortcut;
+    formMode = 'edit';
     showForm = true;
   }
 
@@ -156,6 +159,7 @@
       id: crypto.randomUUID(),
       line_number: getNextLineNumber()
     };
+    formMode = 'duplicate';
     showForm = true;
   }
 
@@ -419,6 +423,7 @@
   <Modal open={showForm} onClose={handleCancelForm}>
     <ShortcutForm
       shortcut={editingShortcut}
+      mode={formMode}
       onSave={handleSaveShortcut}
       onCancel={handleCancelForm}
     />

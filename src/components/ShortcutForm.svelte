@@ -4,11 +4,12 @@
 
   interface Props {
     shortcut?: Shortcut;
+    mode?: 'create' | 'edit' | 'duplicate';
     onSave: (data: CreateShortcutRequest & { id?: string }) => Promise<void>;
     onCancel: () => void;
   }
 
-  let { shortcut, onSave, onCancel }: Props = $props();
+  let { shortcut, mode = shortcut ? 'edit' : 'create', onSave, onCancel }: Props = $props();
 
   const AVAILABLE_MODIFIERS = ['cmd', 'alt', 'shift', 'ctrl', 'fn'];
 
@@ -19,6 +20,23 @@
   let validationErrors = $state<string[]>([]);
   let validationWarnings = $state<string[]>([]);
   let saving = $state(false);
+
+  // Track if form has changes (for duplicate mode)
+  let hasChanges = $derived(
+    mode === 'duplicate' ? (
+      JSON.stringify(selectedModifiers) !== JSON.stringify(shortcut?.modifiers || []) ||
+      key !== (shortcut?.key || '') ||
+      command !== (shortcut?.command || '') ||
+      comment !== (shortcut?.comment || '')
+    ) : true
+  );
+
+  // Get form title based on mode
+  let formTitle = $derived(
+    mode === 'duplicate' ? 'Duplicate Shortcut' :
+    mode === 'edit' ? 'Edit Shortcut' :
+    'Create Shortcut'
+  );
 
   function toggleModifier(modifier: string) {
     if (selectedModifiers.includes(modifier)) {
@@ -48,7 +66,8 @@
         comment: comment.trim() || undefined,
       };
 
-      if (shortcut) {
+      // Only set ID for edit mode (not for duplicate or create)
+      if (shortcut && mode === 'edit') {
         data.id = shortcut.id;
       }
 
@@ -83,7 +102,7 @@
 </script>
 
 <div class="shortcut-form">
-  <h3>{shortcut ? 'Edit Shortcut' : 'Create Shortcut'}</h3>
+  <h3>{formTitle}</h3>
 
   {#if validationErrors.length > 0}
     <div class="validation-errors">
@@ -157,8 +176,8 @@
       <button type="button" class="btn-cancel" onclick={onCancel} disabled={saving}>
         Cancel
       </button>
-      <button type="submit" class="btn-save" disabled={saving}>
-        {saving ? 'Saving...' : shortcut ? 'Update' : 'Create'}
+      <button type="submit" class="btn-save" disabled={saving || (mode === 'duplicate' && !hasChanges)}>
+        {saving ? 'Saving...' : mode === 'duplicate' ? 'Create' : shortcut ? 'Update' : 'Create'}
       </button>
     </div>
   </form>

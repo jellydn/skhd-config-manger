@@ -18,24 +18,19 @@
 </script>
 
 <div class="shortcut-item">
-  <div class="shortcut-keys">
-    {#if shortcut.modifiers.length > 0}
-      <span class="modifiers">{formatModifiers(shortcut.modifiers)}</span>
-    {/if}
-    <span class="key">{shortcut.key}</span>
-  </div>
-
-  <div class="shortcut-command">
-    <code>{shortcut.command}</code>
-  </div>
-
-  {#if shortcut.comment}
-    <div class="shortcut-comment">
-      {shortcut.comment}
+  <div class="shortcut-main">
+    <div class="shortcut-keys">
+      {#if shortcut.modifiers.length > 0}
+        <span class="modifiers">{formatModifiers(shortcut.modifiers)}</span>
+      {/if}
+      <span class="key">{shortcut.key}</span>
     </div>
-  {/if}
 
-  <div class="shortcut-actions">
+    <div class="shortcut-command">
+      <code>{shortcut.command}</code>
+    </div>
+
+    <div class="shortcut-actions">
     {#if onTest}
       <button type="button" class="btn-test" onclick={() => onTest(shortcut.id)} title="Test">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -69,21 +64,34 @@
         </svg>
       </button>
     {/if}
+    </div>
   </div>
+
+  {#if shortcut.comment}
+    <div class="shortcut-comment">
+      {shortcut.comment}
+    </div>
+  {/if}
 </div>
 
 <style>
   .shortcut-item {
-    display: grid;
-    grid-template-columns: 280px 1fr 240px;
-    gap: 1rem;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 1rem;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     background: white;
     margin-bottom: 0.5rem;
     transition: box-shadow 0.2s;
+  }
+
+  .shortcut-main {
+    display: grid;
+    grid-template-columns: 280px 1fr 240px;
+    gap: 1rem;
+    align-items: start;
   }
 
   .shortcut-item:hover {
@@ -127,15 +135,18 @@
   }
 
   .shortcut-comment {
-    grid-column: 1 / -1;
     font-size: 0.875rem;
     color: #666;
     font-style: italic;
+    padding-left: 0.5rem;
+    border-left: 3px solid #e0e0e0;
   }
 
   .shortcut-actions {
     display: flex;
     gap: 0.5rem;
+    position: relative;
+    z-index: 1;
   }
 
   button {

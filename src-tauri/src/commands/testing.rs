@@ -3,6 +3,12 @@ use crate::models::{Shortcut, TestResult};
 use std::process::Command;
 use tauri::State;
 
+/// Escape a string for safe shell usage
+fn shell_escape(s: &str) -> String {
+    // Replace single quotes with '\'' (end quote, escaped quote, start quote)
+    s.replace('\'', r"'\''")
+}
+
 /// Test a shortcut by executing its command in dry-run mode
 /// This shows what would be executed without actually triggering the shortcut
 #[tauri::command]
@@ -21,10 +27,11 @@ pub fn test_shortcut(
         .ok_or("Shortcut not found")?;
 
     // Execute the command with sh -n (syntax check without execution)
+    // Use printf to properly handle quotes and special characters
+    let test_script = format!("printf '%s' '{}' | sh -n", shell_escape(&shortcut.command));
     let output = Command::new("sh")
-        .arg("-n")
         .arg("-c")
-        .arg(&shortcut.command)
+        .arg(&test_script)
         .output()
         .map_err(|e| format!("Failed to test command: {}", e))?;
 
