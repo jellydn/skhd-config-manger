@@ -58,16 +58,37 @@ jobs:
       - name: Generate Changelog
         id: changelog
         run: |
-          # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+          # Get current tag (the one that triggered this workflow)
+          CURRENT_TAG="${{ github.ref_name }}"
+
+          # Get previous stable release tag (exclude test tags and current tag)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "test" | grep -v "^${CURRENT_TAG}$" | head -1)
 
           if [ -z "$PREV_TAG" ]; then
             # First release - get all commits
+            echo "📝 First release - generating full changelog"
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
           else
             # Get commits since previous tag
-            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            echo "📝 Generating changelog from ${PREV_TAG} to ${CURRENT_TAG}"
+            CHANGELOG=$(git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --no-merges)
+
+            # Add comparison link for context
+            REPO="${{ github.repository }}"
+            echo "🔗 Full comparison: https://github.com/${REPO}/compare/${PREV_TAG}...${CURRENT_TAG}"
           fi
+
+          # Filter out noise commits
+          CHANGELOG=$(echo "$CHANGELOG" | grep -v "chore: bump version to" || true)
+
+          # If changelog is empty after filtering, add a note
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Version bump release (no feature changes)"
+          fi
+
+          # Count changes
+          NUM_COMMITS=$(echo "$CHANGELOG" | wc -l | tr -d ' ')
+          echo "📊 Found ${NUM_COMMITS} changes"
 
           # Save to file and output
           echo "$CHANGELOG" > /tmp/changelog.txt
@@ -92,17 +113,28 @@ jobs:
 
             ${{ steps.changelog.outputs.CHANGELOG }}
 
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}
+
             ## Installation
 
-            1. Download the DMG file below
-            2. Open the DMG
-            3. Drag Keybinder to your Applications folder
-            4. Launch from Applications or Spotlight
+            1. Download the DMG file below (`keybinder_*_universal_darwin.dmg`)
+            2. Open the DMG file
+            3. Drag Keybinder.app to your Applications folder
+            4. Launch from Applications or Spotlight (⌘+Space, type "Keybinder")
+
+            ### First Launch (macOS Security)
+
+            macOS may block the app on first launch. To open it:
+            1. Control-click (or right-click) the app
+            2. Select "Open" from the menu
+            3. Click "Open" in the dialog
+
+            Or run: `xattr -cr /Applications/Keybinder.app`
 
             ## System Requirements
 
             - macOS 11 (Big Sur) or later
-            - Works on both Intel and Apple Silicon Macs
+            - Universal binary (works on both Intel and Apple Silicon Macs)
 
             ---
             🤖 Built with [Tauri](https://tauri.app)
