@@ -1,4 +1,4 @@
-.PHONY: help dev build test test-cov lint format check clean install deps tauri-dev tauri-build
+.PHONY: help dev build test test-cov lint format check clean install deps tauri-dev tauri-build version bump bump-patch bump-minor bump-major release
 
 # Default target
 .DEFAULT_GOAL := help
@@ -41,6 +41,14 @@ help:
 	@echo ""
 	@echo "\033[0;32mCI/CD:\033[0m"
 	@echo "  make ci           - Run CI checks (lint + test + build)"
+	@echo ""
+	@echo "\033[0;32mVersion Management:\033[0m"
+	@echo "  make version      - Show current version"
+	@echo "  make bump VERSION=x.y.z - Bump to specific version"
+	@echo "  make bump-patch   - Bump patch version (0.1.0 → 0.1.1)"
+	@echo "  make bump-minor   - Bump minor version (0.1.0 → 0.2.0)"
+	@echo "  make bump-major   - Bump major version (0.1.0 → 1.0.0)"
+	@echo "  make release VERSION=x.y.z - Bump, commit, tag, and push release"
 	@echo ""
 	@echo "\033[0;32mInfo:\033[0m"
 	@echo "  make info         - Show project info"
@@ -172,3 +180,97 @@ info:
 	@echo ""
 	@echo "$(CYAN)Tauri:$(NC)"
 	@bun run tauri --version || echo "Tauri CLI not installed"
+
+## version: Show current version
+version:
+	@echo "$(CYAN)Current version:$(NC)"
+	@grep '"version":' package.json | head -1 | sed 's/.*: "\(.*\)".*/\1/'
+
+## bump: Bump to a specific version
+bump:
+ifndef VERSION
+	@echo "$(RED)Error: VERSION is required$(NC)"
+	@echo "Usage: make bump VERSION=x.y.z"
+	@echo "Example: make bump VERSION=0.2.0"
+	@exit 1
+endif
+	@echo "$(CYAN)Bumping version to $(VERSION)...$(NC)"
+	@./scripts/bump-version.sh $(VERSION)
+
+## bump-patch: Bump patch version (0.1.0 → 0.1.1)
+bump-patch:
+	@echo "$(CYAN)Calculating new patch version...$(NC)"
+	@CURRENT=$$(grep '"version":' package.json | head -1 | sed 's/.*: "\(.*\)".*/\1/'); \
+	MAJOR=$$(echo $$CURRENT | cut -d. -f1); \
+	MINOR=$$(echo $$CURRENT | cut -d. -f2); \
+	PATCH=$$(echo $$CURRENT | cut -d. -f3 | cut -d- -f1); \
+	NEW_PATCH=$$((PATCH + 1)); \
+	NEW_VERSION="$$MAJOR.$$MINOR.$$NEW_PATCH"; \
+	$(MAKE) bump VERSION=$$NEW_VERSION
+
+## bump-minor: Bump minor version (0.1.0 → 0.2.0)
+bump-minor:
+	@echo "$(CYAN)Calculating new minor version...$(NC)"
+	@CURRENT=$$(grep '"version":' package.json | head -1 | sed 's/.*: "\(.*\)".*/\1/'); \
+	MAJOR=$$(echo $$CURRENT | cut -d. -f1); \
+	MINOR=$$(echo $$CURRENT | cut -d. -f2); \
+	NEW_MINOR=$$((MINOR + 1)); \
+	NEW_VERSION="$$MAJOR.$$NEW_MINOR.0"; \
+	$(MAKE) bump VERSION=$$NEW_VERSION
+
+## bump-major: Bump major version (0.1.0 → 1.0.0)
+bump-major:
+	@echo "$(CYAN)Calculating new major version...$(NC)"
+	@CURRENT=$$(grep '"version":' package.json | head -1 | sed 's/.*: "\(.*\)".*/\1/'); \
+	MAJOR=$$(echo $$CURRENT | cut -d. -f1); \
+	NEW_MAJOR=$$((MAJOR + 1)); \
+	NEW_VERSION="$$NEW_MAJOR.0.0"; \
+	$(MAKE) bump VERSION=$$NEW_VERSION
+
+## release: Bump version, commit, tag, and push release
+release:
+ifndef VERSION
+	@echo "$(RED)Error: VERSION is required$(NC)"
+	@echo "Usage: make release VERSION=x.y.z"
+	@echo "Example: make release VERSION=0.2.0"
+	@exit 1
+endif
+	@echo "$(CYAN)Creating release $(VERSION)...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 1/5: Checking git status...$(NC)"
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "$(RED)Error: Working directory is not clean$(NC)"; \
+		echo "Please commit or stash your changes first"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✓ Working directory is clean$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 2/5: Bumping version to $(VERSION)...$(NC)"
+	@./scripts/bump-version.sh $(VERSION)
+	@echo "$(GREEN)✓ Version bumped$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 3/5: Committing changes...$(NC)"
+	@git add -A
+	@git commit -m "chore: bump version to $(VERSION)"
+	@echo "$(GREEN)✓ Changes committed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 4/5: Creating tag v$(VERSION)...$(NC)"
+	@git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	@echo "$(GREEN)✓ Tag created$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 5/5: Pushing to remote...$(NC)"
+	@git push origin main
+	@git push origin v$(VERSION)
+	@echo "$(GREEN)✓ Pushed to remote$(NC)"
+	@echo ""
+	@echo "$(GREEN)========================================$(NC)"
+	@echo "$(GREEN)✓ Release $(VERSION) created successfully!$(NC)"
+	@echo "$(GREEN)========================================$(NC)"
+	@echo ""
+	@echo "$(CYAN)GitHub Actions will now:$(NC)"
+	@echo "  1. Build the application"
+	@echo "  2. Create a GitHub release"
+	@echo "  3. Upload the DMG artifact"
+	@echo ""
+	@echo "$(CYAN)Track the release at:$(NC)"
+	@echo "  https://github.com/jellydn/skhd-config-manger/actions"

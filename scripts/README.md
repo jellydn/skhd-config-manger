@@ -184,6 +184,142 @@ bun run tauri build
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
 ```
 
+## Version Management
+
+### `bump-version.sh`
+
+Updates version numbers across all project configuration files to ensure consistency between the git tag and generated artifacts.
+
+#### Requirements
+
+- **macOS or Linux** (uses `sed` for file updates)
+- **Git repository** (for version tracking)
+
+#### Usage
+
+```bash
+./scripts/bump-version.sh <new_version>
+```
+
+**Example:**
+```bash
+./scripts/bump-version.sh 0.2.0
+```
+
+#### What It Updates
+
+The script automatically updates version numbers in:
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `package.json` | Line 3 | JavaScript package version |
+| `src-tauri/Cargo.toml` | Line 3 | Rust package version |
+| `src-tauri/tauri.conf.json` | Line 4 | Tauri app version (used for DMG naming) |
+| `src-tauri/Cargo.lock` | Auto | Rust dependency lock file |
+| `Makefile` | Info section | Documentation version display |
+
+#### Version Format
+
+Supports semantic versioning (semver):
+- **Standard:** `MAJOR.MINOR.PATCH` (e.g., `1.0.0`, `0.2.1`)
+- **Pre-release:** `MAJOR.MINOR.PATCH-PRERELEASE` (e.g., `1.0.0-alpha.1`, `2.0.0-beta.2`)
+
+#### Makefile Integration
+
+Instead of running the script directly, use the Makefile commands:
+
+```bash
+# Show current version
+make version
+
+# Bump to specific version
+make bump VERSION=0.2.0
+
+# Automatic version bumps
+make bump-patch   # 0.1.0 → 0.1.1
+make bump-minor   # 0.1.0 → 0.2.0
+make bump-major   # 0.1.0 → 1.0.0
+
+# Complete release workflow (bump + commit + tag + push)
+make release VERSION=0.2.0
+```
+
+#### Complete Release Workflow
+
+**Option 1: Manual (step by step)**
+```bash
+# 1. Bump version
+make bump VERSION=0.2.0
+
+# 2. Review changes
+git diff
+
+# 3. Commit
+git add -A
+git commit -m "chore: bump version to 0.2.0"
+
+# 4. Create tag
+git tag v0.2.0
+
+# 5. Push
+git push origin main --tags
+```
+
+**Option 2: Automated (recommended)**
+```bash
+# Single command does everything
+make release VERSION=0.2.0
+```
+
+The automated release command:
+1. Checks git status is clean
+2. Bumps version in all files
+3. Commits the changes
+4. Creates a git tag
+5. Pushes to remote
+6. Triggers GitHub Actions to build and publish
+
+#### Why Version Consistency Matters
+
+**Problem:** Git tag v0.2.0 but DMG named `keybinder_0.1.0_universal_darwin.dmg`
+
+This happens when version in `tauri.conf.json` doesn't match the git tag. The Tauri build process reads `tauri.conf.json` to name the DMG file.
+
+**Solution:** Always bump version in config files before creating git tag.
+
+#### Troubleshooting
+
+**Script fails with "Invalid version format":**
+```bash
+# Wrong format
+./scripts/bump-version.sh v0.2.0  # Don't include 'v' prefix
+./scripts/bump-version.sh 0.2     # Incomplete version
+
+# Correct format
+./scripts/bump-version.sh 0.2.0
+```
+
+**Git push fails during release:**
+```bash
+# Ensure you're on main branch and it's up to date
+git checkout main
+git pull origin main
+
+# Then retry
+make release VERSION=0.2.0
+```
+
+**Working directory not clean:**
+```bash
+# Commit or stash changes first
+git status
+git add -A
+git commit -m "Your changes"
+
+# Then retry release
+make release VERSION=0.2.0
+```
+
 ## Adding New Scripts
 
 When adding new scripts to this directory:
