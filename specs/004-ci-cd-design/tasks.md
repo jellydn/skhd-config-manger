@@ -90,39 +90,39 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### Icon Asset Creation
 
-- [ ] T019 [P] [US2] Design or acquire source icon (1024x1024 PNG with transparency) and save to `assets/icons/app-icon.png`
-- [ ] T020 [US2] Validate source icon meets requirements: exactly 1024x1024, PNG format, transparency, clear at 16x16
-- [ ] T021 [US2] Generate icon variants using Tauri CLI: `bun tauri icon assets/icons/app-icon.png`
-- [ ] T022 [US2] Verify generated icons exist in `src-tauri/icons/`: `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`
+- [x] T019 [P] [US2] Design or acquire source icon (1024x1024 PNG with transparency) and save to `assets/icons/app-icon.png` (Already exists from Tauri template)
+- [x] T020 [US2] Validate source icon meets requirements: exactly 1024x1024, PNG format, transparency, clear at 16x16
+- [x] T021 [US2] Generate icon variants using Tauri CLI: `bun tauri icon assets/icons/app-icon.png`
+- [x] T022 [US2] Verify generated icons exist in `src-tauri/icons/`: `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`
 
 **Reference**: `specs/004-ci-cd-design/contracts/asset-schema.md` (Icon Requirements)
 
 ### DMG Background Creation
 
-- [ ] T023 [P] [US2] Design DMG background image (660x400 PNG) and save to `assets/dmg/background.png`
-- [ ] T024 [P] [US2] Create Retina variant (1320x800 PNG) and save to `assets/dmg/background@2x.png`
-- [ ] T025 [US2] Validate DMG backgrounds: dimensions correct, file size <2MB, professional appearance
+- [x] T023 [P] [US2] Design DMG background image (660x400 PNG) and save to `assets/dmg/background.png`
+- [x] T024 [P] [US2] Create Retina variant (1320x800 PNG) and save to `assets/dmg/background@2x.png`
+- [x] T025 [US2] Validate DMG backgrounds: dimensions correct, file size <2MB, professional appearance
 
 **Reference**: `specs/004-ci-cd-design/contracts/asset-schema.md` (DMG Background)
 
 ### Tauri Configuration Integration
 
-- [ ] T026 [US2] Update `src-tauri/tauri.conf.json`: Add icon paths to `bundle.icon` array
-- [ ] T027 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.background` path
-- [ ] T028 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.windowSize` (660x400)
-- [ ] T029 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.appPosition` (x:180, y:170)
-- [ ] T030 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.applicationFolderPosition` (x:480, y:170)
+- [x] T026 [US2] Update `src-tauri/tauri.conf.json`: Add icon paths to `bundle.icon` array
+- [x] T027 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.background` path
+- [x] T028 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.windowSize` (660x400)
+- [x] T029 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.appPosition` (x:180, y:170)
+- [x] T030 [US2] Update `src-tauri/tauri.conf.json`: Configure `bundle.macOS.dmg.applicationFolderPosition` (x:480, y:170)
 
 **Reference**: `specs/004-ci-cd-design/data-model.md` (Tauri Bundle Configuration Schema)
 
 ### Build & Validation
 
-- [ ] T031 [US2] Build DMG locally: `bun run tauri build --bundles dmg`
-- [ ] T032 [US2] Open built DMG and verify custom background appears
-- [ ] T033 [US2] Verify icon positions in DMG (app icon left, Applications folder right)
-- [ ] T034 [US2] Install app from DMG and verify custom icon appears in Dock
-- [ ] T035 [US2] Verify custom icon in Finder for app bundle (all sizes, Retina)
-- [ ] T036 [US2] Open app and verify icon in About dialog (if About dialog exists)
+- [x] T031 [US2] Build DMG locally: `bun run tauri build --bundles dmg`
+- [x] T032 [US2] Open built DMG and verify custom background appears
+- [x] T033 [US2] Verify icon positions in DMG (app icon left, Applications folder right)
+- [x] T034 [US2] Install app from DMG and verify custom icon appears in Dock
+- [x] T035 [US2] Verify custom icon in Finder for app bundle (all sizes, Retina)
+- [x] T036 [US2] Open app and verify icon in About dialog (if About dialog exists)
 
 **Acceptance Validation**:
 - ✅ AS2.1: Custom icon displays in Dock (not generic icon)
@@ -148,26 +148,26 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### Release Workflow Implementation
 
-- [ ] T037 [US3] Create `.github/workflows/release.yml` with basic structure (name, triggers)
-- [ ] T038 [US3] Configure release trigger in `release.yml`: `on: push: tags: ['v*']`
-- [ ] T039 [US3] Add `permissions: contents: write` to `release.yml` (required for creating releases)
-- [ ] T040 [US3] Define `publish` job in `release.yml` with `runs-on: macos-latest`
-- [ ] T041 [US3] Add checkout step in `release.yml`: `actions/checkout@v4`
-- [ ] T042 [US3] Add Bun setup step in `release.yml`: `oven-sh/setup-bun@v2`
-- [ ] T043 [US3] Add Rust setup with universal targets in `release.yml`: `targets: aarch64-apple-darwin, x86_64-apple-darwin`
-- [ ] T044 [US3] Add dependency install step in `release.yml`: `run: bun install`
+- [x] T037 [US3] Create `.github/workflows/release.yml` with basic structure (name, triggers)
+- [x] T038 [US3] Configure release trigger in `release.yml`: `on: push: tags: ['v*']`
+- [x] T039 [US3] Add `permissions: contents: write` to `release.yml` (required for creating releases)
+- [x] T040 [US3] Define `publish` job in `release.yml` with `runs-on: macos-latest`
+- [x] T041 [US3] Add checkout step in `release.yml`: `actions/checkout@v4`
+- [x] T042 [US3] Add Bun setup step in `release.yml`: `oven-sh/setup-bun@v2`
+- [x] T043 [US3] Add Rust setup with universal targets in `release.yml`: `targets: aarch64-apple-darwin, x86_64-apple-darwin`
+- [x] T044 [US3] Add dependency install step in `release.yml`: `run: bun install`
 
 **Reference Contract**: `specs/004-ci-cd-design/contracts/release.yml`
 
 ### Tauri Action Configuration
 
-- [ ] T045 [US3] Add `tauri-apps/tauri-action@v0` step in `release.yml`
-- [ ] T046 [US3] Configure `tagName: ${{ github.ref_name }}` in tauri-action
-- [ ] T047 [US3] Configure `releaseName: 'skhd-gui ${{ github.ref_name }}'` in tauri-action
-- [ ] T048 [US3] Configure `releaseBody` in tauri-action with changelog reference and installation instructions
-- [ ] T049 [US3] Set `releaseDraft: false` and `prerelease: false` in tauri-action (GitHub auto-detects pre-releases)
-- [ ] T050 [US3] Set `args: --target universal-apple-darwin --bundles dmg` in tauri-action
-- [ ] T051 [US3] Add `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` environment variable to tauri-action step
+- [x] T045 [US3] Add `tauri-apps/tauri-action@v0` step in `release.yml`
+- [x] T046 [US3] Configure `tagName: ${{ github.ref_name }}` in tauri-action
+- [x] T047 [US3] Configure `releaseName: 'skhd-gui ${{ github.ref_name }}'` in tauri-action
+- [x] T048 [US3] Configure `releaseBody` in tauri-action with changelog reference and installation instructions
+- [x] T049 [US3] Set `releaseDraft: false` and `prerelease: false` in tauri-action (GitHub auto-detects pre-releases)
+- [x] T050 [US3] Set `args: --target universal-apple-darwin --bundles dmg` in tauri-action
+- [x] T051 [US3] Add `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` environment variable to tauri-action step
 
 **Reference**: `specs/004-ci-cd-design/data-model.md` (tauri-action Configuration Schema)
 
@@ -199,10 +199,10 @@ Tasks are organized by user story priority to enable independent implementation 
 
 ### Documentation
 
-- [ ] T062 [P] Update README.md with CI/CD status badges (GitHub Actions workflow badges)
-- [ ] T063 [P] Update README.md with installation instructions (download DMG from Releases)
-- [ ] T064 [P] Update README.md with developer setup (how to trigger CI, create releases)
-- [ ] T065 [P] Create or update CHANGELOG.md template for release notes
+- [x] T062 [P] Update README.md with CI/CD status badges (GitHub Actions workflow badges)
+- [x] T063 [P] Update README.md with installation instructions (download DMG from Releases)
+- [x] T064 [P] Update README.md with developer setup (how to trigger CI, create releases)
+- [x] T065 [P] Create or update CHANGELOG.md template for release notes
 
 ### Branch Protection & Settings
 
