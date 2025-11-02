@@ -18,6 +18,7 @@ pub fn run() {
             commands::config::detect_active_config,
             commands::config::load_config,
             commands::config::save_config,
+            commands::config::save_as_config,
             commands::config::reload_config,
             commands::config::import_config,
             commands::config::export_config,

@@ -247,6 +247,57 @@ pub fn save_config(config: ConfigFile, state: State<'_, ConfigState>) -> Result<
     Ok(())
 }
 
+/// Save configuration to a user-selected file location via file picker
+///
+/// This is similar to export_config but updates the configuration's file_path
+/// to the selected location for future saves.
+///
+/// # Arguments
+/// * `config` - Configuration to save
+/// * `state` - Application state
+///
+/// # Returns
+/// * `Ok(ConfigFile)` - Updated config with new file_path on success
+/// * `Err(String)` on failure or user cancellation
+#[tauri::command]
+pub async fn save_as_config(
+    mut config: ConfigFile,
+    state: State<'_, ConfigState>,
+) -> Result<ConfigFile, String> {
+    // Serialize config back to skhd format
+    let content = serialize_config(&config);
+
+    // Show save file dialog
+    let file = rfd::AsyncFileDialog::new()
+        .set_title("Save skhd Configuration")
+        .set_file_name("skhdrc")
+        .set_directory(dirs::home_dir().unwrap_or_default().join(".config/skhd"))
+        .save_file()
+        .await;
+
+    // Handle user cancellation
+    let file = match file {
+        Some(f) => f,
+        None => return Err("Save cancelled".to_string()),
+    };
+
+    let path = file.path();
+    let path_str = path.to_string_lossy().to_string();
+
+    // Write atomically
+    write_config_atomic(path, &content).map_err(|e| format!("Failed to write config: {}", e))?;
+
+    // Update config with new file path and mark as saved
+    config.file_path = path_str.clone();
+    config.current_file_path = path_str;
+    config.is_modified = false;
+
+    // Update state with saved version
+    *state.config.lock().unwrap() = Some(config.clone());
+
+    Ok(config)
+}
+
 /// Reload configuration from disk (discarding in-memory changes)
 ///
 /// # Arguments

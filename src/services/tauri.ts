@@ -43,6 +43,15 @@ export async function saveConfig(config: ConfigFile): Promise<void> {
 }
 
 /**
+ * Save configuration to a user-selected file location via file picker
+ * @param config Configuration to save
+ * @returns Updated configuration with new file path
+ */
+export async function saveAsConfig(config: ConfigFile): Promise<ConfigFile> {
+  return invoke<ConfigFile>('save_as_config', { config });
+}
+
+/**
  * Reload configuration from disk (discarding in-memory changes)
  */
 export async function reloadConfig(): Promise<ConfigFile> {

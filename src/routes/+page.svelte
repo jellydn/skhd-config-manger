@@ -4,6 +4,7 @@
     detectActiveConfig,
     loadConfig,
     saveConfig,
+    saveAsConfig,
     importConfig,
     exportConfig,
     createShortcut as createShortcutAPI,
@@ -151,12 +152,21 @@
     if (!config) return;
 
     try {
-      await saveConfig(config);
-      // Update local state - create new config object to trigger reactivity
-      config = {
-        ...config,
-        is_modified: false
-      };
+      // Check if this is a blank config without a file path
+      if (!config.file_path || config.file_path.trim() === '') {
+        // Use "Save As" dialog to let user choose location
+        const updatedConfig = await saveAsConfig(config);
+        // Update local state with the new file path and saved status
+        config = updatedConfig;
+      } else {
+        // Normal save to existing file path
+        await saveConfig(config);
+        // Update local state - create new config object to trigger reactivity
+        config = {
+          ...config,
+          is_modified: false
+        };
+      }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
       console.error('Failed to save config:', err);
