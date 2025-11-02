@@ -42,7 +42,19 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__get-library-docs",
+      "SlashCommand(/speckit.plan)",
+      "Bash(gh pr create:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(./generate-background.sh)",
+      "Bash(python3:*)",
+      "Bash(test -f:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr:*)",
+      "Bash(bun run check:*)",
+      "Bash(gh run watch:*)"
     ],
     "deny": [],
     "ask": []

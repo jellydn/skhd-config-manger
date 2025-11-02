@@ -1,8 +1,10 @@
-# skhd Configuration Manager
+# Keybinder
 
-A modern, user-friendly GUI application for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts on macOS.
+A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts.
 
-![skhd GUI Manager](https://img.shields.io/badge/platform-macOS-blue)
+![CI](https://github.com/jellydn/skhd-config-manger/workflows/CI/badge.svg)
+![Release](https://github.com/jellydn/skhd-config-manger/workflows/Release/badge.svg)
+![Keybinder](https://img.shields.io/badge/platform-macOS-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-v2-orange)
 ![Svelte](https://img.shields.io/badge/Svelte-5-red)
 ![Rust](https://img.shields.io/badge/Rust-1.75+-brown)
@@ -47,6 +49,15 @@ A modern, user-friendly GUI application for managing [skhd](https://github.com/k
 - [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/) 18+ (for frontend development)
 
 ## Installation
+
+### From Release (Recommended)
+
+1. Go to the [Releases page](https://github.com/jellydn/skhd-config-manger/releases)
+2. Download the latest `.dmg` file (works on both Intel and Apple Silicon Macs)
+3. Open the DMG and drag Keybinder to your Applications folder
+4. Launch from Applications or Spotlight
+
+**Note**: On first launch, you may need to right-click → Open to bypass macOS Gatekeeper.
 
 ### From Source
 
@@ -121,6 +132,38 @@ Examples:
 - **Import**: Click **Import...** to browse for an existing skhd config file
 
 ## Development Workflow
+
+### CI/CD Pipeline
+
+This project uses GitHub Actions for automated quality checks and releases:
+
+#### Continuous Integration (CI)
+- **Trigger**: Every push and pull request
+- **Checks**:
+  - Rust: `cargo test`, `cargo clippy`, `cargo check`
+  - TypeScript: `bun run typecheck`
+  - Runs on macOS latest
+- **Badge**: ![CI](https://github.com/jellydn/skhd-config-manger/workflows/CI/badge.svg)
+
+#### Automated Releases
+- **Trigger**: Push version tags (e.g., `v1.0.0`, `v1.0.0-beta.1`)
+- **Output**: Universal DMG (Intel + Apple Silicon)
+- **Location**: [GitHub Releases](https://github.com/jellydn/skhd-config-manger/releases)
+- **Badge**: ![Release](https://github.com/jellydn/skhd-config-manger/workflows/Release/badge.svg)
+
+#### Creating a Release
+```bash
+# Create and push a version tag
+git tag v1.0.0
+git push origin v1.0.0
+
+# GitHub Actions will automatically:
+# 1. Build universal DMG
+# 2. Create GitHub release
+# 3. Upload DMG as downloadable asset
+```
+
+### Spec-Kit Development
 
 This project uses [spec-kit](https://github.com/github/spec-kit) for specification-driven development. Each feature is documented in the `specs/` directory.
 

@@ -30,7 +30,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let showForm = $state(false);
-  let editingShortcut = $state<Shortcut | null>(null);
+  let editingShortcut = $state<Shortcut | undefined>(undefined);
   let formMode = $state<'create' | 'edit' | 'duplicate'>('create');
   let testResult = $state<TestResult | null>(null);
   let showTestResult = $state(false);
@@ -93,9 +93,11 @@
       config = {
         file_path: '', // No path yet - user will choose on first save
         shortcuts: [],
+        global_comments: [],
         parse_errors: [],
         last_modified: new Date().toISOString(),
-        is_modified: true // Mark as modified so user can save with location choice
+        is_modified: true, // Mark as modified so user can save with location choice
+        current_file_path: '' // No current file path yet - will be set on first save
       };
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -163,7 +165,7 @@
   }
 
   function handleCreate() {
-    editingShortcut = null;
+    editingShortcut = undefined;
     formMode = 'create';
     showForm = true;
   }
@@ -267,7 +269,7 @@
       }
 
       showForm = false;
-      editingShortcut = null;
+      editingShortcut = undefined;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : String(err));
     }
@@ -275,7 +277,7 @@
 
   function handleCancelForm() {
     showForm = false;
-    editingShortcut = null;
+    editingShortcut = undefined;
   }
 
   async function handleTest(id: string) {
@@ -315,12 +317,12 @@
 </script>
 
 <svelte:head>
-  <title>skhd Configuration Manager</title>
+  <title>Keybinder</title>
 </svelte:head>
 
 <main class="app-container">
   <header class="app-header">
-    <h1>skhd Configuration Manager</h1>
+    <h1>Keybinder</h1>
     <div class="header-actions">
       {#if config}
         <button class="btn-home" onclick={handleHomeClick} disabled={loading} aria-label="Return to home screen">
@@ -362,7 +364,7 @@
         </div>
 
         <div class="error-actions">
-          <button class="btn-create-new" onclick={handleCreateNew}>
+          <button class="btn-create-new" onclick={handleCreateBlank}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 4v16m8-8H4" />
             </svg>
@@ -374,17 +376,11 @@
             </svg>
             Import Existing File
           </button>
-          <button class="btn-retry" onclick={handleDetectAndLoad}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Try Again
-          </button>
         </div>
       </div>
     {:else if !config}
       <div class="welcome-state">
-        <h2>Welcome to skhd Configuration Manager</h2>
+        <h2>Welcome to Keybinder</h2>
         <p>Choose how you'd like to get started:</p>
 
         <div class="welcome-actions">
@@ -733,29 +729,6 @@
     flex-shrink: 0;
   }
 
-  .btn-retry {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #f5f5f7;
-    color: #1d1d1f;
-    border: 1px solid #d2d2d7;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-retry:hover {
-    background: #e8e8ed;
-  }
-
-  .btn-retry svg {
-    flex-shrink: 0;
-  }
-
   @media (prefers-color-scheme: dark) {
     :global(body) {
       background: #1d1d1f;
@@ -807,16 +780,6 @@
     .error-help code {
       background: #3a3a3a;
       color: #e0e0e0;
-    }
-
-    .btn-retry {
-      background: #3a3a3a;
-      border-color: #4a4a4a;
-      color: #f5f5f7;
-    }
-
-    .btn-retry:hover {
-      background: #4a4a4a;
     }
   }
 

@@ -1,0 +1,134 @@
+# Release Workflow Contract
+# This file defines the expected release workflow structure for Feature 004
+# Implementation file: .github/workflows/release.yml
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on v1.0.0, v1.0.0-alpha.1, v2.1.3, etc.
+
+permissions:
+  contents: write  # Required for creating GitHub releases
+
+jobs:
+  publish:
+    runs-on: macos-latest
+
+    steps:
+      # Step 1: Checkout repository with full history for changelog
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog generation
+
+      # Step 2: Setup Bun (JavaScript package manager)
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # Step 2.5: Cache Bun dependencies
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      # Step 3: Setup Rust with universal binary targets
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      # Step 3.5: Cache Rust dependencies
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      # Step 4: Install project dependencies
+      - name: Install dependencies
+        run: bun install
+
+      # Step 5: Generate changelog from commits
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - get all commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since previous tag
+            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Save to file and output
+          echo "$CHANGELOG" > /tmp/changelog.txt
+
+          # Create multiline output for GitHub Actions
+          {
+            echo 'CHANGELOG<<EOF'
+            echo "$CHANGELOG"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      # Step 6: Build and create GitHub release
+      - name: Build and Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Keybinder ${{ github.ref_name }}'
+          releaseBody: |
+            ## What's Changed
+
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ## Installation
+
+            1. Download the DMG file below
+            2. Open the DMG
+            3. Drag Keybinder to your Applications folder
+            4. Launch from Applications or Spotlight
+
+            ## System Requirements
+
+            - macOS 11 (Big Sur) or later
+            - Works on both Intel and Apple Silicon Macs
+
+            ---
+            🤖 Built with [Tauri](https://tauri.app)
+          releaseDraft: false
+          prerelease: false  # GitHub auto-detects from tag format
+          args: --target universal-apple-darwin --bundles dmg
+
+# Requirements Satisfied:
+# - FR-004: Automatic GitHub releases on version tags
+# - FR-005: Builds distributable macOS DMG (universal binary)
+# - FR-006: Attaches DMG to GitHub release as downloadable asset
+# - FR-007: Release configuration version-controlled
+# - FR-013: Pre-release versions use semantic versioning with suffixes
+
+# Success Criteria:
+# - SC-002: 100% of releases include DMG packages
+# - SC-004: Users can download and install without dev tools
+# - SC-006: Release process <15 minutes from tag to published
+
+# Constitution Compliance:
+# - Platform Requirements: macOS 11+ minimum (constitution)
+# - Architecture: Universal binary (Intel + Apple Silicon)
+# - Bundle Size: Target <20MB (will be validated in implementation)
+
+# Version Tag Examples:
+# - Stable: v1.0.0, v1.2.3, v2.0.0
+# - Alpha: v1.0.0-alpha.1, v1.0.0-alpha.2
+# - Beta: v1.0.0-beta.1, v1.0.0-beta.2
+# - RC: v1.0.0-rc.1, v1.0.0-rc.2

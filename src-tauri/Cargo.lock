@@ -1913,6 +1913,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "keybinder"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "dirs 5.0.1",
+ "mockall",
+ "notify",
+ "pest",
+ "pest_derive",
+ "rfd",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tempfile",
+ "uuid",
+]
+
+[[package]]
 name = "keyboard-types"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3681,27 +3702,6 @@ name = "siphasher"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
-
-[[package]]
-name = "skhd-gui"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "dirs 5.0.1",
- "mockall",
- "notify",
- "pest",
- "pest_derive",
- "rfd",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tempfile",
- "uuid",
-]
 
 [[package]]
 name = "slab"
