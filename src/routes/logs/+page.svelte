@@ -19,6 +19,7 @@
 
   // Configuration state
   let activeConfigPath = $state<string>('');
+  let loadedConfigPath = $state<string>(''); // Config loaded in app (may differ from service config)
   let isImporting = $state(false);
   let importFeedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -67,12 +68,12 @@
 
       const config = await importConfig();
 
-      // Update active config path
-      await loadActiveConfig();
+      // Update loaded config path (what's in the app)
+      loadedConfigPath = config.file_path;
 
       importFeedback = {
         type: 'success',
-        message: `Imported: ${config.file_path}`
+        message: `Imported: ${config.file_path}. Click "Reload Service" to apply.`
       };
 
       // Clear feedback after 5 seconds
@@ -100,7 +101,14 @@
     try {
       isReloading = true;
       await reloadService();
-      setTimeout(loadStatus, 1000);
+
+      // After reload, update what skhd service is actually using
+      setTimeout(async () => {
+        await loadStatus();
+        await loadActiveConfig();
+        // Clear loaded config since it's now active
+        loadedConfigPath = '';
+      }, 1000);
     } catch (err) {
       console.error('Failed to reload service:', err);
     } finally {
@@ -263,10 +271,18 @@
 
   <main class="logs-page__content">
     <!-- Active Configuration Display -->
-    {#if activeConfigPath}
+    {#if loadedConfigPath || activeConfigPath}
       <div class="config-path-display">
-        <span class="config-path-label">Active Config:</span>
-        <code class="config-path-value">{activeConfigPath}</code>
+        {#if loadedConfigPath && loadedConfigPath !== activeConfigPath}
+          <!-- Show loaded config (not yet applied to service) -->
+          <span class="config-path-label">Loaded Config:</span>
+          <code class="config-path-value config-path-pending">{loadedConfigPath}</code>
+          <span class="config-path-hint">(Click "Reload Service" to apply)</span>
+        {:else}
+          <!-- Show active service config -->
+          <span class="config-path-label">Active Config:</span>
+          <code class="config-path-value">{activeConfigPath}</code>
+        {/if}
       </div>
     {/if}
 
@@ -512,6 +528,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .config-path-pending {
+    border-color: #ff9500;
+    background: rgba(255, 149, 0, 0.1);
+  }
+
+  .config-path-hint {
+    color: rgba(255, 149, 0, 0.8);
+    font-size: 11px;
+    font-style: italic;
   }
 
   /* Import Feedback */
