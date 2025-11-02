@@ -186,14 +186,14 @@
 </script>
 
 <svelte:head>
-  <title>Service Logs - Keybinder</title>
+  <title>Service Manager - Keybinder</title>
 </svelte:head>
 
 <div class="logs-page">
   <!-- Toolbar -->
   <header class="toolbar">
     <div class="toolbar-left">
-      <h1>Service Logs</h1>
+      <h1>Service Manager</h1>
       {#if status}
         <div class="service-status">
           <div class="status-indicator {getStatusClass(status.state)}"></div>

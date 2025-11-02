@@ -64,7 +64,7 @@
         class="nav-item"
         class:active={currentPath === '/logs'}
         aria-current={currentPath === '/logs' ? 'page' : undefined}
-        title="Service Logs"
+        title="Service Manager"
       >
         <!-- Terminal/Activity icon -->
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -72,7 +72,7 @@
           <line x1="12" y1="19" x2="20" y2="19"></line>
         </svg>
         {#if !isCollapsed}
-          <span>Service Logs</span>
+          <span>Service Manager</span>
         {/if}
       </a>
     </nav>
