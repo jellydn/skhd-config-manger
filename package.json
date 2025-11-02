@@ -1,6 +1,6 @@
 {
   "name": "keybinder",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A modern, intuitive macOS app for managing skhd keyboard shortcuts",
   "type": "module",
   "scripts": {
