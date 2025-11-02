@@ -169,12 +169,20 @@ impl LogTailer {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|e| format!("Failed to spawn tail process for {}: {}", log_file, e))?;
+            .map_err(|e| {
+                format!(
+                    "Failed to start log monitoring for {}: {}. \
+                     Make sure the skhd service is running and has generated logs. \
+                     The log file may not exist yet if skhd has never been started.",
+                    log_file, e
+                )
+            })?;
 
-        let stdout = process
-            .stdout
-            .take()
-            .ok_or("Failed to capture stdout".to_string())?;
+        let stdout = process.stdout.take().ok_or(
+            "Failed to capture log output stream. \
+             This is an internal error - please report this issue."
+                .to_string(),
+        )?;
 
         // Spawn task to read lines and emit events
         let app_handle = self.app_handle.clone();
@@ -216,18 +224,20 @@ impl LogTailer {
 
         if let Some(mut stream) = handle.take() {
             // Kill the process
-            stream
-                .process
-                .kill()
-                .await
-                .map_err(|e| format!("Failed to kill log stream process: {}", e))?;
+            stream.process.kill().await.map_err(|e| {
+                format!(
+                    "Failed to stop log stream process: {}. \
+                     The process may have already terminated.",
+                    e
+                )
+            })?;
 
             // Abort the task
             stream.task.abort();
 
             Ok(())
         } else {
-            Err("Log stream is not running".to_string())
+            Err("Log stream is not running. Start the stream before attempting to stop it.".to_string())
         }
     }
 

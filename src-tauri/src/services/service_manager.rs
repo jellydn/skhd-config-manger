@@ -28,7 +28,13 @@ impl ServiceManager {
         let output = Command::new("launchctl")
             .arg("list")
             .output()
-            .map_err(|e| format!("Failed to execute launchctl: {}", e))?;
+            .map_err(|e| {
+                format!(
+                    "Failed to execute launchctl command: {}. \
+                     Make sure you're running on macOS and launchctl is available.",
+                    e
+                )
+            })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -69,7 +75,11 @@ impl ServiceManager {
             pid: None,
             last_updated: chrono::Utc::now(),
             config_path: None,
-            error_message: Some("Service not found in launchctl list".to_string()),
+            error_message: Some(
+                "skhd service not found. Install skhd and load the service with: \
+                 brew services start skhd"
+                    .to_string(),
+            ),
         })
     }
 
@@ -81,11 +91,21 @@ impl ServiceManager {
             .arg("unload")
             .arg(&plist_path)
             .output()
-            .map_err(|e| format!("Failed to execute launchctl unload: {}", e))?;
+            .map_err(|e| {
+                format!(
+                    "Failed to execute launchctl unload: {}. \
+                     Check that you have permission to control launchd services.",
+                    e
+                )
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Failed to stop service: {}", stderr));
+            return Err(format!(
+                "Failed to stop skhd service: {}. \
+                 The service may not be loaded or you may lack permissions.",
+                stderr.trim()
+            ));
         }
 
         Ok(())
@@ -99,11 +119,22 @@ impl ServiceManager {
             .arg("load")
             .arg(&plist_path)
             .output()
-            .map_err(|e| format!("Failed to execute launchctl load: {}", e))?;
+            .map_err(|e| {
+                format!(
+                    "Failed to execute launchctl load: {}. \
+                     Check that you have permission to control launchd services.",
+                    e
+                )
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Failed to start service: {}", stderr));
+            return Err(format!(
+                "Failed to start skhd service: {}. \
+                 Check that skhd is installed and the plist file exists at {}.",
+                stderr.trim(),
+                plist_path
+            ));
         }
 
         // Wait for service to start
@@ -113,10 +144,14 @@ impl ServiceManager {
         let status = self.get_status().await?;
         match status.state {
             ServiceState::Running => Ok(()),
-            ServiceState::Error => Err(status
-                .error_message
-                .unwrap_or_else(|| "Service failed to start".to_string())),
-            _ => Err(format!("Service in unexpected state: {:?}", status.state)),
+            ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
+                "Service failed to start. Check your skhd configuration for syntax errors.".to_string()
+            })),
+            _ => Err(format!(
+                "Service in unexpected state: {:?}. Try restarting the service manually with: \
+                 brew services restart skhd",
+                status.state
+            )),
         }
     }
 
@@ -143,8 +178,11 @@ impl ServiceManager {
 
     /// Get the path to the skhd launchd plist file
     fn get_plist_path(&self) -> Result<String, String> {
-        let home = std::env::var("HOME")
-            .map_err(|_| "Failed to get HOME environment variable".to_string())?;
+        let home = std::env::var("HOME").map_err(|_| {
+            "Failed to get HOME environment variable. \
+             This is required to locate the skhd plist file."
+                .to_string()
+        })?;
 
         Ok(format!(
             "{}/Library/LaunchAgents/com.koekeishiya.skhd.plist",
@@ -157,8 +195,11 @@ impl ServiceManager {
         // Read the plist to find StandardErrorPath which usually contains the log
         // In a real implementation, you might want to parse the plist XML
         // For now, use the standard skhd config locations
-        let home = std::env::var("HOME")
-            .map_err(|_| "Failed to get HOME environment variable".to_string())?;
+        let home = std::env::var("HOME").map_err(|_| {
+            "Failed to get HOME environment variable. \
+             This is required to locate the skhd configuration."
+                .to_string()
+        })?;
 
         let config_paths = vec![
             format!("{}/.config/skhd/skhdrc", home),
@@ -171,6 +212,12 @@ impl ServiceManager {
             }
         }
 
-        Err("No active configuration file found".to_string())
+        Err(format!(
+            "No skhd configuration file found in standard locations:\n\
+             - {}/.config/skhd/skhdrc\n\
+             - {}/.skhdrc\n\
+             Create a configuration file in one of these locations.",
+            home, home
+        ))
     }
 }
