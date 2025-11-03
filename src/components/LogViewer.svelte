@@ -25,55 +25,80 @@
   import type { UnlistenFn } from '@tauri-apps/api/event';
 
   // Props
-  export let maxLogs = 1000; // Maximum number of logs to keep in memory
-  export let autoScroll = true; // Auto-scroll to bottom on new logs
-  export let showControls = true; // Show internal controls header (false when controls are external)
+  let {
+    maxLogs = 1000, // Maximum number of logs to keep in memory
+    autoScroll = $bindable(true), // Auto-scroll to bottom on new logs
+    showControls = true, // Show internal controls header (false when controls are external)
+    levelFilter = 'error', // Filter logs by level
+    startIndex = 0, // Pagination start index
+    endIndex = 0, // Pagination end index
+  }: {
+    maxLogs?: number;
+    autoScroll?: boolean;
+    showControls?: boolean;
+    levelFilter?: 'error' | 'info';
+    startIndex?: number;
+    endIndex?: number;
+  } = $props();
 
   // State
-  let logs: LogEntry[] = [];
-  let isStreaming = false;
-  let error: string | null = null;
+  let logs = $state<LogEntry[]>([]);
+  let isStreaming = $state(false);
+  let error = $state<string | null>(null);
   let unlisten: UnlistenFn | null = null;
   let scrollContainer: HTMLDivElement;
-  let sortDescending = true; // Default: newest first
+  let sortDescending = $state(true); // Default: newest first
+  let loadedLogLimit = $state(100); // Track how many logs we've loaded
 
   // Expose state and methods for external control
   export function getIsStreaming() { return isStreaming; }
-  export function getLogsCount() { return logs.length; }
+  export function getLogsCount() { return filteredLogs.length; }
   export function getSortDescending() { return sortDescending; }
+  export function scrollToTop() {
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
+  }
   export { handleStart as startStream };
   export { handleStop as stopStream };
   export { toggleSortOrder };
   export { clearLogs };
 
-  // Virtual scrolling state
-  const itemHeight = 24; // Height of each log entry in pixels
-  const viewportHeight = 600; // Height of visible area
-  let scrollTop = 0;
-  let visibleStart = 0;
-  let visibleEnd = 0;
-
-  // Computed values
-  $: visibleLogs = logs.slice(visibleStart, visibleEnd);
-  $: totalHeight = logs.length * itemHeight;
-  $: offsetY = visibleStart * itemHeight;
-
-  // Calculate visible range based on scroll position
-  function updateVisibleRange() {
-    const start = Math.floor(scrollTop / itemHeight);
-    const viewportItemCount = Math.ceil(viewportHeight / itemHeight);
-    visibleStart = Math.max(0, start - 10); // Buffer above
-    visibleEnd = Math.min(logs.length, start + viewportItemCount + 10); // Buffer below
+  // Load more historical logs
+  export async function loadMoreLogs(additionalLimit = 500) {
+    try {
+      const newLimit = loadedLogLimit + additionalLimit;
+      const recentLogs = await getRecentLogs(newLimit);
+      logs = sortDescending ? recentLogs.reverse() : recentLogs;
+      loadedLogLimit = newLimit;
+    } catch (err) {
+      console.error('Failed to load more logs:', err);
+      throw err;
+    }
   }
+
+  // Filter logs based on level
+  // Simple two-level system: ERROR (from stderr) and INFO (from stdout)
+  let filteredLogs = $derived(logs.filter(log => {
+    if (levelFilter === 'error') {
+      return log.level === 'ERROR';
+    } else { // 'info'
+      return log.level === 'INFO';
+    }
+  }));
+
+  // Paginated logs (if pagination is enabled via startIndex/endIndex)
+  let paginatedLogs = $derived((endIndex > 0) ? filteredLogs.slice(startIndex, endIndex) : filteredLogs);
 
   // Handle scroll events
   function handleScroll(event: Event) {
     const target = event.target as HTMLDivElement;
-    scrollTop = target.scrollTop;
-    updateVisibleRange();
+    const scrollTop = target.scrollTop;
+    const scrollHeight = target.scrollHeight;
+    const clientHeight = target.clientHeight;
 
     // Check if user scrolled away from bottom (disable auto-scroll)
-    const isAtBottom = scrollTop + viewportHeight >= totalHeight - 10;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
     if (!isAtBottom && autoScroll) {
       autoScroll = false;
     }
@@ -82,7 +107,7 @@
   // Scroll to bottom
   function scrollToBottom() {
     if (scrollContainer) {
-      scrollContainer.scrollTop = totalHeight;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
   }
 
@@ -91,7 +116,7 @@
     if (!scrollContainer) return;
 
     const scrollAmount = 100; // pixels per arrow key press
-    const pageAmount = viewportHeight * 0.8; // 80% of viewport
+    const pageAmount = scrollContainer.clientHeight * 0.8; // 80% of viewport
 
     switch (event.key) {
       case 'ArrowDown':
@@ -116,7 +141,7 @@
         break;
       case 'End':
         event.preventDefault();
-        scrollContainer.scrollTop = totalHeight;
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
         break;
     }
   }
@@ -137,15 +162,17 @@
           logs = [...logs, entry];
         }
 
-        updateVisibleRange();
-
         // Auto-scroll to bottom
         if (autoScroll) {
           setTimeout(scrollToBottom, 50);
         }
       });
     } catch (err) {
-      error = String(err);
+      const errorMsg = String(err);
+      // Suppress "already running" errors since we auto-start
+      if (!errorMsg.includes('already running')) {
+        error = errorMsg;
+      }
       isStreaming = false;
     }
   }
@@ -172,13 +199,11 @@
     sortDescending = !sortDescending;
     logs = [...logs].reverse();
     localStorage.setItem('logSortOrder', sortDescending ? 'desc' : 'asc');
-    updateVisibleRange();
   }
 
   // Clear all logs
   function clearLogs() {
     logs = [];
-    updateVisibleRange();
   }
 
   // Initialize
@@ -190,14 +215,17 @@
     }
 
     // Load recent logs from file (historical logs)
+    // Start with 100 logs (50 per file) to keep initial load fast
     try {
-      const recentLogs = await getRecentLogs(100);
+      const recentLogs = await getRecentLogs(loadedLogLimit);
       logs = sortDescending ? recentLogs.reverse() : recentLogs;
-      updateVisibleRange();
     } catch (err) {
       console.error('Failed to load recent logs:', err);
       // Not critical - stream can still work without historical logs
     }
+
+    // Auto-start streaming
+    await handleStart();
   });
 
   // Cleanup
@@ -268,13 +296,12 @@
     </div>
   {/if}
 
-  <!-- Log display area with virtual scrolling -->
+  <!-- Log display area -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     bind:this={scrollContainer}
     class="log-viewer__container"
-    style="height: {viewportHeight}px; overflow-y: auto;"
     on:scroll={handleScroll}
     on:keydown={handleKeydown}
     role="region"
@@ -283,45 +310,42 @@
     aria-label="Service logs output"
     tabindex="0"
   >
-    <div style="height: {totalHeight}px; position: relative;">
-      <div style="transform: translateY({offsetY}px);">
+    {#if paginatedLogs.length === 0}
+      <div class="log-viewer__empty" role="status">
         {#if logs.length === 0}
-          <div class="log-viewer__empty" role="status">
-            {#if isStreaming}
-              <p>Waiting for logs...</p>
-            {:else}
-              <p>No logs available. Start the stream to begin viewing logs.</p>
-            {/if}
-          </div>
+          {#if isStreaming}
+            <p>Waiting for logs...</p>
+          {:else}
+            <p>No logs available. Start the stream to begin viewing logs.</p>
+          {/if}
+        {:else if filteredLogs.length === 0}
+          <p>No {levelFilter === 'error' ? 'error' : 'info'} logs found. Switch to {levelFilter === 'error' ? 'Info' : 'Error'} to see other logs.</p>
         {:else}
-          {#each visibleLogs as log (log.id)}
-            <div class="log-entry" style="height: {itemHeight}px;" role="article" aria-label="{log.level} log entry">
-              <span class="log-entry__timestamp" aria-label="Timestamp">
-                {formatLogTimestamp(log.timestamp)}
-              </span>
-              <span class="log-entry__level {getLogLevelClass(log.level)}" aria-label="Log level">
-                [{log.level}]
-              </span>
-              <span class="log-entry__message" aria-label="Message">
-                {log.message}
-              </span>
-            </div>
-          {/each}
+          <p>No logs on this page.</p>
         {/if}
       </div>
-    </div>
+    {:else}
+      {#each paginatedLogs as log (log.id)}
+        <div class="log-entry" role="article" aria-label="{log.level} log entry">
+          <span class="log-entry__timestamp" aria-label="Timestamp">
+            {formatLogTimestamp(log.timestamp)}
+          </span>
+          <span class="log-entry__level {getLogLevelClass(log.level)}" aria-label="Log level">
+            [{log.level}]
+          </span>
+          <span class="log-entry__message" aria-label="Message">
+            {log.message}
+          </span>
+        </div>
+      {/each}
+    {/if}
   </div>
 
-  <!-- Footer with stats -->
+  <!-- Footer with status only -->
   <div class="log-viewer__footer">
-    <span>Total logs: {logs.length}</span>
-    {#if isStreaming}
-      <span class="log-viewer__status log-viewer__status--active">
-        ● Streaming
-      </span>
-    {:else}
-      <span class="log-viewer__status">○ Stopped</span>
-    {/if}
+    <span class="log-viewer__status log-viewer__status--active">
+      ● Live
+    </span>
   </div>
 </div>
 
@@ -333,6 +357,8 @@
     padding: 0;
     background: transparent;
     border-radius: 0;
+    height: 100%;
+    min-height: 0;
   }
 
   .log-viewer__header {
@@ -372,13 +398,16 @@
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
     color: #d4d4d4;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
   }
 
   .log-viewer__empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    padding: 3rem 1rem;
     color: #888;
   }
 
@@ -389,6 +418,7 @@
     border-bottom: 1px solid #2d2d2d;
     white-space: nowrap;
     overflow: hidden;
+    min-height: 24px;
   }
 
   .log-entry:hover {

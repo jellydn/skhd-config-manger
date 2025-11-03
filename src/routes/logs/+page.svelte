@@ -26,10 +26,13 @@
 
   // Log viewer state that we'll pass down
   let logViewerRef: any = null;
-  let isStreaming = $state(false);
   let logsCount = $state(0);
   let sortDescending = $state(true);
-  let autoScroll = $state(true);
+  let logLevelFilter = $state<'error' | 'info'>('error');
+
+  // Pagination state
+  let currentPage = $state(1);
+  let logsPerPage = 50;
 
   // Lifecycle
   onMount(async () => {
@@ -142,37 +145,66 @@
   }
 
   // Log viewer control functions
-  function handleStartStream() {
-    if (logViewerRef) {
-      logViewerRef.startStream();
-      updateLogState();
-    }
-  }
 
-  function handleStopStream() {
-    if (logViewerRef) {
-      logViewerRef.stopStream();
-      updateLogState();
-    }
-  }
-
-  function handleToggleSort() {
+  function handleSortChange() {
     if (logViewerRef) {
       logViewerRef.toggleSortOrder();
       updateLogState();
     }
   }
 
-  function handleClearLogs() {
-    if (logViewerRef) {
-      logViewerRef.clearLogs();
-      updateLogState();
+  // Pagination controls
+  function handlePrevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      if (logViewerRef) {
+        logViewerRef.scrollToTop();
+      }
     }
   }
 
+  function handleNextPage() {
+    const totalPages = Math.ceil(logsCount / logsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      if (logViewerRef) {
+        logViewerRef.scrollToTop();
+      }
+    }
+  }
+
+  // Load more historical logs
+  let isLoadingMore = $state(false);
+  let hasMoreLogs = $state(true);
+  let previousLogsCount = 0;
+
+  async function handleLoadMore() {
+    if (logViewerRef && !isLoadingMore && hasMoreLogs) {
+      try {
+        isLoadingMore = true;
+        previousLogsCount = logsCount;
+        await logViewerRef.loadMoreLogs(500); // Load 500 more logs
+        updateLogState();
+
+        // Check if we got new logs
+        if (logsCount === previousLogsCount) {
+          hasMoreLogs = false; // No more logs available
+        }
+      } catch (err) {
+        console.error('Failed to load more logs:', err);
+      } finally {
+        isLoadingMore = false;
+      }
+    }
+  }
+
+  // Computed pagination values
+  let totalPages = $derived(Math.ceil(logsCount / logsPerPage));
+  let startIndex = $derived((currentPage - 1) * logsPerPage);
+  let endIndex = $derived(startIndex + logsPerPage);
+
   function updateLogState() {
     if (logViewerRef) {
-      isStreaming = logViewerRef.getIsStreaming();
       logsCount = logViewerRef.getLogsCount();
       sortDescending = logViewerRef.getSortDescending();
     }
@@ -182,6 +214,15 @@
   $effect(() => {
     const interval = setInterval(updateLogState, 500);
     return () => clearInterval(interval);
+  });
+
+  // Reset load more state and pagination when filter changes
+  $effect(() => {
+    // Watch for filter changes
+    logLevelFilter;
+    // Reset hasMoreLogs and go back to page 1 when filter changes
+    hasMoreLogs = true;
+    currentPage = 1;
   });
 </script>
 
@@ -248,81 +289,140 @@
         {/if}
         Reload Service
       </button>
-
-      <!-- Log Viewer Controls -->
-      {#if isStreaming}
-        <button class="toolbar-btn" onclick={handleStopStream} aria-label="Stop log stream">
-          Stop Stream
-        </button>
-      {:else}
-        <button class="toolbar-btn toolbar-btn-primary" onclick={handleStartStream} aria-label="Start log stream">
-          Start Stream
-        </button>
-      {/if}
-
-      <button class="toolbar-btn" onclick={handleToggleSort} aria-label="Toggle sort order">
-        {sortDescending ? '↑ Oldest First' : '↓ Newest First'}
-      </button>
-
-      <button class="toolbar-btn" onclick={handleClearLogs} disabled={logsCount === 0} aria-label="Clear all logs">
-        Clear Logs
-      </button>
-
-      <label class="toolbar-checkbox">
-        <input type="checkbox" bind:checked={autoScroll} />
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-          {#if autoScroll}
-            <path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/>
-          {:else}
-            <rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-          {/if}
-        </svg>
-        Auto-scroll
-      </label>
     </div>
   </header>
 
   <main class="logs-page__content">
-    <!-- Active Configuration Display -->
-    {#if loadedConfigPath || activeConfigPath}
-      <div class="config-path-display" role="status" aria-label="Configuration status">
-        {#if loadedConfigPath && loadedConfigPath !== activeConfigPath}
-          <!-- Show loaded config (not yet applied to service) -->
-          <span class="config-path-label">Loaded Config:</span>
-          <code class="config-path-value config-path-pending" aria-label="Pending configuration path">{loadedConfigPath}</code>
-          <span class="config-path-hint" aria-live="polite">(Click "Reload Service" to apply)</span>
-        {:else}
-          <!-- Show active service config -->
-          <span class="config-path-label">Active Config:</span>
-          <code class="config-path-value" aria-label="Active configuration path">{activeConfigPath}</code>
+    <!-- Log Viewer Controls Panel -->
+    <div class="log-controls-panel">
+      <div class="log-controls-left">
+        <div class="log-header-group">
+          <h2>Service Logs</h2>
+          <!-- Active Config inline -->
+          {#if activeConfigPath}
+            <span class="config-path-inline">
+              <span class="config-label">Config:</span>
+              <code class="config-value">{activeConfigPath}</code>
+            </span>
+          {/if}
+        </div>
+        <!-- Import Feedback inline -->
+        {#if importFeedback}
+          <div class="import-feedback-inline import-feedback-{importFeedback.type}">
+            {#if importFeedback.type === 'success'}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            {:else}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            {/if}
+            <span>{importFeedback.message}</span>
+          </div>
         {/if}
       </div>
-    {/if}
+      <div class="log-controls-actions">
+        <!-- Log Level Filter (Compact Toggle) -->
+        <div class="filter-group">
+          <button
+            class="filter-btn {logLevelFilter === 'error' ? 'filter-btn-active' : ''}"
+            onclick={() => logLevelFilter = 'error'}
+            aria-label="Show error logs only"
+            aria-pressed={logLevelFilter === 'error'}
+          >
+            Error
+          </button>
+          <button
+            class="filter-btn {logLevelFilter === 'info' ? 'filter-btn-active' : ''}"
+            onclick={() => logLevelFilter = 'info'}
+            aria-label="Show info logs only"
+            aria-pressed={logLevelFilter === 'info'}
+          >
+            Info
+          </button>
+        </div>
 
-    <!-- Import Feedback -->
-    {#if importFeedback}
-      <div
-        class="import-feedback import-feedback-{importFeedback.type}"
-        role={importFeedback.type === 'error' ? 'alert' : 'status'}
-        aria-live={importFeedback.type === 'error' ? 'assertive' : 'polite'}
-        aria-atomic="true"
-      >
-        {#if importFeedback.type === 'success'}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        {:else}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        {/if}
-        <span>{importFeedback.message}</span>
+        <!-- Sort Order Dropdown -->
+        <select
+          class="log-control-select"
+          bind:value={sortDescending}
+          onchange={handleSortChange}
+          aria-label="Sort order"
+        >
+          <option value={true}>Newest First</option>
+          <option value={false}>Oldest First</option>
+        </select>
+
+        <!-- Pagination and Count Group -->
+        <div class="pagination-group">
+          <span class="log-count">
+            {logsCount} {logLevelFilter === 'error' ? 'error' : 'info'} logs
+          </span>
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              onclick={handlePrevPage}
+              disabled={currentPage === 1}
+              aria-label="Previous page"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <span class="pagination-info">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <button
+              class="pagination-btn"
+              onclick={handleNextPage}
+              disabled={currentPage >= totalPages || totalPages === 0}
+              aria-label="Next page"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <LogViewer
+      bind:this={logViewerRef}
+      maxLogs={1000}
+      levelFilter={logLevelFilter}
+      {startIndex}
+      {endIndex}
+      showControls={false}
+    />
+
+    <!-- Load More at bottom (only show on last page) -->
+    {#if currentPage === totalPages && hasMoreLogs && totalPages > 0}
+      <div class="load-more-bottom">
+        <button
+          class="load-more-bottom-btn"
+          onclick={handleLoadMore}
+          disabled={isLoadingMore}
+          aria-label="Load more historical logs"
+        >
+          {#if isLoadingMore}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            Loading more logs...
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12h18M3 12l6-6M3 12l6 6"></path>
+              <path d="M21 12l-6-6M21 12l-6 6"></path>
+            </svg>
+            Load More (500 logs)
+          {/if}
+        </button>
       </div>
     {/if}
-
-    <LogViewer bind:this={logViewerRef} maxLogs={1000} bind:autoScroll showControls={false} />
   </main>
 </div>
 
@@ -515,6 +615,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    min-height: 0;
   }
 
   /* Active Configuration Display */
@@ -596,5 +697,351 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Log Controls Panel */
+  .log-controls-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: #252525;
+    border: 1px solid #2d2d2d;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .log-controls-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .log-header-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .log-controls-left h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+  }
+
+  .config-path-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .config-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+  }
+
+  .config-value {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 10px;
+  }
+
+  .import-feedback-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .import-feedback-inline.import-feedback-success {
+    background: rgba(48, 209, 88, 0.15);
+    border: 1px solid rgba(48, 209, 88, 0.3);
+    color: #30d158;
+  }
+
+  .import-feedback-inline.import-feedback-error {
+    background: rgba(255, 59, 48, 0.15);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+  }
+
+  .import-feedback-inline svg {
+    flex-shrink: 0;
+  }
+
+  .log-controls-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .log-control-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .log-control-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .log-control-btn:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .log-control-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .log-control-btn svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .log-control-btn:hover:not(:disabled) svg {
+    opacity: 1;
+  }
+
+  .log-control-btn-primary {
+    background: #0a84ff;
+    border-color: #0a84ff;
+    color: #ffffff;
+  }
+
+  .log-control-btn-primary:hover:not(:disabled) {
+    background: #0071e3;
+    border-color: #0071e3;
+  }
+
+  .log-control-btn-stop {
+    background: rgba(255, 59, 48, 0.15);
+    border-color: rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+  }
+
+  .log-control-btn-stop:hover:not(:disabled) {
+    background: rgba(255, 59, 48, 0.25);
+    border-color: rgba(255, 59, 48, 0.4);
+  }
+
+  .log-control-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .log-control-checkbox:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .log-control-checkbox input[type="checkbox"] {
+    appearance: none;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .log-control-checkbox svg {
+    flex-shrink: 0;
+    color: #0a84ff;
+  }
+
+  /* Sort Order Dropdown */
+  .log-control-select {
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    appearance: none;
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.8)' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 12px;
+  }
+
+  .log-control-select:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .log-control-select:focus {
+    outline: none;
+    border-color: #0a84ff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .log-control-select option {
+    background: #2a2a2a;
+    color: #ffffff;
+  }
+
+  /* Log Level Filter */
+  .filter-group {
+    display: flex;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .filter-btn {
+    padding: 5px 10px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-btn:last-child {
+    border-right: none;
+  }
+
+  .filter-btn:hover:not(.filter-btn-active) {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  .filter-btn-active {
+    background: #0a84ff;
+    color: #ffffff;
+  }
+
+  /* Pagination Controls */
+  .pagination-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 0 4px;
+  }
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .pagination-btn svg {
+    flex-shrink: 0;
+  }
+
+  .pagination-info {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .pagination-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .log-count {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* Load More at Bottom */
+  .load-more-bottom {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .load-more-bottom-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .load-more-bottom-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .load-more-bottom-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .load-more-bottom-btn svg {
+    flex-shrink: 0;
   }
 </style>

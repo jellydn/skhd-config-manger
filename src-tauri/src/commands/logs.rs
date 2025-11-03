@@ -249,14 +249,14 @@ pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, Stri
 
     // Parse stdout lines (INFO logs)
     for line in stdout_lines {
-        if let Some(entry) = parse_log_line(&line) {
+        if let Some(entry) = parse_log_line(&line, false) {
             log_entries.push(entry);
         }
     }
 
     // Parse stderr lines (ERROR logs)
     for line in stderr_lines {
-        if let Some(entry) = parse_log_line(&line) {
+        if let Some(entry) = parse_log_line(&line, true) {
             log_entries.push(entry);
         }
     }

@@ -15,82 +15,41 @@ use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
-/// Detect log level from message content using heuristics
-///
-/// skhd doesn't output structured log levels, so we infer severity from keywords.
-///
-/// # Arguments
-/// * `message` - Log message text
-///
-/// # Returns
-/// * `LogLevel` - Inferred severity level
-fn detect_log_level(message: &str) -> LogLevel {
-    let lower = message.to_lowercase();
-
-    // WARN patterns checked first (more specific): deprecations, warnings, skipped
-    // These indicate issues but not critical failures
-    if lower.contains("warn")
-        || lower.contains("deprecated")
-        || lower.contains("skipped")
-        || lower.contains("ignored")
-    {
-        return LogLevel::Warn;
-    }
-
-    // ERROR patterns: failures, aborts, unable to, unknown commands
-    // Critical failures that prevent operations from completing
-    if lower.contains("error")
-        || lower.contains("fail")
-        || lower.contains("abort")
-        || lower.contains("unable to")
-        || lower.contains("unknown command")
-        || lower.contains("invalid")
-        || lower.contains("cannot")
-        || lower.contains("refused")
-        || lower.contains("not found")
-        || lower.contains("denied")
-    {
-        return LogLevel::Error;
-    }
-
-    // DEBUG patterns: debug, trace, verbose output
-    if lower.contains("debug") || lower.contains("trace") || lower.contains("verbose") {
-        return LogLevel::Debug;
-    }
-
-    // Default to INFO for normal operational messages
-    LogLevel::Info
-}
-
 /// Parse a single log line into a structured LogEntry
 ///
 /// skhd logs are plain text without timestamps or explicit log levels.
-/// This parser:
-/// - Uses current timestamp for each log entry
-/// - Infers log level from message content using heuristics
-/// - Handles multi-line logs (fish shell output, stack traces, etc.)
+/// The log level is determined by which file the log came from:
+/// - stderr file (/tmp/skhd_*.err.log) -> ERROR level
+/// - stdout file (/tmp/skhd_*.out.log) -> INFO level
 ///
 /// # Arguments
 /// * `line` - Raw log line string from skhd service
+/// * `is_error` - True if from stderr file, false if from stdout file
 ///
 /// # Returns
-/// * `Some(LogEntry)` - Successfully parsed log entry (never None)
+/// * `Some(LogEntry)` - Successfully parsed log entry
 ///
 /// # Examples
 /// ```ignore
 /// let line = "skhd: unable to find application named 'Visual Studio Code'";
-/// let entry = parse_log_line(line);
+/// let entry = parse_log_line(line, true); // from stderr = ERROR
 /// assert!(entry.is_some());
 /// assert_eq!(entry.unwrap().level, LogLevel::Error);
 /// ```
-pub fn parse_log_line(line: &str) -> Option<LogEntry> {
+pub fn parse_log_line(line: &str, is_error: bool) -> Option<LogEntry> {
     // Skip empty lines
     if line.trim().is_empty() {
         return None;
     }
 
     let timestamp = chrono::Utc::now();
-    let level = detect_log_level(line);
+    // Simple source-based level assignment:
+    // stderr file -> ERROR, stdout file -> INFO
+    let level = if is_error {
+        LogLevel::Error
+    } else {
+        LogLevel::Info
+    };
 
     Some(LogEntry::new(
         timestamp,
@@ -243,8 +202,8 @@ impl LogTailer {
             let mut lines = reader.lines();
 
             while let Ok(Some(line)) = lines.next_line().await {
-                // Parse log line
-                if let Some(entry) = parse_log_line(&line) {
+                // Parse log line from stdout (INFO level)
+                if let Some(entry) = parse_log_line(&line, false) {
                     // Emit event to frontend
                     let _ = app_handle_stdout.emit("log-entry", &entry);
                 }
@@ -258,8 +217,8 @@ impl LogTailer {
             let mut lines = reader.lines();
 
             while let Ok(Some(line)) = lines.next_line().await {
-                // Parse log line
-                if let Some(entry) = parse_log_line(&line) {
+                // Parse log line from stderr (ERROR level)
+                if let Some(entry) = parse_log_line(&line, true) {
                     // Emit event to frontend
                     let _ = app_handle_stderr.emit("log-entry", &entry);
                 }
@@ -338,80 +297,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_detect_log_level_error_patterns() {
-        assert_eq!(
-            detect_log_level("skhd: unable to find application named 'Visual Studio Code'"),
-            LogLevel::Error
-        );
-        assert_eq!(
-            detect_log_level("fish: Unknown command: yabai"),
-            LogLevel::Error
-        );
-        assert_eq!(
-            detect_log_level("skhd: must be run with accessibility access! abort.."),
-            LogLevel::Error
-        );
-        assert_eq!(
-            detect_log_level("error: configuration file not found"),
-            LogLevel::Error
-        );
-        assert_eq!(
-            detect_log_level("failed to load config"),
-            LogLevel::Error
-        );
-        assert_eq!(
-            detect_log_level("invalid hotkey syntax"),
-            LogLevel::Error
-        );
-    }
-
-    #[test]
-    fn test_detect_log_level_warn_patterns() {
-        assert_eq!(
-            detect_log_level("warning: deprecated configuration option"),
-            LogLevel::Warn
-        );
-        assert_eq!(
-            detect_log_level("skipped invalid entry"),
-            LogLevel::Warn
-        );
-        assert_eq!(
-            detect_log_level("ignored duplicate keybinding"),
-            LogLevel::Warn
-        );
-    }
-
-    #[test]
-    fn test_detect_log_level_debug_patterns() {
-        assert_eq!(
-            detect_log_level("debug: processing hotkey cmd+shift+a"),
-            LogLevel::Debug
-        );
-        assert_eq!(
-            detect_log_level("trace: event received"),
-            LogLevel::Debug
-        );
-    }
-
-    #[test]
-    fn test_detect_log_level_info_default() {
-        assert_eq!(
-            detect_log_level("skhd: configuration loaded successfully"),
-            LogLevel::Info
-        );
-        assert_eq!(
-            detect_log_level("yabai -m window --space next"),
-            LogLevel::Info
-        );
-        assert_eq!(detect_log_level("^~~~^"), LogLevel::Info);
-    }
-
-    #[test]
-    fn test_parse_log_line_plain_text() {
+    fn test_parse_log_line_from_stderr() {
         let line = "skhd: unable to find application named 'Zed'";
-        let entry = parse_log_line(line).expect("Should parse plain text log");
+        let entry = parse_log_line(line, true).expect("Should parse stderr log");
 
-        assert_eq!(entry.level, LogLevel::Error); // Detected from "unable to"
+        assert_eq!(entry.level, LogLevel::Error); // stderr = ERROR
+        assert_eq!(entry.message, line);
+        assert_eq!(entry.raw, line);
+    }
+
+    #[test]
+    fn test_parse_log_line_from_stdout() {
+        let line = "yabai -m window --space next";
+        let entry = parse_log_line(line, false).expect("Should parse stdout log");
+
+        assert_eq!(entry.level, LogLevel::Info); // stdout = INFO
         assert_eq!(entry.message, line);
         assert_eq!(entry.raw, line);
     }
@@ -419,7 +319,7 @@ mod tests {
     #[test]
     fn test_parse_log_line_empty() {
         let line = "";
-        let entry = parse_log_line(line);
+        let entry = parse_log_line(line, true);
 
         assert!(entry.is_none(), "Empty lines should return None");
     }
@@ -427,7 +327,7 @@ mod tests {
     #[test]
     fn test_parse_log_line_whitespace_only() {
         let line = "   \t\n   ";
-        let entry = parse_log_line(line);
+        let entry = parse_log_line(line, false);
 
         assert!(
             entry.is_none(),

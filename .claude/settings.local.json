@@ -67,7 +67,8 @@
       "Bash(log show:*)",
       "Bash(bun test:*)",
       "Bash(bun run test:*)",
-      "Bash(bun run build:*)"
+      "Bash(bun run build:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []
