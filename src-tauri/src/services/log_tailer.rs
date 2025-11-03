@@ -7,69 +7,97 @@
 /// - Event emission for new log entries to the frontend
 
 use crate::models::{LogEntry, LogLevel};
-use chrono::NaiveDateTime;
-use regex::Regex;
 use std::process::Stdio;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
-/// Regex pattern for parsing skhd log lines
-/// Format: YYYY-MM-DD HH:MM:SS [LEVEL] message
-static LOG_PATTERN: OnceLock<Regex> = OnceLock::new();
+/// Detect log level from message content using heuristics
+///
+/// skhd doesn't output structured log levels, so we infer severity from keywords.
+///
+/// # Arguments
+/// * `message` - Log message text
+///
+/// # Returns
+/// * `LogLevel` - Inferred severity level
+fn detect_log_level(message: &str) -> LogLevel {
+    let lower = message.to_lowercase();
 
-/// Get the compiled regex pattern for log parsing
-fn get_log_pattern() -> &'static Regex {
-    LOG_PATTERN.get_or_init(|| {
-        Regex::new(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(ERROR|WARN|INFO|DEBUG)\] (.+)$")
-            .expect("Valid regex pattern")
-    })
+    // WARN patterns checked first (more specific): deprecations, warnings, skipped
+    // These indicate issues but not critical failures
+    if lower.contains("warn")
+        || lower.contains("deprecated")
+        || lower.contains("skipped")
+        || lower.contains("ignored")
+    {
+        return LogLevel::Warn;
+    }
+
+    // ERROR patterns: failures, aborts, unable to, unknown commands
+    // Critical failures that prevent operations from completing
+    if lower.contains("error")
+        || lower.contains("fail")
+        || lower.contains("abort")
+        || lower.contains("unable to")
+        || lower.contains("unknown command")
+        || lower.contains("invalid")
+        || lower.contains("cannot")
+        || lower.contains("refused")
+        || lower.contains("not found")
+        || lower.contains("denied")
+    {
+        return LogLevel::Error;
+    }
+
+    // DEBUG patterns: debug, trace, verbose output
+    if lower.contains("debug") || lower.contains("trace") || lower.contains("verbose") {
+        return LogLevel::Debug;
+    }
+
+    // Default to INFO for normal operational messages
+    LogLevel::Info
 }
 
 /// Parse a single log line into a structured LogEntry
+///
+/// skhd logs are plain text without timestamps or explicit log levels.
+/// This parser:
+/// - Uses current timestamp for each log entry
+/// - Infers log level from message content using heuristics
+/// - Handles multi-line logs (fish shell output, stack traces, etc.)
 ///
 /// # Arguments
 /// * `line` - Raw log line string from skhd service
 ///
 /// # Returns
-/// * `Some(LogEntry)` - Successfully parsed log entry
-/// * `None` - Line could not be parsed (should use fallback)
+/// * `Some(LogEntry)` - Successfully parsed log entry (never None)
 ///
 /// # Examples
 /// ```ignore
-/// let line = "2025-11-02 10:15:30 [INFO] skhd: configuration loaded";
+/// let line = "skhd: unable to find application named 'Visual Studio Code'";
 /// let entry = parse_log_line(line);
 /// assert!(entry.is_some());
+/// assert_eq!(entry.unwrap().level, LogLevel::Error);
 /// ```
 pub fn parse_log_line(line: &str) -> Option<LogEntry> {
-    let re = get_log_pattern();
-
-    if let Some(caps) = re.captures(line) {
-        let timestamp_str = caps.get(1)?.as_str();
-        let level_str = caps.get(2)?.as_str();
-        let message = caps.get(3)?.as_str();
-
-        // Parse timestamp
-        let timestamp = NaiveDateTime::parse_from_str(timestamp_str, "%Y-%m-%d %H:%M:%S")
-            .ok()?
-            .and_utc();
-
-        // Parse log level
-        let level = LogLevel::from_str(level_str)?;
-
-        Some(LogEntry::new(
-            timestamp,
-            level,
-            message.to_string(),
-            line.to_string(),
-        ))
-    } else {
-        // Return fallback entry for unparseable lines
-        Some(LogEntry::from_raw(line.to_string()))
+    // Skip empty lines
+    if line.trim().is_empty() {
+        return None;
     }
+
+    let timestamp = chrono::Utc::now();
+    let level = detect_log_level(line);
+
+    Some(LogEntry::new(
+        timestamp,
+        level,
+        line.to_string(),
+        line.to_string(),
+    ))
 }
 
 /// Sanitize username to prevent path traversal attacks
@@ -108,10 +136,12 @@ pub struct LogTailer {
     stream_handle: Arc<Mutex<Option<StreamHandle>>>,
 }
 
-/// Internal handle to the running log stream process and task
+/// Internal handle to the running log stream processes and tasks
 struct StreamHandle {
-    process: Child,
-    task: JoinHandle<()>,
+    stdout_process: Child,
+    stdout_task: JoinHandle<()>,
+    stderr_process: Child,
+    stderr_task: JoinHandle<()>,
 }
 
 impl LogTailer {
@@ -147,59 +177,101 @@ impl LogTailer {
 
         // Check if already running
         if handle.is_some() {
-            return Err("Log stream is already running".to_string());
+            return Err("Log stream is already running. Stop the current stream before starting a new one.".to_string());
         }
 
-        // Get current username for log file path
+        // Get current username for log file paths
         let username = std::env::var("USER")
             .or_else(|_| std::env::var("USERNAME"))
             .unwrap_or_else(|_| "unknown".to_string());
 
         // Sanitize username to prevent path traversal attacks
         let sanitized_username = sanitize_username(&username);
-        let log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
+        let stdout_log_file = format!("/tmp/skhd_{}.out.log", sanitized_username);
+        let stderr_log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
 
-        // Spawn tail process to follow skhd log file
-        // skhd writes logs to /tmp/skhd_<username>.err.log
-        let mut process = Command::new("tail")
+        // Spawn tail process for stdout (INFO logs)
+        let mut stdout_process = Command::new("tail")
             .arg("-f")
             .arg("-n")
-            .arg("100") // Start with last 100 lines
-            .arg(&log_file)
+            .arg("50") // Start with last 50 lines from stdout
+            .arg(&stdout_log_file)
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| {
                 format!(
-                    "Failed to start log monitoring for {}: {}. \
-                     Make sure the skhd service is running and has generated logs. \
+                    "Failed to start stdout log monitoring for {}: {}. \
                      The log file may not exist yet if skhd has never been started.",
-                    log_file, e
+                    stdout_log_file, e
                 )
             })?;
 
-        let stdout = process.stdout.take().ok_or(
-            "Failed to capture log output stream. \
+        let stdout_stream = stdout_process.stdout.take().ok_or(
+            "Failed to capture stdout log stream. \
              This is an internal error - please report this issue."
                 .to_string(),
         )?;
 
-        // Spawn task to read lines and emit events
-        let app_handle = self.app_handle.clone();
-        let task = tokio::spawn(async move {
-            let reader = BufReader::new(stdout);
+        // Spawn tail process for stderr (ERROR logs)
+        let mut stderr_process = Command::new("tail")
+            .arg("-f")
+            .arg("-n")
+            .arg("50") // Start with last 50 lines from stderr
+            .arg(&stderr_log_file)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| {
+                format!(
+                    "Failed to start stderr log monitoring for {}: {}. \
+                     Make sure the skhd service is running and has generated logs.",
+                    stderr_log_file, e
+                )
+            })?;
+
+        let stderr_stream = stderr_process.stdout.take().ok_or(
+            "Failed to capture stderr log stream. \
+             This is an internal error - please report this issue."
+                .to_string(),
+        )?;
+
+        // Spawn task to read stdout lines and emit events
+        let app_handle_stdout = self.app_handle.clone();
+        let stdout_task = tokio::spawn(async move {
+            let reader = BufReader::new(stdout_stream);
             let mut lines = reader.lines();
 
             while let Ok(Some(line)) = lines.next_line().await {
                 // Parse log line
                 if let Some(entry) = parse_log_line(&line) {
                     // Emit event to frontend
-                    let _ = app_handle.emit("log-entry", &entry);
+                    let _ = app_handle_stdout.emit("log-entry", &entry);
                 }
             }
         });
 
-        *handle = Some(StreamHandle { process, task });
+        // Spawn task to read stderr lines and emit events
+        let app_handle_stderr = self.app_handle.clone();
+        let stderr_task = tokio::spawn(async move {
+            let reader = BufReader::new(stderr_stream);
+            let mut lines = reader.lines();
+
+            while let Ok(Some(line)) = lines.next_line().await {
+                // Parse log line
+                if let Some(entry) = parse_log_line(&line) {
+                    // Emit event to frontend
+                    let _ = app_handle_stderr.emit("log-entry", &entry);
+                }
+            }
+        });
+
+        *handle = Some(StreamHandle {
+            stdout_process,
+            stdout_task,
+            stderr_process,
+            stderr_task,
+        });
 
         Ok(())
     }
@@ -223,17 +295,27 @@ impl LogTailer {
         let mut handle = self.stream_handle.lock().await;
 
         if let Some(mut stream) = handle.take() {
-            // Kill the process
-            stream.process.kill().await.map_err(|e| {
+            // Kill the stdout process
+            stream.stdout_process.kill().await.map_err(|e| {
                 format!(
-                    "Failed to stop log stream process: {}. \
+                    "Failed to stop stdout log stream process: {}. \
                      The process may have already terminated.",
                     e
                 )
             })?;
 
-            // Abort the task
-            stream.task.abort();
+            // Kill the stderr process
+            stream.stderr_process.kill().await.map_err(|e| {
+                format!(
+                    "Failed to stop stderr log stream process: {}. \
+                     The process may have already terminated.",
+                    e
+                )
+            })?;
+
+            // Abort both tasks
+            stream.stdout_task.abort();
+            stream.stderr_task.abort();
 
             Ok(())
         } else {
@@ -256,35 +338,101 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_valid_log() {
-        let line = "2025-11-02 10:15:30 [INFO] skhd: configuration loaded successfully";
-        let entry = parse_log_line(line).expect("Should parse valid log line");
-
-        assert_eq!(entry.level, LogLevel::Info);
-        assert_eq!(entry.message, "skhd: configuration loaded successfully");
-        assert_eq!(entry.raw, line);
+    fn test_detect_log_level_error_patterns() {
+        assert_eq!(
+            detect_log_level("skhd: unable to find application named 'Visual Studio Code'"),
+            LogLevel::Error
+        );
+        assert_eq!(
+            detect_log_level("fish: Unknown command: yabai"),
+            LogLevel::Error
+        );
+        assert_eq!(
+            detect_log_level("skhd: must be run with accessibility access! abort.."),
+            LogLevel::Error
+        );
+        assert_eq!(
+            detect_log_level("error: configuration file not found"),
+            LogLevel::Error
+        );
+        assert_eq!(
+            detect_log_level("failed to load config"),
+            LogLevel::Error
+        );
+        assert_eq!(
+            detect_log_level("invalid hotkey syntax"),
+            LogLevel::Error
+        );
     }
 
     #[test]
-    fn test_parse_invalid_log_fallback() {
-        let line = "Invalid log line without timestamp";
-        let entry = parse_log_line(line).expect("Should return fallback entry");
+    fn test_detect_log_level_warn_patterns() {
+        assert_eq!(
+            detect_log_level("warning: deprecated configuration option"),
+            LogLevel::Warn
+        );
+        assert_eq!(
+            detect_log_level("skipped invalid entry"),
+            LogLevel::Warn
+        );
+        assert_eq!(
+            detect_log_level("ignored duplicate keybinding"),
+            LogLevel::Warn
+        );
+    }
 
-        // Fallback creates INFO level with raw content
-        assert_eq!(entry.level, LogLevel::Info);
+    #[test]
+    fn test_detect_log_level_debug_patterns() {
+        assert_eq!(
+            detect_log_level("debug: processing hotkey cmd+shift+a"),
+            LogLevel::Debug
+        );
+        assert_eq!(
+            detect_log_level("trace: event received"),
+            LogLevel::Debug
+        );
+    }
+
+    #[test]
+    fn test_detect_log_level_info_default() {
+        assert_eq!(
+            detect_log_level("skhd: configuration loaded successfully"),
+            LogLevel::Info
+        );
+        assert_eq!(
+            detect_log_level("yabai -m window --space next"),
+            LogLevel::Info
+        );
+        assert_eq!(detect_log_level("^~~~^"), LogLevel::Info);
+    }
+
+    #[test]
+    fn test_parse_log_line_plain_text() {
+        let line = "skhd: unable to find application named 'Zed'";
+        let entry = parse_log_line(line).expect("Should parse plain text log");
+
+        assert_eq!(entry.level, LogLevel::Error); // Detected from "unable to"
         assert_eq!(entry.message, line);
         assert_eq!(entry.raw, line);
     }
 
     #[test]
-    fn test_log_pattern_caching() {
-        // First call initializes
-        let pattern1 = get_log_pattern();
-        // Second call returns cached instance
-        let pattern2 = get_log_pattern();
+    fn test_parse_log_line_empty() {
+        let line = "";
+        let entry = parse_log_line(line);
 
-        // Should be the same instance
-        assert!(std::ptr::eq(pattern1, pattern2));
+        assert!(entry.is_none(), "Empty lines should return None");
+    }
+
+    #[test]
+    fn test_parse_log_line_whitespace_only() {
+        let line = "   \t\n   ";
+        let entry = parse_log_line(line);
+
+        assert!(
+            entry.is_none(),
+            "Whitespace-only lines should return None"
+        );
     }
 
     #[test]

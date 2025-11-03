@@ -299,6 +299,26 @@
       </div>
     {/if}
 
+    <!-- Logging Info Box -->
+    <div class="logging-info-box" role="note" aria-label="Logging information">
+      <div class="logging-info-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>About skhd Logging</span>
+      </div>
+      <div class="logging-info-content">
+        <p><strong>skhd logs to two files:</strong></p>
+        <ul>
+          <li><code>/tmp/skhd_[user].out.log</code> - INFO logs (normal operations)</li>
+          <li><code>/tmp/skhd_[user].err.log</code> - ERROR logs (failures, warnings)</li>
+        </ul>
+        <p><strong>To enable verbose logging:</strong> Edit <code>~/Library/LaunchAgents/com.koekeishiya.skhd.plist</code> and add <code>-v</code> flag to ProgramArguments, then reload the service.</p>
+      </div>
+    </div>
+
     <!-- Import Feedback -->
     {#if importFeedback}
       <div
@@ -585,6 +605,52 @@
     background: rgba(255, 59, 48, 0.15);
     border: 1px solid rgba(255, 59, 48, 0.3);
     color: #ff3b30;
+  }
+
+  /* Logging Info Box */
+  .logging-info-box {
+    background: rgba(10, 132, 255, 0.1);
+    border: 1px solid rgba(10, 132, 255, 0.3);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .logging-info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #0a84ff;
+    margin-bottom: 10px;
+  }
+
+  .logging-info-content {
+    color: #b0b0b0;
+    line-height: 1.5;
+  }
+
+  .logging-info-content p {
+    margin: 8px 0;
+  }
+
+  .logging-info-content ul {
+    margin: 8px 0 8px 20px;
+    padding: 0;
+  }
+
+  .logging-info-content li {
+    margin: 4px 0;
+  }
+
+  .logging-info-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 12px;
+    color: #e0e0e0;
   }
 
   @keyframes slideIn {

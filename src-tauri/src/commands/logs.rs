@@ -174,39 +174,20 @@ pub async fn is_log_stream_running(state: State<'_, LogStreamState>) -> Result<b
 ///   console.error('Failed to load logs:', error);
 /// }
 /// ```
-#[tauri::command]
-pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, String> {
-    let limit = limit.unwrap_or(100);
-
-    // Get current username for log file path
-    let username = std::env::var("USER")
-        .or_else(|_| std::env::var("USERNAME"))
-        .unwrap_or_else(|_| "unknown".to_string());
-
-    // Sanitize username (same logic as LogTailer)
-    let sanitized_username = username
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
-        .collect::<String>();
-
-    let log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
-
+/// Read recent logs from a specific log file
+async fn read_log_file(file_path: &str, limit: usize) -> Result<Vec<String>, String> {
     // Check if log file exists
-    if !tokio::fs::metadata(&log_file).await.is_ok() {
-        return Err(format!(
-            "Log file not found: {}. \
-             The skhd service may not have been started yet, or logs may not have been generated. \
-             Start the skhd service to begin generating logs.",
-            log_file
-        ));
+    if !tokio::fs::metadata(file_path).await.is_ok() {
+        // Return empty vec if file doesn't exist (not an error - file may not be created yet)
+        return Ok(Vec::new());
     }
 
     // Open and read the log file
-    let file = File::open(&log_file).await.map_err(|e| {
+    let file = File::open(file_path).await.map_err(|e| {
         format!(
             "Failed to open log file {}: {}. \
              Check that you have permission to read the file.",
-            log_file, e
+            file_path, e
         )
     })?;
 
@@ -227,13 +208,61 @@ pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, Stri
         .rev() // Reverse back to chronological order
         .collect();
 
-    // Parse lines into LogEntry objects
+    Ok(recent_lines)
+}
+
+#[tauri::command]
+pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, String> {
+    let limit = limit.unwrap_or(100);
+    let limit_per_file = limit / 2; // Split between stdout and stderr
+
+    // Get current username for log file paths
+    let username = std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .unwrap_or_else(|_| "unknown".to_string());
+
+    // Sanitize username (same logic as LogTailer)
+    let sanitized_username = username
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
+        .collect::<String>();
+
+    let stdout_log_file = format!("/tmp/skhd_{}.out.log", sanitized_username);
+    let stderr_log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
+
+    // Read from both log files
+    let stdout_lines = read_log_file(&stdout_log_file, limit_per_file).await?;
+    let stderr_lines = read_log_file(&stderr_log_file, limit_per_file).await?;
+
+    // Check if both files are empty
+    if stdout_lines.is_empty() && stderr_lines.is_empty() {
+        return Err(format!(
+            "No log files found: {} and {}. \
+             The skhd service may not have been started yet, or logs may not have been generated. \
+             Start the skhd service to begin generating logs.",
+            stdout_log_file, stderr_log_file
+        ));
+    }
+
+    // Combine and parse lines into LogEntry objects
     let mut log_entries = Vec::new();
-    for line in recent_lines {
+
+    // Parse stdout lines (INFO logs)
+    for line in stdout_lines {
         if let Some(entry) = parse_log_line(&line) {
             log_entries.push(entry);
         }
     }
+
+    // Parse stderr lines (ERROR logs)
+    for line in stderr_lines {
+        if let Some(entry) = parse_log_line(&line) {
+            log_entries.push(entry);
+        }
+    }
+
+    // Sort by timestamp (chronological order)
+    log_entries.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
     Ok(log_entries)
 }
