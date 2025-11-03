@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import type { Snippet } from 'svelte';
+
+  // Props
+  let { children }: { children: Snippet } = $props();
 
   // Current route path
   let currentPath = $derived($page.url.pathname);
@@ -89,7 +93,7 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <slot />
+    {@render children()}
   </main>
 </div>
 
