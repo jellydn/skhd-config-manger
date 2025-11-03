@@ -1,5 +1,5 @@
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::Path;
 
 /// Escapes a shell path by wrapping it in single quotes and escaping any single quotes within
 pub fn escape_shell_path(path: &str) -> String {
@@ -7,7 +7,7 @@ pub fn escape_shell_path(path: &str) -> String {
 }
 
 /// Validates if a file exists and is executable
-pub fn validate_file_executable(path: &PathBuf) -> Result<bool, String> {
+pub fn validate_file_executable(path: &Path) -> Result<bool, String> {
     if !path.exists() {
         return Err(format!("File does not exist: {}", path.display()));
     }
@@ -23,7 +23,7 @@ pub fn validate_file_executable(path: &PathBuf) -> Result<bool, String> {
 }
 
 /// Detects the appropriate interpreter for a script file based on its extension
-pub fn detect_interpreter(path: &PathBuf) -> Option<String> {
+pub fn detect_interpreter(path: &Path) -> Option<String> {
     match path.extension()?.to_str()? {
         "sh" | "bash" => Some("bash".to_string()),
         "zsh" => Some("zsh".to_string()),
@@ -37,6 +37,7 @@ pub fn detect_interpreter(path: &PathBuf) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn test_escape_shell_path() {

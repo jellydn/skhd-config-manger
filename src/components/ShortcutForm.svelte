@@ -2,6 +2,7 @@
   import type { Shortcut, CreateShortcutRequest, ValidationResult } from '../types';
   import { validateShortcut as validateShortcutAPI } from '../services/tauri';
   import ApplicationPicker from './pickers/ApplicationPicker.svelte';
+  import CommandPicker from './pickers/CommandPicker.svelte';
 
   interface Props {
     shortcut?: Shortcut;
@@ -22,6 +23,7 @@
   let validationWarnings = $state<string[]>([]);
   let saving = $state(false);
   let showAppPicker = $state(false);
+  let showCommandPicker = $state(false);
 
   // Helper to compare arrays efficiently without JSON.stringify
   function arraysEqual(a: string[], b: string[]): boolean {
@@ -119,6 +121,15 @@
   function handleAppPickerCancel() {
     showAppPicker = false;
   }
+
+  function handleCommandSelect(selectedCommand: string) {
+    command = selectedCommand;
+    showCommandPicker = false;
+  }
+
+  function handleCommandPickerCancel() {
+    showCommandPicker = false;
+  }
 </script>
 
 <div class="shortcut-form">
@@ -173,14 +184,24 @@
     <div class="form-group">
       <div class="field-header">
         <label for="command-input">Command</label>
-        <button
-          type="button"
-          class="btn-picker"
-          onclick={() => (showAppPicker = true)}
-          title="Browse installed applications"
-        >
-          📱 Browse Applications
-        </button>
+        <div class="picker-buttons">
+          <button
+            type="button"
+            class="btn-picker"
+            onclick={() => (showCommandPicker = true)}
+            title="Browse command templates"
+          >
+            📋 Templates
+          </button>
+          <button
+            type="button"
+            class="btn-picker"
+            onclick={() => (showAppPicker = true)}
+            title="Browse installed applications"
+          >
+            📱 Applications
+          </button>
+        </div>
       </div>
       <textarea
         id="command-input"
@@ -215,6 +236,10 @@
 
 {#if showAppPicker}
   <ApplicationPicker onSelect={handleAppSelect} onCancel={handleAppPickerCancel} />
+{/if}
+
+{#if showCommandPicker}
+  <CommandPicker onSelect={handleCommandSelect} onCancel={handleCommandPickerCancel} />
 {/if}
 
 <style>
@@ -351,6 +376,11 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 0.5rem;
+  }
+
+  .picker-buttons {
+    display: flex;
+    gap: 0.5rem;
   }
 
   .btn-picker {

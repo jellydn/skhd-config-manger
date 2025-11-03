@@ -1,7 +1,7 @@
 use crate::models::application::Application;
 use plist::Value;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Discovers all installed macOS applications from standard directories
 pub fn discover_applications() -> Result<Vec<Application>, String> {
@@ -37,7 +37,7 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
 }
 
 /// Parses a macOS .app bundle to extract application metadata
-pub fn parse_app_bundle(app_path: &PathBuf) -> Result<Application, String> {
+pub fn parse_app_bundle(app_path: &Path) -> Result<Application, String> {
     let info_plist_path = app_path.join("Contents/Info.plist");
     let plist: Value = Value::from_file(&info_plist_path)
         .map_err(|e| format!("Failed to parse Info.plist: {}", e))?;
