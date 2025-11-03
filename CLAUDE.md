@@ -7,7 +7,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-02
 - YAML (GitHub Actions workflows), Rust 1.75+, TypeScript 5+, macOS 11+ + GitHub Actions (tauri-apps/tauri-action), Tauri CLI v2, cargo, bun, clippy, existing test suite (004-ci-cd-design)
 - N/A (CI/CD infrastructure, assets stored in git) (004-ci-cd-design)
 - Rust 1.75+ (backend), TypeScript 5+ (frontend) + Tauri v2, tokio (async runtime), chrono (timestamps), Svelte 5 (UI framework) (005-command-test)
-- Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2, tokio (async runtime), notify (file watching), chrono (timestamps), existing skhd parser (006-service-log-reload)
+- Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2, tokio (async runtime), chrono (timestamps), existing skhd parser (006-service-log-reload)
 - File-based (skhd logs from system, no database required) (006-service-log-reload)
 
 - Rust 1.75+ (backend), TypeScript 5+ (frontend), Svelte 5 (UI framework) + Tauri v2, rfd (Rust file dialogs), existing skhd parser (002-config-import-export)

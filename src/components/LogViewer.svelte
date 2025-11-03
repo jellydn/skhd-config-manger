@@ -245,7 +245,7 @@
       {#if isStreaming}
         <button
           class="btn btn--secondary"
-          on:click={handleStop}
+          onclick={handleStop}
           aria-label="Stop log stream"
         >
           Stop Stream
@@ -253,7 +253,7 @@
       {:else}
         <button
           class="btn btn--primary"
-          on:click={handleStart}
+          onclick={handleStart}
           aria-label="Start log stream"
         >
           Start Stream
@@ -263,7 +263,7 @@
       <!-- Sort order toggle -->
       <button
         class="btn btn--secondary"
-        on:click={toggleSortOrder}
+        onclick={toggleSortOrder}
         aria-label="Toggle sort order"
       >
         {sortDescending ? '↓ Newest First' : '↑ Oldest First'}
@@ -272,7 +272,7 @@
       <!-- Clear logs button -->
       <button
         class="btn btn--secondary"
-        on:click={clearLogs}
+        onclick={clearLogs}
         disabled={logs.length === 0}
         aria-label="Clear all logs"
       >
@@ -302,8 +302,8 @@
   <div
     bind:this={scrollContainer}
     class="log-viewer__container"
-    on:scroll={handleScroll}
-    on:keydown={handleKeydown}
+    onscroll={handleScroll}
+    onkeydown={handleKeydown}
     role="region"
     aria-live="polite"
     aria-atomic="false"
@@ -436,23 +436,23 @@
   }
 
   /* Log level colors optimized for dark background */
-  .log-entry__level :global(.log-level-error) {
+  .log-entry__level:global(.log-level-error) {
     color: #f48771;
   }
 
-  .log-entry__level :global(.log-level-warn) {
+  .log-entry__level:global(.log-level-warn) {
     color: #dcdcaa;
   }
 
-  .log-entry__level :global(.log-level-info) {
+  .log-entry__level:global(.log-level-info) {
     color: #4fc1ff;
   }
 
-  .log-entry__level :global(.log-level-debug) {
+  .log-entry__level:global(.log-level-debug) {
     color: #b5b5b5;
   }
 
-  .log-entry__level :global(.log-level-default) {
+  .log-entry__level:global(.log-level-default) {
     color: #d4d4d4;
   }
 

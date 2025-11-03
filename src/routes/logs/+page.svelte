@@ -584,13 +584,6 @@
     color: #ffffff;
   }
 
-  .toolbar-checkbox input[type="checkbox"] {
-    appearance: none;
-    width: 0;
-    height: 0;
-    position: absolute;
-  }
-
   .toolbar-checkbox svg {
     flex-shrink: 0;
     color: #0a84ff;
@@ -864,13 +857,6 @@
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.12);
     color: #ffffff;
-  }
-
-  .log-control-checkbox input[type="checkbox"] {
-    appearance: none;
-    width: 0;
-    height: 0;
-    position: absolute;
   }
 
   .log-control-checkbox svg {

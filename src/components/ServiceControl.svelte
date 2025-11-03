@@ -20,6 +20,7 @@
   let error = $state<string | null>(null);
   let success = $state<string | null>(null);
   let statusPollInterval: number | null = null;
+  let reloadTimeouts: number[] = [];
   let failureCount = 0;
   const MAX_FAILURES = 5;
   const BASE_POLL_INTERVAL = 5000; // 5 seconds
@@ -35,6 +36,11 @@
 
   onDestroy(() => {
     stopPolling();
+    // Clear any pending reload timeouts
+    reloadTimeouts.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId);
+    });
+    reloadTimeouts = [];
   });
 
   // Start status polling with exponential backoff
@@ -113,12 +119,14 @@
       startPolling();
 
       // Reload status after a brief delay
-      setTimeout(loadStatus, 1000);
+      const statusTimeout = window.setTimeout(loadStatus, 1000);
+      reloadTimeouts.push(statusTimeout);
 
       // Clear success message after 5 seconds
-      setTimeout(() => {
+      const successTimeout = window.setTimeout(() => {
         success = null;
       }, 5000);
+      reloadTimeouts.push(successTimeout);
     } catch (err) {
       error = String(err);
       console.error('Failed to reload service:', err);
