@@ -51,7 +51,6 @@
   let loadedLogLimit = $state(100); // Track how many logs we've loaded
 
   // Expose state and methods for external control
-  export function getIsStreaming() { return isStreaming; }
   export function getLogsCount() { return filteredLogs.length; }
   export function getSortDescending() { return sortDescending; }
   export function scrollToTop() {
@@ -59,10 +58,7 @@
       scrollContainer.scrollTop = 0;
     }
   }
-  export { handleStart as startStream };
-  export { handleStop as stopStream };
   export { toggleSortOrder };
-  export { clearLogs };
 
   // Load more historical logs
   export async function loadMoreLogs(additionalLimit = 500) {
@@ -147,7 +143,6 @@
   }
 
   // Start log streaming
-  // svelte-ignore non_reactive_update
   async function handleStart() {
     try {
       error = null;
@@ -179,7 +174,6 @@
   }
 
   // Stop log streaming
-  // svelte-ignore non_reactive_update
   async function handleStop() {
     try {
       error = null;
@@ -205,7 +199,6 @@
   }
 
   // Clear all logs
-  // svelte-ignore non_reactive_update
   function clearLogs() {
     logs = [];
   }
