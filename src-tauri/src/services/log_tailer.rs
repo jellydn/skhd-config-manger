@@ -5,7 +5,6 @@
 /// - Streaming log data in real-time using macOS `log stream`
 /// - Managing the lifecycle of log streaming (start/stop)
 /// - Event emission for new log entries to the frontend
-
 use crate::models::{LogEntry, LogLevel};
 use std::process::Stdio;
 use std::sync::Arc;

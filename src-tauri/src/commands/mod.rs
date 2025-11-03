@@ -1,5 +1,6 @@
-pub mod backups;
 /// Tauri command modules
+pub mod applications;
+pub mod backups;
 pub mod config;
 pub mod logs;
 pub mod service;
@@ -8,6 +9,7 @@ pub mod testing;
 pub mod validation;
 
 // Re-export commands for easy access
+pub use applications::get_installed_applications;
 pub use backups::{create_backup, list_backups, restore_backup};
 pub use config::{detect_active_config, export_config, import_config, load_config, reload_config, save_config};
 pub use logs::{is_log_stream_running, start_log_stream, stop_log_stream};

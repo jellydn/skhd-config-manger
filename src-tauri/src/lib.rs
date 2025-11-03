@@ -19,6 +19,7 @@ pub fn run() {
         .manage(LogStreamState::default())
         .manage(ServiceManager::new())
         .invoke_handler(tauri::generate_handler![
+            commands::applications::get_installed_applications,
             commands::config::detect_active_config,
             commands::config::load_config,
             commands::config::save_config,

@@ -8,7 +8,6 @@
 ///
 /// Events emitted:
 /// - `log-entry`: Emitted for each new log entry (payload: LogEntry)
-
 use crate::models::LogEntry;
 use crate::services::{log_tailer::parse_log_line, LogTailer};
 use std::sync::Arc;
@@ -177,7 +176,7 @@ pub async fn is_log_stream_running(state: State<'_, LogStreamState>) -> Result<b
 /// Read recent logs from a specific log file
 async fn read_log_file(file_path: &str, limit: usize) -> Result<Vec<String>, String> {
     // Check if log file exists
-    if !tokio::fs::metadata(file_path).await.is_ok() {
+    if tokio::fs::metadata(file_path).await.is_err() {
         // Return empty vec if file doesn't exist (not an error - file may not be created yet)
         return Ok(Vec::new());
     }

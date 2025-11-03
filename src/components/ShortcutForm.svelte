@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Shortcut, CreateShortcutRequest, ValidationResult } from '../types';
   import { validateShortcut as validateShortcutAPI } from '../services/tauri';
+  import ApplicationPicker from './pickers/ApplicationPicker.svelte';
 
   interface Props {
     shortcut?: Shortcut;
@@ -20,6 +21,7 @@
   let validationErrors = $state<string[]>([]);
   let validationWarnings = $state<string[]>([]);
   let saving = $state(false);
+  let showAppPicker = $state(false);
 
   // Helper to compare arrays efficiently without JSON.stringify
   function arraysEqual(a: string[], b: string[]): boolean {
@@ -108,6 +110,15 @@
       key = keyMap[keyName] || keyName;
     }
   }
+
+  function handleAppSelect(selectedCommand: string) {
+    command = selectedCommand;
+    showAppPicker = false;
+  }
+
+  function handleAppPickerCancel() {
+    showAppPicker = false;
+  }
 </script>
 
 <div class="shortcut-form">
@@ -160,7 +171,17 @@
     </div>
 
     <div class="form-group">
-      <label for="command-input">Command</label>
+      <div class="field-header">
+        <label for="command-input">Command</label>
+        <button
+          type="button"
+          class="btn-picker"
+          onclick={() => (showAppPicker = true)}
+          title="Browse installed applications"
+        >
+          📱 Browse Applications
+        </button>
+      </div>
       <textarea
         id="command-input"
         bind:value={command}
@@ -191,6 +212,10 @@
     </div>
   </form>
 </div>
+
+{#if showAppPicker}
+  <ApplicationPicker onSelect={handleAppSelect} onCancel={handleAppPickerCancel} />
+{/if}
 
 <style>
   .shortcut-form {
@@ -321,6 +346,30 @@
     font-size: 0.75rem;
   }
 
+  .field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-picker {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #d2d2d7;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #007aff;
+  }
+
+  .btn-picker:hover {
+    background: #f5f5f7;
+    border-color: #007aff;
+  }
+
   .form-actions {
     display: flex;
     gap: 1rem;
@@ -402,6 +451,16 @@
 
     small {
       color: #999;
+    }
+
+    .btn-picker {
+      background: #1e1e1e;
+      border-color: #4a4a4a;
+    }
+
+    .btn-picker:hover {
+      background: #3a3a3a;
+      border-color: #007aff;
     }
   }
 </style>

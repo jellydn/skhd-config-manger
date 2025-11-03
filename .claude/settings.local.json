@@ -70,7 +70,12 @@
       "Bash(bun run build:*)",
       "Bash(lsof:*)",
       "WebFetch(domain:svelte.dev)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(sed:*)",
+      "Bash(if [ -d \"/Users/huynhdung/src/tries/2025-11-01-skhd-gui/specs/007-hotkey-command-picker/checklists\" ])",
+      "Bash(then find /Users/huynhdung/src/tries/2025-11-01-skhd-gui/specs/007-hotkey-command-picker/checklists -name \"*.md\" -type f)",
+      "Bash(else echo \"no-checklists\")",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": []
