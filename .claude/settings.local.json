@@ -61,7 +61,16 @@
       "Bash(convert:*)",
       "Bash(./scripts/generate-icons.sh:*)",
       "Bash(git revert:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(launchctl list:*)",
+      "Bash(timeout 5 log stream:*)",
+      "Bash(log show:*)",
+      "Bash(bun test:*)",
+      "Bash(bun run test:*)",
+      "Bash(bun run build:*)",
+      "Bash(lsof:*)",
+      "WebFetch(domain:svelte.dev)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

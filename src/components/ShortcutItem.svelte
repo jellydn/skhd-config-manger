@@ -128,22 +128,23 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #2d2d2d;
     border-radius: 8px;
-    background: white;
+    background: #252525;
     margin-bottom: 0.5rem;
-    transition: box-shadow 0.2s;
+    transition: all 0.2s;
   }
 
   .shortcut-main {
     display: grid;
-    grid-template-columns: 280px 1fr 240px;
+    grid-template-columns: minmax(180px, 240px) 1fr minmax(180px, 200px);
     gap: 1rem;
     align-items: start;
   }
 
   .shortcut-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #2a2a2a;
+    border-color: #3a3a3a;
   }
 
   .shortcut-keys {
@@ -156,17 +157,17 @@
   }
 
   .modifiers {
-    color: #666;
+    color: #999;
     font-weight: 500;
   }
 
   .key {
-    background: #f5f5f5;
+    background: #1c1c1c;
     padding: 0.25rem 0.75rem;
     border-radius: 4px;
-    border: 1px solid #ddd;
+    border: 1px solid #3a3a3a;
     font-weight: 600;
-    color: #333;
+    color: #f5f5f7;
   }
 
   .shortcut-command {
@@ -175,19 +176,19 @@
   }
 
   .shortcut-command code {
-    background: #f8f8f8;
+    background: #1c1c1c;
     padding: 0.5rem;
     border-radius: 4px;
     display: block;
-    color: #2c3e50;
+    color: #d4d4d4;
   }
 
   .shortcut-comment {
     font-size: 0.875rem;
-    color: #666;
+    color: #888;
     font-style: italic;
     padding-left: 0.5rem;
-    border-left: 3px solid #e0e0e0;
+    border-left: 3px solid #3a3a3a;
   }
 
   .shortcut-actions {

@@ -1,0 +1,10 @@
+2025-11-02 10:15:30 [INFO] skhd: configuration loaded successfully from /Users/test/.config/skhd/skhdrc
+2025-11-02 10:15:31 [DEBUG] skhd: parsing keybindings
+2025-11-02 10:15:31 [DEBUG] skhd: registered 45 keybindings
+2025-11-02 10:16:00 [INFO] skhd: hotkey activated: cmd + shift - return
+2025-11-02 10:16:01 [ERROR] skhd: failed to execute command: command not found
+2025-11-02 10:16:05 [WARN] skhd: duplicate keybinding detected: cmd + t
+2025-11-02 10:17:00 [INFO] skhd: reloading configuration
+2025-11-02 10:17:01 [ERROR] skhd: parse error at line 42: invalid syntax
+Invalid log line without timestamp
+2025-11-02 10:17:05 [INFO] skhd: configuration reload complete
