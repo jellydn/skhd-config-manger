@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
-import type { LogEntry, LogLevel } from '../../types';
+import { describe, it } from 'vitest';
 
 /**
  * Unit tests for LogViewer component
@@ -13,22 +11,6 @@ import type { LogEntry, LogLevel } from '../../types';
  * - Empty state handling
  * - Timestamp formatting (ISO 8601 → human-readable)
  */
-
-// Mock log entries for testing
-const createMockLog = (level: LogLevel, message: string, timestamp: string): LogEntry => ({
-  id: `log-${Date.now()}-${Math.random()}`,
-  timestamp,
-  level,
-  message,
-  raw: `${timestamp} [${level}] ${message}`,
-});
-
-const mockLogs: LogEntry[] = [
-  createMockLog('INFO', 'skhd: configuration loaded successfully', '2025-11-02T10:15:30Z'),
-  createMockLog('DEBUG', 'skhd: parsing keybindings', '2025-11-02T10:15:31Z'),
-  createMockLog('ERROR', 'skhd: failed to execute command', '2025-11-02T10:16:01Z'),
-  createMockLog('WARN', 'skhd: duplicate keybinding detected', '2025-11-02T10:16:05Z'),
-];
 
 describe('LogViewer Component', () => {
   // Note: These tests are marked as .todo() since they are placeholder tests
