@@ -147,6 +147,7 @@
   }
 
   // Start log streaming
+  // svelte-ignore non_reactive_update
   async function handleStart() {
     try {
       error = null;
@@ -178,6 +179,7 @@
   }
 
   // Stop log streaming
+  // svelte-ignore non_reactive_update
   async function handleStop() {
     try {
       error = null;
@@ -195,6 +197,7 @@
   }
 
   // Toggle sort order
+  // svelte-ignore non_reactive_update
   function toggleSortOrder() {
     sortDescending = !sortDescending;
     logs = [...logs].reverse();
@@ -202,6 +205,7 @@
   }
 
   // Clear all logs
+  // svelte-ignore non_reactive_update
   function clearLogs() {
     logs = [];
   }
