@@ -68,7 +68,9 @@
       "Bash(bun test:*)",
       "Bash(bun run test:*)",
       "Bash(bun run build:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "WebFetch(domain:svelte.dev)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

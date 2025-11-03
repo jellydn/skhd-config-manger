@@ -45,10 +45,13 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 
 ### Service Manager
 
-- **Real-time Log Viewer**: Live streaming of skhd service logs with automatic updates
+- **Real-time Log Viewer**: Live streaming of skhd service logs with automatic updates using `tail -f`
 - **Historical Logs**: Load up to 100 recent logs from before the app opened
+- **Progressive Loading**: Infinite scroll support to load older logs on demand
+- **Dual Log Sources**: Monitors both stdout (INFO) and stderr (ERROR) streams
+- **Level Filtering**: Toggle between ERROR and INFO log views with pagination support
 - **Virtual Scrolling**: Smooth performance with thousands of logs (1000+ entries)
-- **Color-Coded Levels**: Visual distinction for ERROR (red), WARN (yellow), INFO (blue), DEBUG (gray)
+- **Color-Coded Levels**: Visual distinction for ERROR (red) and INFO (blue) messages
 - **Service Status**: Real-time monitoring of skhd service state and PID
 - **Service Reload**: One-click service restart to apply configuration changes
 - **Configuration Import**: Import external configs with visual pending state before reload
@@ -56,6 +59,8 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Sort Options**: Toggle between newest-first and oldest-first log display
 - **Clear Logs**: Remove all logs from viewer with one click
 - **Accessibility**: Full ARIA support for screen readers and keyboard navigation
+- **Circuit Breaker**: Automatic polling pause after repeated failures to prevent resource exhaustion
+- **Memory Management**: Proper cleanup of timeouts and event listeners to prevent memory leaks
 
 ### User Experience
 
@@ -184,29 +189,42 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 
 #### Viewing Logs
 
-1. **Navigate to Service Manager** via the navigation menu
-2. **Start Log Stream** - Click to begin real-time log monitoring
-3. **Historical Logs** - Automatically loads the last 100 logs on page load
-4. **Color-Coded Levels**:
-   - 🔴 ERROR: Critical issues requiring attention
-   - 🟡 WARN: Warnings and potential problems
-   - 🔵 INFO: General information messages
-   - ⚪ DEBUG: Detailed debugging information
+1. **Navigate to Service Manager** via the sidebar navigation
+2. **Automatic Streaming** - Log stream starts automatically on page load
+3. **Historical Logs** - Automatically loads the last 100 recent logs
+4. **Progressive Loading** - Scroll to load more historical logs (500 at a time)
+5. **Level Filtering**:
+   - **ERROR Tab**: Shows only stderr messages (critical issues)
+   - **INFO Tab**: Shows stdout messages (general information)
+   - Each tab has independent pagination and filtering
+6. **Color-Coded Levels**:
+   - 🔴 ERROR: Red text for critical issues
+   - 🔵 INFO: Blue text for general information
 
 #### Log Controls
 
+- **Level Tabs**: Switch between ERROR and INFO log views
+- **Pagination**: Navigate through logs 50 entries at a time
 - **Sort Order**: Toggle between newest-first (↓) and oldest-first (↑)
 - **Auto-scroll**: Enable/disable automatic scrolling to new logs
-- **Clear Logs**: Remove all logs from the viewer
-- **Stop/Start Stream**: Pause or resume log streaming
+- **Load More**: Button to fetch older historical logs (500 more entries)
+- **Keyboard Navigation**: Arrow keys, Page Up/Down, Home/End for scrolling
 
 #### Service Management
 
-1. **Monitor Status**: View real-time service state (Running, Stopped, Error) and PID
+1. **Monitor Status**:
+   - View real-time service state (Running, Stopped, Starting, Stopping, Reloading, Error)
+   - See current PID when service is running
+   - Status indicator with color coding (green = running, red = error, orange = transitioning)
+   - Automatic status polling every 5 seconds with exponential backoff on failures
+   - Circuit breaker pauses polling after 5 consecutive failures
+
 2. **Reload Service**:
    - Click **Reload Service** to restart skhd with current configuration
+   - Shows "Reloading..." spinner during the operation
    - Service automatically reloads and displays new PID
    - Check logs for reload confirmation messages
+   - Success/error notifications with auto-dismiss after 5 seconds
 
 #### Configuration Import Workflow
 
@@ -223,6 +241,17 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 - **Status Announcements**: Service state changes announced automatically
 
 ## Development Workflow
+
+### Tech Stack
+
+- **Frontend**: Svelte 5 (with Runes mode for reactive state management)
+- **Backend**: Rust 1.75+ with Tauri v2 framework
+- **Build Tool**: Vite 5 with SvelteKit for frontend bundling
+- **Package Manager**: Bun (or npm/pnpm as alternatives)
+- **Testing**: Vitest for unit tests, cargo test for Rust backend
+- **Linting**: ESLint + TypeScript + cargo clippy
+
+**Note on Svelte 5**: This project fully embraces Svelte 5's runes mode (`$state`, `$derived`, `$props`, `$effect`) for cleaner, more explicit reactivity. All components use modern syntax including `{@render children()}` instead of slots and `onclick={}` instead of `on:click={}`.
 
 ### CI/CD Pipeline
 
