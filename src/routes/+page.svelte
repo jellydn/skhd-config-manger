@@ -870,51 +870,17 @@
       color: #f5f5f7;
     }
 
-    .app-header {
-      background: #2a2a2a;
-      border-bottom-color: #3a3a3a;
-    }
-
     h1 {
       color: #f5f5f7;
     }
 
-    .btn-home {
-      background: #3a3a3a;
-      border-color: #4a4a4a;
-      color: #f5f5f7;
-    }
-
-    .btn-home:hover:not(:disabled) {
-      background: #4a4a4a;
-    }
-
-    .loading-state p,
-    .error-message {
+    .loading-state p {
       color: #999;
     }
 
     .spinner {
       border-color: #3a3a3a;
       border-top-color: #007aff;
-    }
-
-    .error-help {
-      background: #2a2a2a;
-      border-color: #4a4a4a;
-    }
-
-    .error-help h3 {
-      color: #f5f5f7;
-    }
-
-    .error-help li {
-      color: #aaa;
-    }
-
-    .error-help code {
-      background: #3a3a3a;
-      color: #e0e0e0;
     }
   }
 

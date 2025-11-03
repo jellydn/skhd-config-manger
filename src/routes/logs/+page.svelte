@@ -191,7 +191,7 @@
 
 <div class="logs-page">
   <!-- Toolbar -->
-  <header class="toolbar" role="banner">
+  <header class="toolbar">
     <div class="toolbar-left">
       <h1>Service Manager</h1>
       {#if status}
@@ -282,7 +282,7 @@
     </div>
   </header>
 
-  <main class="logs-page__content" role="main">
+  <main class="logs-page__content">
     <!-- Active Configuration Display -->
     {#if loadedConfigPath || activeConfigPath}
       <div class="config-path-display" role="status" aria-label="Configuration status">

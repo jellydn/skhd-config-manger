@@ -86,6 +86,41 @@
     }
   }
 
+  // Handle keyboard navigation
+  function handleKeydown(event: KeyboardEvent) {
+    if (!scrollContainer) return;
+
+    const scrollAmount = 100; // pixels per arrow key press
+    const pageAmount = viewportHeight * 0.8; // 80% of viewport
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        scrollContainer.scrollTop += scrollAmount;
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        scrollContainer.scrollTop -= scrollAmount;
+        break;
+      case 'PageDown':
+        event.preventDefault();
+        scrollContainer.scrollTop += pageAmount;
+        break;
+      case 'PageUp':
+        event.preventDefault();
+        scrollContainer.scrollTop -= pageAmount;
+        break;
+      case 'Home':
+        event.preventDefault();
+        scrollContainer.scrollTop = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        scrollContainer.scrollTop = totalHeight;
+        break;
+    }
+  }
+
   // Start log streaming
   async function handleStart() {
     try {
@@ -234,12 +269,15 @@
   {/if}
 
   <!-- Log display area with virtual scrolling -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     bind:this={scrollContainer}
     class="log-viewer__container"
     style="height: {viewportHeight}px; overflow-y: auto;"
     on:scroll={handleScroll}
-    role="log"
+    on:keydown={handleKeydown}
+    role="region"
     aria-live="polite"
     aria-atomic="false"
     aria-label="Service logs output"

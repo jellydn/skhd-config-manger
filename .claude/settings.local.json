@@ -65,7 +65,9 @@
       "Bash(launchctl list:*)",
       "Bash(timeout 5 log stream:*)",
       "Bash(log show:*)",
-      "Bash(bun test:*)"
+      "Bash(bun test:*)",
+      "Bash(bun run test:*)",
+      "Bash(bun run build:*)"
     ],
     "deny": [],
     "ask": []
