@@ -312,10 +312,11 @@
       <div class="logging-info-content">
         <p><strong>skhd logs to two files:</strong></p>
         <ul>
-          <li><code>/tmp/skhd_[user].out.log</code> - stdout (minimal output)</li>
+          <li><code>/tmp/skhd_[user].out.log</code> - stdout (INFO logs when verbose enabled)</li>
           <li><code>/tmp/skhd_[user].err.log</code> - stderr (errors, command output)</li>
         </ul>
-        <p><strong>Note:</strong> Most skhd activity logs to stderr, so you'll primarily see error messages and command failures here. This is normal skhd behavior.</p>
+        <p><strong>To enable verbose logging:</strong> Edit <code>~/Library/LaunchAgents/com.koekeishiya.skhd.plist</code> and add <code>-V</code> (capital V) flag to ProgramArguments, then reload the service.</p>
+        <p><em>Note: Use <code>-V</code> not <code>-v</code> (lowercase prints version and exits)</em></p>
       </div>
     </div>
 
