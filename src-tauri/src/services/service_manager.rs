@@ -166,11 +166,27 @@ impl ServiceManager {
         // either at the end of this function or during error propagation
         let _lock = self.reload_lock.lock().await;
 
-        // Stop the service
-        self.stop_service().await?;
+        // Use skhd --reload (-r) to signal running instance to reload config
+        // This is faster and less disruptive than stop/start
+        let output = Command::new("skhd")
+            .arg("--reload")
+            .output()
+            .map_err(|e| {
+                format!(
+                    "Failed to execute skhd --reload: {}. \
+                     Make sure skhd is installed and available in PATH.",
+                    e
+                )
+            })?;
 
-        // Start the service
-        self.start_service().await?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!(
+                "Failed to reload skhd service: {}. \
+                 The service may not be running. Try starting it first.",
+                stderr.trim()
+            ));
+        }
 
         // Lock is automatically released here when _lock goes out of scope
         Ok(())
