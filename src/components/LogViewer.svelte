@@ -481,16 +481,28 @@
   .btn {
     padding: 0.5rem 1rem;
     border: 1px solid var(--color-button-secondary-border);
-    border-radius: 0.25rem;
+    border-radius: 6px;
     background: var(--color-button-secondary-bg);
     color: var(--color-button-secondary-text);
     cursor: pointer;
     font-size: 0.875rem;
-    transition: all 0.2s;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn:hover:not(:disabled) {
     background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn:disabled {
