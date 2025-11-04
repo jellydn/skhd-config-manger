@@ -37,7 +37,7 @@ pub async fn generate_command_from_template(
             .clone();
 
         // Validate parameter value
-        validate_parameter_value(&param, &value)?;
+        validate_parameter_value(param, &value)?;
 
         // Replace {param_name} with value
         let placeholder = format!("{{{}}}", param.name);
