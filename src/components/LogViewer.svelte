@@ -453,23 +453,6 @@
     color: var(--color-text);
   }
 
-  .log-viewer__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-  }
-
-  .log-viewer__status {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .log-viewer__status--active {
-    color: var(--color-text);
-  }
 
   .btn {
     padding: 0.5rem 1rem;
