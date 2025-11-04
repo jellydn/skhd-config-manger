@@ -102,11 +102,6 @@
                     {#if app.version}
                       <span class="app-version">v{app.version}</span>
                     {/if}
-                    {#if filteredApps.filter((a) => a.display_name === app.display_name).length > 1}
-                      <span class="app-path" title={app.app_path}>
-                        {app.app_path.split('/').slice(-2, -1)[0]}
-                      </span>
-                    {/if}
                   </div>
                 </div>
               </button>

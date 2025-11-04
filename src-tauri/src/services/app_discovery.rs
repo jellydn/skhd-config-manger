@@ -41,11 +41,41 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
         }
     }
 
-    // Remove duplicates by bundle_id + app_path
-    apps.sort_by(|a, b| a.display_name.cmp(&b.display_name));
-    apps.dedup_by(|a, b| a.bundle_id == b.bundle_id && a.app_path == b.app_path);
+    // Remove duplicates by display name, preferring installations from standard locations
+    // Priority order: /Applications > /System/Applications > Homebrew > Setapp > ~/Applications
+    apps.sort_by(|a, b| {
+        // First sort by display name
+        match a.display_name.cmp(&b.display_name) {
+            std::cmp::Ordering::Equal => {
+                // For same name, sort by location priority (lower = higher priority)
+                get_location_priority(&a.app_path).cmp(&get_location_priority(&b.app_path))
+            }
+            other => other,
+        }
+    });
+
+    // Keep only the first (highest priority) app for each display name
+    apps.dedup_by(|a, b| a.display_name == b.display_name);
 
     Ok(apps)
+}
+
+/// Determines the priority of an application based on its installation location
+/// Lower values = higher priority
+fn get_location_priority(app_path: &str) -> u8 {
+    if app_path.starts_with("/Applications/") && !app_path.contains("Setapp") {
+        1 // Highest priority: /Applications
+    } else if app_path.starts_with("/System/Applications/") {
+        2 // System applications
+    } else if app_path.contains("/Caskroom/") {
+        3 // Homebrew applications
+    } else if app_path.contains("/Setapp/") {
+        4 // Setapp applications
+    } else if app_path.contains("/Applications") {
+        5 // User Applications (~/Applications)
+    } else {
+        6 // Other locations
+    }
 }
 
 /// Scans a Homebrew Caskroom app directory for .app bundles
@@ -163,5 +193,84 @@ mod tests {
         let nonexistent_path = PathBuf::from("/nonexistent/app.app");
         let result = parse_app_bundle(&nonexistent_path);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_location_priority_order() {
+        // /Applications should have highest priority (lowest number)
+        assert_eq!(get_location_priority("/Applications/Safari.app"), 1);
+
+        // /System/Applications should be second
+        assert_eq!(get_location_priority("/System/Applications/Mail.app"), 2);
+
+        // Homebrew should be third
+        assert_eq!(
+            get_location_priority("/opt/homebrew/Caskroom/firefox/latest/Firefox.app"),
+            3
+        );
+
+        // Setapp should be fourth
+        assert_eq!(
+            get_location_priority("/Users/test/Applications/Setapp/Code.app"),
+            4
+        );
+
+        // ~/Applications should be fifth
+        assert_eq!(get_location_priority("/Users/test/Applications/Code.app"), 5);
+
+        // Other locations should be lowest priority
+        assert_eq!(get_location_priority("/opt/custom/app.app"), 6);
+    }
+
+    #[test]
+    fn test_deduplication_by_name_with_priority() {
+        use crate::models::application::Application;
+
+        let mut apps = vec![
+            Application {
+                display_name: "Code - Insiders".to_string(),
+                app_path: "/Users/test/Applications/Code.app".to_string(),
+                bundle_id: "com.microsoft.VSCodeInsiders".to_string(),
+                executable_path: "/Users/test/Applications/Code.app/Contents/MacOS/Electron"
+                    .to_string(),
+                icon_path: None,
+                version: Some("1.103.0".to_string()),
+            },
+            Application {
+                display_name: "Code - Insiders".to_string(),
+                app_path: "/Applications/Code - Insiders.app".to_string(),
+                bundle_id: "com.microsoft.VSCodeInsiders".to_string(),
+                executable_path: "/Applications/Code - Insiders.app/Contents/MacOS/Electron"
+                    .to_string(),
+                icon_path: None,
+                version: Some("1.106.0".to_string()),
+            },
+            Application {
+                display_name: "Code - Insiders".to_string(),
+                app_path: "/opt/homebrew/Caskroom/code-insiders/1.103.0/Code.app".to_string(),
+                bundle_id: "com.microsoft.VSCodeInsiders".to_string(),
+                executable_path:
+                    "/opt/homebrew/Caskroom/code-insiders/1.103.0/Code.app/Contents/MacOS/Electron"
+                        .to_string(),
+                icon_path: None,
+                version: Some("1.103.0".to_string()),
+            },
+        ];
+
+        // Sort and deduplicate using the same logic as discover_applications
+        apps.sort_by(|a, b| match a.display_name.cmp(&b.display_name) {
+            std::cmp::Ordering::Equal => {
+                get_location_priority(&a.app_path).cmp(&get_location_priority(&b.app_path))
+            }
+            other => other,
+        });
+        apps.dedup_by(|a, b| a.display_name == b.display_name);
+
+        // Should only have 1 app left
+        assert_eq!(apps.len(), 1);
+
+        // Should be the /Applications version (highest priority)
+        assert_eq!(apps[0].app_path, "/Applications/Code - Insiders.app");
+        assert_eq!(apps[0].version, Some("1.106.0".to_string()));
     }
 }

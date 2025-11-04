@@ -9,7 +9,7 @@
 
 ### Session 2025-11-03
 
-- Q: How does the system handle applications with duplicate names (e.g., multiple versions of the same app)? → A: Show all duplicate applications with distinguishing information (path or version) appended to the name
+- Q: How does the system handle applications with duplicate names (e.g., multiple versions of the same app)? → A: Show only one instance per application name, preferring the most recent version from standard locations (/Applications over Homebrew over ~/Applications)
 - Q: What happens when searching returns no results? → A: Display a simple "No results found" message with no further action
 - Q: What happens when a selected application or script is moved or deleted after the hotkey is created? → A: Allow hotkey to remain configured but mark it as inactive/disabled if the target is missing, with visual indicator in the list
 - Q: What happens when the user's system has hundreds of applications installed (performance of application list)? → A: Load all applications at once and rely on browser/system performance (may cause lag with 500+ apps)
@@ -88,7 +88,7 @@ Users want access to pre-configured command templates for common tasks (volume c
 ### Edge Cases
 
 - The system loads all installed applications at once in the picker, relying on browser/system performance (may experience lag with 500+ applications)
-- When multiple applications have the same name, the system displays all versions with distinguishing information (file path or version number) appended to help users select the correct one
+- When multiple applications have the same name, the system shows only one instance, preferring installations in this order: /Applications → /System/Applications → Homebrew → Setapp → ~/Applications
 - When a configured application or script is moved or deleted, the hotkey remains in the configuration but is marked as inactive/disabled with a visual indicator in the list, preserving the configuration in case the file is restored
 - Commands requiring elevated privileges (sudo) are allowed without special handling or warnings; users are responsible for understanding the implications
 - When search returns no results in any picker (applications, commands, templates), the system displays a "No results found" message
