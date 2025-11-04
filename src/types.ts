@@ -278,3 +278,53 @@ export interface ConfigurationReference {
   /** Whether configuration passes syntax validation */
   valid: boolean;
 }
+
+/**
+ * Represents an installed macOS application
+ */
+export interface Application {
+  display_name: string;
+  app_path: string;
+  bundle_id: string;
+  executable_path: string;
+  icon_path?: string;
+  version?: string;
+}
+
+/**
+ * Represents a command template with parameters
+ */
+export interface CommandTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category_id: string;
+  command_pattern: string;
+  parameters: CommandParameter[];
+  requires_admin?: boolean;
+}
+
+/**
+ * Represents a parameter for a command template
+ */
+export interface CommandParameter {
+  name: string;
+  description: string;
+  data_type: 'string' | 'integer' | 'float' | 'boolean' | 'enum';
+  default_value: string;
+  validation_regex?: string;
+  min_value?: number;
+  max_value?: number;
+  enum_values?: string[];
+}
+
+/**
+ * Represents a category for organizing command templates
+ */
+export interface CommandCategory {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  display_order?: number;
+}

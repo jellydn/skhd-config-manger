@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// Log level categorization for visual distinction
@@ -15,16 +16,25 @@ pub enum LogLevel {
     Debug,
 }
 
-impl LogLevel {
+impl FromStr for LogLevel {
+    type Err = ();
+
     /// Parse log level from string (case-insensitive)
-    pub fn from_str(s: &str) -> Option<Self> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "ERROR" | "ERR" => Some(LogLevel::Error),
-            "WARN" | "WARNING" => Some(LogLevel::Warn),
-            "INFO" => Some(LogLevel::Info),
-            "DEBUG" | "DBG" => Some(LogLevel::Debug),
-            _ => None,
+            "ERROR" | "ERR" => Ok(LogLevel::Error),
+            "WARN" | "WARNING" => Ok(LogLevel::Warn),
+            "INFO" => Ok(LogLevel::Info),
+            "DEBUG" | "DBG" => Ok(LogLevel::Debug),
+            _ => Err(()),
         }
+    }
+}
+
+impl LogLevel {
+    /// Parse log level from string (case-insensitive) - convenience method returning Option
+    pub fn parse_opt(s: &str) -> Option<Self> {
+        <Self as FromStr>::from_str(s).ok()
     }
 }
 
@@ -77,12 +87,12 @@ mod tests {
 
     #[test]
     fn test_log_level_from_str() {
-        assert_eq!(LogLevel::from_str("ERROR"), Some(LogLevel::Error));
-        assert_eq!(LogLevel::from_str("error"), Some(LogLevel::Error));
-        assert_eq!(LogLevel::from_str("WARN"), Some(LogLevel::Warn));
-        assert_eq!(LogLevel::from_str("INFO"), Some(LogLevel::Info));
-        assert_eq!(LogLevel::from_str("DEBUG"), Some(LogLevel::Debug));
-        assert_eq!(LogLevel::from_str("INVALID"), None);
+        assert_eq!(LogLevel::parse_opt("ERROR"), Some(LogLevel::Error));
+        assert_eq!(LogLevel::parse_opt("error"), Some(LogLevel::Error));
+        assert_eq!(LogLevel::parse_opt("WARN"), Some(LogLevel::Warn));
+        assert_eq!(LogLevel::parse_opt("INFO"), Some(LogLevel::Info));
+        assert_eq!(LogLevel::parse_opt("DEBUG"), Some(LogLevel::Debug));
+        assert_eq!(LogLevel::parse_opt("INVALID"), None);
     }
 
     #[test]

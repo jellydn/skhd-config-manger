@@ -1,0 +1,234 @@
+{
+  "categories": [
+    {
+      "id": "media",
+      "name": "Media Control",
+      "description": "Audio playback and volume controls",
+      "icon": "🔊",
+      "display_order": 1
+    },
+    {
+      "id": "system",
+      "name": "System",
+      "description": "System operations and utilities",
+      "icon": "⚙️",
+      "display_order": 2
+    },
+    {
+      "id": "window",
+      "name": "Window Management",
+      "description": "Window positioning and tiling",
+      "icon": "🪟",
+      "display_order": 3
+    },
+    {
+      "id": "brightness",
+      "name": "Display",
+      "description": "Screen brightness controls",
+      "icon": "💡",
+      "display_order": 4
+    },
+    {
+      "id": "launch",
+      "name": "Quick Launch",
+      "description": "Launch common applications",
+      "icon": "🚀",
+      "display_order": 5
+    }
+  ],
+  "templates": [
+    {
+      "id": "volume-up",
+      "name": "Increase Volume",
+      "description": "Increase system volume by specified amount",
+      "category_id": "media",
+      "command_pattern": "osascript -e 'set volume output volume (output volume of (get volume settings) + {amount})'",
+      "parameters": [
+        {
+          "name": "amount",
+          "description": "Volume increase amount (1-100)",
+          "data_type": "integer",
+          "default_value": "10",
+          "validation_regex": "^([1-9]|[1-9][0-9]|100)$",
+          "min_value": 1,
+          "max_value": 100
+        }
+      ],
+      "requires_admin": false
+    },
+    {
+      "id": "volume-down",
+      "name": "Decrease Volume",
+      "description": "Decrease system volume by specified amount",
+      "category_id": "media",
+      "command_pattern": "osascript -e 'set volume output volume (output volume of (get volume settings) - {amount})'",
+      "parameters": [
+        {
+          "name": "amount",
+          "description": "Volume decrease amount (1-100)",
+          "data_type": "integer",
+          "default_value": "10",
+          "validation_regex": "^([1-9]|[1-9][0-9]|100)$",
+          "min_value": 1,
+          "max_value": 100
+        }
+      ],
+      "requires_admin": false
+    },
+    {
+      "id": "volume-mute",
+      "name": "Toggle Mute",
+      "description": "Mute or unmute system audio",
+      "category_id": "media",
+      "command_pattern": "osascript -e 'set volume output muted (not (output muted of (get volume settings)))'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "screenshot-full",
+      "name": "Screenshot (Full Screen)",
+      "description": "Take screenshot of entire screen and save to Downloads",
+      "category_id": "system",
+      "command_pattern": "screencapture ~/Downloads/screenshot-$(date +%Y%m%d-%H%M%S).png",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "screenshot-area",
+      "name": "Screenshot (Selection)",
+      "description": "Take screenshot of selected area",
+      "category_id": "system",
+      "command_pattern": "screencapture -i ~/Downloads/screenshot-$(date +%Y%m%d-%H%M%S).png",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "screenshot-window",
+      "name": "Screenshot (Window)",
+      "description": "Take screenshot of selected window",
+      "category_id": "system",
+      "command_pattern": "screencapture -w ~/Downloads/screenshot-$(date +%Y%m%d-%H%M%S).png",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "lock-screen",
+      "name": "Lock Screen",
+      "description": "Lock the screen immediately",
+      "category_id": "system",
+      "command_pattern": "pmset displaysleepnow",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "mission-control",
+      "name": "Mission Control",
+      "description": "Open Mission Control (all windows)",
+      "category_id": "system",
+      "command_pattern": "open -a 'Mission Control'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "window-tile-left",
+      "name": "Tile Window Left",
+      "description": "Move and resize active window to left half of screen (requires rectangle or similar)",
+      "category_id": "window",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to tell process \"Rectangle\" to keystroke \"left\" using {control down, option down}'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "window-tile-right",
+      "name": "Tile Window Right",
+      "description": "Move and resize active window to right half of screen (requires rectangle or similar)",
+      "category_id": "window",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to tell process \"Rectangle\" to keystroke \"right\" using {control down, option down}'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "window-maximize",
+      "name": "Maximize Window",
+      "description": "Maximize active window to fill screen",
+      "category_id": "window",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to tell process \"Rectangle\" to keystroke \"return\" using {control down, option down}'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "window-center",
+      "name": "Center Window",
+      "description": "Center active window on screen",
+      "category_id": "window",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to tell process \"Rectangle\" to keystroke \"c\" using {control down, option down}'",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "brightness-up",
+      "name": "Increase Brightness",
+      "description": "Increase display brightness by specified amount",
+      "category_id": "brightness",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to repeat {amount} times\nkey code 144\nend repeat'",
+      "parameters": [
+        {
+          "name": "amount",
+          "description": "Number of brightness increments (1-16)",
+          "data_type": "integer",
+          "default_value": "3",
+          "validation_regex": "^([1-9]|1[0-6])$",
+          "min_value": 1,
+          "max_value": 16
+        }
+      ],
+      "requires_admin": false
+    },
+    {
+      "id": "brightness-down",
+      "name": "Decrease Brightness",
+      "description": "Decrease display brightness by specified amount",
+      "category_id": "brightness",
+      "command_pattern": "osascript -e 'tell application \"System Events\" to repeat {amount} times\nkey code 145\nend repeat'",
+      "parameters": [
+        {
+          "name": "amount",
+          "description": "Number of brightness decrements (1-16)",
+          "data_type": "integer",
+          "default_value": "3",
+          "validation_regex": "^([1-9]|1[0-6])$",
+          "min_value": 1,
+          "max_value": 16
+        }
+      ],
+      "requires_admin": false
+    },
+    {
+      "id": "launch-terminal",
+      "name": "Launch Terminal",
+      "description": "Open Terminal application",
+      "category_id": "launch",
+      "command_pattern": "open -a Terminal",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "launch-finder",
+      "name": "Launch Finder",
+      "description": "Open Finder application",
+      "category_id": "launch",
+      "command_pattern": "open -a Finder",
+      "parameters": [],
+      "requires_admin": false
+    },
+    {
+      "id": "launch-system-prefs",
+      "name": "Open System Settings",
+      "description": "Open System Settings/Preferences",
+      "category_id": "launch",
+      "command_pattern": "open -a 'System Settings'",
+      "parameters": [],
+      "requires_admin": false
+    }
+  ]
+}

@@ -19,6 +19,7 @@ pub fn run() {
         .manage(LogStreamState::default())
         .manage(ServiceManager::new())
         .invoke_handler(tauri::generate_handler![
+            commands::applications::get_installed_applications,
             commands::config::detect_active_config,
             commands::config::load_config,
             commands::config::save_config,
@@ -45,6 +46,13 @@ pub fn run() {
             commands::logs::get_recent_logs,
             commands::service::get_service_status,
             commands::service::reload_service,
+            commands::templates::get_command_templates,
+            commands::templates::get_command_categories,
+            commands::templates::generate_command_from_template,
+            commands::file_picker::open_file_picker,
+            commands::file_picker::check_file_executable,
+            commands::file_picker::escape_path_for_shell,
+            commands::file_picker::detect_script_interpreter,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

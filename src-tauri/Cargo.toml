@@ -28,6 +28,7 @@ rfd = "0.14"
 dirs = "5.0"
 tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util"] }
 regex = "1.10"
+plist = "1.6"
 
 [dev-dependencies]
 mockall = "0.12"
