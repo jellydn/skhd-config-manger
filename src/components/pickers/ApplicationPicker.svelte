@@ -98,9 +98,16 @@
                 <div class="app-icon-placeholder">📱</div>
                 <div class="app-info">
                   <span class="app-name">{app.display_name}</span>
-                  {#if app.version}
-                    <span class="app-version">v{app.version}</span>
-                  {/if}
+                  <div class="app-meta">
+                    {#if app.version}
+                      <span class="app-version">v{app.version}</span>
+                    {/if}
+                    {#if filteredApps.filter((a) => a.display_name === app.display_name).length > 1}
+                      <span class="app-path" title={app.app_path}>
+                        {app.app_path.split('/').slice(-2, -1)[0]}
+                      </span>
+                    {/if}
+                  </div>
                 </div>
               </button>
             </li>
@@ -290,13 +297,6 @@
     background: #e5e7eb;
   }
 
-  .app-icon {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
   .app-icon-placeholder {
     width: 40px;
     height: 40px;
@@ -320,9 +320,21 @@
     font-size: 0.875rem;
   }
 
+  .app-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
   .app-version {
     color: #6b7280;
     font-size: 0.75rem;
+  }
+
+  .app-path {
+    color: #9ca3af;
+    font-size: 0.7rem;
+    font-style: italic;
   }
 
   .modal-footer {
@@ -404,6 +416,10 @@
 
     .app-version {
       color: #9ca3af;
+    }
+
+    .app-path {
+      color: #6b7280;
     }
 
     .modal-footer {
