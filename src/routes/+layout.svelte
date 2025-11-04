@@ -15,6 +15,9 @@
   // Sidebar collapse state
   let isCollapsed = $state(false);
 
+  // Store unsubscribe function for cleanup
+  let unsubscribeThemeListener: (() => void) | null = $state(null);
+
   // Load collapse state from localStorage and detect system theme on mount
   onMount(async () => {
     // Load sidebar collapse state
@@ -31,6 +34,39 @@
       // Fallback to dark mode on error (maintains current default behavior)
       console.error('Failed to detect system theme, defaulting to dark mode:', error);
       applyTheme('dark');
+    }
+
+    // Start theme monitoring for real-time updates
+    try {
+      await startThemeMonitor();
+      console.log('Theme monitoring started');
+    } catch (error) {
+      console.error('Failed to start theme monitoring:', error);
+    }
+
+    // Listen for theme change events
+    try {
+      const unsubscribe = await listen<{ theme: string; timestamp: string }>('theme-changed', (event) => {
+        const newTheme = event.payload.theme as 'light' | 'dark';
+        console.log('System theme changed to:', newTheme);
+        applyTheme(newTheme);
+      });
+      unsubscribeThemeListener = unsubscribe;
+    } catch (error) {
+      console.error('Failed to set up theme change listener:', error);
+    }
+  });
+
+  // Cleanup on destroy
+  onDestroy(async () => {
+    if (unsubscribeThemeListener) {
+      unsubscribeThemeListener();
+    }
+    try {
+      await stopThemeMonitor();
+      console.log('Theme monitoring stopped');
+    } catch (error) {
+      console.error('Failed to stop theme monitoring:', error);
     }
   });
 
