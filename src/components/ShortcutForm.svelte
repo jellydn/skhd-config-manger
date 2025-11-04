@@ -193,34 +193,32 @@
     </div>
 
     <div class="form-group">
-      <div class="field-header">
-        <label for="command-input">Command</label>
-        <div class="picker-buttons">
-          <button
-            type="button"
-            class="btn-picker"
-            onclick={() => (showCommandPicker = true)}
-            title="Browse command templates"
-          >
-            📋 Templates
-          </button>
-          <button
-            type="button"
-            class="btn-picker"
-            onclick={() => (showAppPicker = true)}
-            title="Browse installed applications"
-          >
-            📱 Applications
-          </button>
-          <button
-            type="button"
-            class="btn-picker"
-            onclick={() => (showFilePicker = true)}
-            title="Browse files and scripts"
-          >
-            📁 Files
-          </button>
-        </div>
+      <label for="command-input">Command</label>
+      <div class="picker-buttons">
+        <button
+          type="button"
+          class="btn-picker"
+          onclick={() => (showCommandPicker = true)}
+          title="Browse command templates"
+        >
+          📋 Templates
+        </button>
+        <button
+          type="button"
+          class="btn-picker"
+          onclick={() => (showAppPicker = true)}
+          title="Browse installed applications"
+        >
+          📱 Applications
+        </button>
+        <button
+          type="button"
+          class="btn-picker"
+          onclick={() => (showFilePicker = true)}
+          title="Browse files and scripts"
+        >
+          📁 Files
+        </button>
       </div>
       <textarea
         id="command-input"
@@ -267,19 +265,20 @@
 
 <style>
   .shortcut-form {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 600px;
+    background: var(--color-form-bg);
+    border-radius: 16px;
+    padding: 2.5rem;
+    max-width: 650px;
     margin: 0 auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px var(--color-form-shadow);
   }
 
   h3 {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.5rem;
+    margin: 0 0 2rem 0;
+    font-size: 1.75rem;
     font-weight: 600;
     color: #1d1d1f;
+    letter-spacing: -0.02em;
   }
 
   .validation-errors,
@@ -310,210 +309,227 @@
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   fieldset {
     border: none;
     padding: 0;
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 2rem 0;
   }
 
   legend {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
     color: #1d1d1f;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     padding: 0;
+    letter-spacing: -0.01em;
   }
 
   label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
     color: #1d1d1f;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    letter-spacing: -0.01em;
   }
 
   .modifier-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.625rem;
     flex-wrap: wrap;
   }
 
   .modifier-btn {
-    padding: 0.5rem 1rem;
-    border: 2px solid #d2d2d7;
-    background: white;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border: 1.5px solid #e5e5e7;
+    background: #fafafa;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     color: #666;
+    letter-spacing: -0.01em;
   }
 
   .modifier-btn:hover {
     border-color: #007aff;
+    background: #f0f7ff;
     color: #007aff;
+    transform: translateY(-1px);
   }
 
   .modifier-btn.active {
     background: #007aff;
     border-color: #007aff;
     color: white;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
   }
 
   input,
   textarea {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d2d2d7;
-    border-radius: 8px;
-    font-size: 1rem;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid var(--color-input-border);
+    border-radius: 10px;
+    font-size: 0.95rem;
     font-family: inherit;
-    transition: border-color 0.2s;
+    transition: all 0.15s ease;
+    background: var(--color-input-bg);
+    box-sizing: border-box;
   }
 
   textarea {
     font-family: 'SF Mono', Monaco, 'Courier New', monospace;
     resize: vertical;
+    line-height: 1.5;
   }
 
   input:focus,
   textarea:focus {
     outline: none;
-    border-color: #007aff;
+    border-color: var(--color-input-focus-border);
+    background: var(--color-input-focus-bg);
+    box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
   }
 
   small {
     display: block;
-    margin-top: 0.25rem;
-    color: #666;
-    font-size: 0.75rem;
-  }
-
-  .field-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    color: #86868b;
+    font-size: 0.8rem;
+    line-height: 1.4;
   }
 
   .picker-buttons {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .btn-picker {
-    padding: 0.375rem 0.75rem;
-    border: 1px solid #d2d2d7;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    padding: 0.5rem 0.875rem;
+    border: 1.5px solid #e5e5e7;
+    background: #fafafa;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     color: #007aff;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    letter-spacing: -0.01em;
   }
 
   .btn-picker:hover {
-    background: #f5f5f7;
+    background: #f0f7ff;
     border-color: #007aff;
+    transform: translateY(-1px);
   }
 
   .form-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     justify-content: flex-end;
-    margin-top: 2rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f0f0;
   }
 
   button[type='submit'],
   .btn-cancel {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     border: none;
+    letter-spacing: -0.01em;
   }
 
   .btn-cancel {
-    background: #f5f5f7;
-    color: #1d1d1f;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border: 1.5px solid var(--color-button-secondary-border);
   }
 
   .btn-cancel:hover:not(:disabled) {
-    background: #e8e8ed;
+    background: var(--color-button-secondary-hover);
+    transform: translateY(-1px);
   }
 
   .btn-save {
-    background: #007aff;
-    color: white;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
   }
 
   .btn-save:hover:not(:disabled) {
-    background: #0051d5;
+    background: var(--color-button-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
   }
 
   button:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+    transform: none !important;
   }
 
   @media (prefers-color-scheme: dark) {
-    .shortcut-form {
-      background: #2a2a2a;
-    }
-
     h3,
     label,
     legend {
       color: #f5f5f7;
     }
 
+    input,
+    textarea {
+      color: #f5f5f7;
+    }
+
     .modifier-btn {
-      background: #1e1e1e;
-      border-color: #4a4a4a;
-      color: #aaa;
+      background: #2a2a2a;
+      border-color: #3a3a3a;
+      color: #9ca3af;
     }
 
     .modifier-btn:hover {
       border-color: #007aff;
+      background: #1a2332;
       color: #007aff;
     }
 
-    input,
-    textarea {
-      background: #1e1e1e;
-      border-color: #4a4a4a;
-      color: #f5f5f7;
-    }
-
-    .btn-cancel {
-      background: #3a3a3a;
-      color: #f5f5f7;
-    }
-
-    .btn-cancel:hover:not(:disabled) {
-      background: #4a4a4a;
+    .modifier-btn.active {
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
     }
 
     small {
-      color: #999;
+      color: #9ca3af;
     }
 
     .btn-picker {
-      background: #1e1e1e;
-      border-color: #4a4a4a;
+      background: #2a2a2a;
+      border-color: #3a3a3a;
     }
 
     .btn-picker:hover {
-      background: #3a3a3a;
+      background: #1a2332;
       border-color: #007aff;
+    }
+
+    .form-actions {
+      border-top-color: #2a2a2a;
     }
   }
 </style>

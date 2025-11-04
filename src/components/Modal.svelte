@@ -46,7 +46,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-modal-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -59,6 +59,27 @@
     max-height: 90vh;
     overflow-y: auto;
     animation: slideIn 0.2s ease-out;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .modal-content::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .modal-content::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+    border-radius: 0;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: 6px;
+    border: 2px solid var(--color-scrollbar-track);
+  }
+
+  .modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover);
   }
 
   @keyframes slideIn {
@@ -72,9 +93,4 @@
     }
   }
 
-  @media (prefers-color-scheme: dark) {
-    .modal-backdrop {
-      background: rgba(0, 0, 0, 0.7);
-    }
-  }
 </style>

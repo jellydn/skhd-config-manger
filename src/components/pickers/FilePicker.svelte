@@ -102,11 +102,13 @@
   <div
     class="modal-backdrop"
     onclick={handleBackdropClick}
+    onkeydown={(e) => e.key === 'Enter' && handleBackdropClick(e as unknown as MouseEvent)}
     role="dialog"
     aria-modal="true"
     aria-label="File Picker Result"
+    tabindex="-1"
   >
-    <div class="modal-dialog" onclick={(e) => e.stopPropagation()}>
+    <div class="modal-dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
       <div class="modal-header">
         <h2>Selected File</h2>
         <button class="close-btn" onclick={onCancel} aria-label="Close">✕</button>
@@ -120,12 +122,12 @@
         {:else}
           <div class="file-details">
             <div class="detail-section">
-              <label>File Path</label>
+              <div class="detail-label">File Path</div>
               <code class="file-path">{selectedPath}</code>
             </div>
 
             <div class="detail-section">
-              <label>Command</label>
+              <div class="detail-label">Command</div>
               <code class="command-preview"
                 >{interpreter ? `${interpreter} ` : ''}{escapedPath}</code
               >
@@ -269,7 +271,7 @@
     gap: 0.5rem;
   }
 
-  .detail-section label {
+  .detail-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: #374151;
@@ -428,7 +430,7 @@
       color: #fca5a5;
     }
 
-    .detail-section label {
+    .detail-label {
       color: #d1d5db;
     }
 

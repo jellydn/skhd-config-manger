@@ -117,11 +117,13 @@
 <div
   class="modal-backdrop"
   onclick={handleBackdropClick}
+  onkeydown={(e) => e.key === 'Enter' && handleBackdropClick(e as unknown as MouseEvent)}
   role="dialog"
   aria-modal="true"
   aria-label="Command Template Picker"
+  tabindex="-1"
 >
-  <div class="modal-dialog" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
     <div class="modal-header">
       <div class="header-left">
         {#if selectedTemplate || selectedCategory}
@@ -213,7 +215,6 @@
           bind:value={searchQuery}
           placeholder="Search templates..."
           class="search-input"
-          autofocus
         />
 
         {#if filteredTemplates().length === 0}
@@ -244,7 +245,6 @@
           bind:value={searchQuery}
           placeholder="Search all templates..."
           class="search-input"
-          autofocus
         />
 
         {#if filteredTemplates().length === 0}
@@ -410,7 +410,26 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
+  }
+
+  .modal-body::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .modal-body::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+    border-radius: 0;
+  }
+
+  .modal-body::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: 6px;
+    border: 2px solid var(--color-scrollbar-track);
+  }
+
+  .modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover);
   }
 
   .search-input {
@@ -420,6 +439,8 @@
     border-radius: 8px;
     font-size: 0.875rem;
     transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
   }
 
   .search-input:focus {

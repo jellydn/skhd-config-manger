@@ -55,11 +55,13 @@
 <div
   class="modal-backdrop"
   onclick={handleBackdropClick}
+  onkeydown={(e) => e.key === 'Enter' && handleBackdropClick(e as unknown as MouseEvent)}
   role="dialog"
   aria-modal="true"
   aria-label="Application Picker"
+  tabindex="-1"
 >
-  <div class="modal-dialog" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
     <div class="modal-header">
       <h2>Select Application</h2>
       <button class="close-btn" onclick={onCancel} aria-label="Close">✕</button>
@@ -71,7 +73,6 @@
         bind:value={searchQuery}
         placeholder="Search applications..."
         class="search-input"
-        autofocus
       />
 
       {#if loading}
@@ -201,7 +202,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
   }
 
   .search-input {
@@ -211,6 +212,8 @@
     border-radius: 8px;
     font-size: 0.875rem;
     transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
   }
 
   .search-input:focus {
@@ -263,6 +266,28 @@
     margin: 0;
     overflow-y: auto;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .app-list::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .app-list::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+    border-radius: 0;
+  }
+
+  .app-list::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: 6px;
+    border: 2px solid var(--color-scrollbar-track);
+  }
+
+  .app-list::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-thumb-hover);
   }
 
   .app-item {
@@ -275,21 +300,22 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 1rem;
     background: none;
-    border: none;
+    border: 1px solid #e5e7eb;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.15s;
+    transition: all 0.15s;
     text-align: left;
   }
 
   .app-button:hover {
-    background: #f3f4f6;
+    background: #f9fafb;
+    border-color: #3b82f6;
   }
 
   .app-button:active {
-    background: #e5e7eb;
+    background: #eff6ff;
   }
 
   .app-icon-placeholder {
@@ -326,11 +352,6 @@
     font-size: 0.75rem;
   }
 
-  .app-path {
-    color: #9ca3af;
-    font-size: 0.7rem;
-    font-style: italic;
-  }
 
   .modal-footer {
     padding: 1rem 1.5rem;
@@ -397,12 +418,17 @@
       border-top-color: #3b82f6;
     }
 
+    .app-button {
+      border-color: #374151;
+    }
+
     .app-button:hover {
-      background: #374151;
+      background: #1f2937;
+      border-color: #3b82f6;
     }
 
     .app-button:active {
-      background: #4b5563;
+      background: #1a2332;
     }
 
     .app-name {
@@ -411,10 +437,6 @@
 
     .app-version {
       color: #9ca3af;
-    }
-
-    .app-path {
-      color: #6b7280;
     }
 
     .modal-footer {
