@@ -5,13 +5,17 @@ use std::path::{Path, PathBuf};
 
 /// Discovers all installed macOS applications from standard directories
 pub fn discover_applications() -> Result<Vec<Application>, String> {
+    let home_dir = std::env::var("HOME").map_err(|_| "Cannot determine home directory")?;
+
     let search_paths = vec![
         PathBuf::from("/Applications"),
-        PathBuf::from(format!(
-            "{}/Applications",
-            std::env::var("HOME").map_err(|_| "Cannot determine home directory")?
-        )),
+        PathBuf::from(format!("{}/Applications", home_dir)),
         PathBuf::from("/System/Applications"),
+        // Homebrew paths (both Intel and Apple Silicon)
+        PathBuf::from("/opt/homebrew/Caskroom"),
+        PathBuf::from("/usr/local/Caskroom"),
+        // Setapp applications
+        PathBuf::from(format!("{}/Applications/Setapp", home_dir)),
     ];
 
     let mut apps = Vec::new();
@@ -20,7 +24,15 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
         if let Ok(entries) = fs::read_dir(&path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
-                if entry_path.extension() == Some(std::ffi::OsStr::new("app")) {
+
+                // Handle Homebrew Caskroom structure: /Caskroom/app-name/version/App.app
+                if path.to_string_lossy().contains("Caskroom") && entry_path.is_dir() {
+                    // Scan subdirectories for .app bundles
+                    if scan_caskroom_directory(&entry_path, &mut apps).is_err() {
+                        // Continue on error - some casks may not have standard structure
+                        continue;
+                    }
+                } else if entry_path.extension() == Some(std::ffi::OsStr::new("app")) {
                     if let Ok(app) = parse_app_bundle(&entry_path) {
                         apps.push(app);
                     }
@@ -34,6 +46,33 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
     apps.dedup_by(|a, b| a.bundle_id == b.bundle_id && a.app_path == b.app_path);
 
     Ok(apps)
+}
+
+/// Scans a Homebrew Caskroom app directory for .app bundles
+/// Homebrew structure: /Caskroom/app-name/version/App.app
+fn scan_caskroom_directory(cask_dir: &Path, apps: &mut Vec<Application>) -> Result<(), String> {
+    // Read version directories
+    if let Ok(version_entries) = fs::read_dir(cask_dir) {
+        for version_entry in version_entries.flatten() {
+            let version_path = version_entry.path();
+            if !version_path.is_dir() {
+                continue;
+            }
+
+            // Scan for .app bundles in this version directory
+            if let Ok(app_entries) = fs::read_dir(&version_path) {
+                for app_entry in app_entries.flatten() {
+                    let app_path = app_entry.path();
+                    if app_path.extension() == Some(std::ffi::OsStr::new("app")) {
+                        if let Ok(app) = parse_app_bundle(&app_path) {
+                            apps.push(app);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Parses a macOS .app bundle to extract application metadata

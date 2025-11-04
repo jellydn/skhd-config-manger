@@ -10,7 +10,24 @@ pub(crate) struct TemplateData {
 /// Load command templates from embedded JSON (internal use only)
 fn load_templates() -> Result<TemplateData, String> {
     let json_data = include_str!("../data/command_templates.json");
-    serde_json::from_str(json_data).map_err(|e| format!("Failed to parse templates: {}", e))
+
+    match serde_json::from_str::<TemplateData>(json_data) {
+        Ok(data) => {
+            // Validate that we have at least some data
+            if data.categories.is_empty() {
+                return Err("Template data contains no categories".to_string());
+            }
+            if data.templates.is_empty() {
+                return Err("Template data contains no templates".to_string());
+            }
+            Ok(data)
+        }
+        Err(e) => {
+            eprintln!("Failed to parse command templates JSON: {}", e);
+            eprintln!("This is likely a bug in the embedded template data");
+            Err(format!("Failed to load command templates: {}. Please report this issue.", e))
+        }
+    }
 }
 
 /// Get all command templates, optionally filtered by category

@@ -1,4 +1,4 @@
-use crate::models::{CommandCategory, CommandParameter, CommandTemplate};
+use crate::models::{CommandCategory, CommandTemplate};
 use crate::services::template_loader;
 
 /// Tauri command to get all command templates, optionally filtered by category
@@ -6,13 +6,21 @@ use crate::services::template_loader;
 pub async fn get_command_templates(
     category_id: Option<String>,
 ) -> Result<Vec<CommandTemplate>, String> {
-    template_loader::get_templates(category_id)
+    template_loader::get_templates(category_id).or_else(|e| {
+        eprintln!("Template loading failed: {}", e);
+        // Return empty list on error to prevent app crash
+        Ok(Vec::new())
+    })
 }
 
 /// Tauri command to get all command categories
 #[tauri::command]
 pub async fn get_command_categories() -> Result<Vec<CommandCategory>, String> {
-    template_loader::get_categories()
+    template_loader::get_categories().or_else(|e| {
+        eprintln!("Category loading failed: {}", e);
+        // Return empty list on error to prevent app crash
+        Ok(Vec::new())
+    })
 }
 
 /// Tauri command to generate a command from a template with parameter substitution
@@ -36,8 +44,8 @@ pub async fn generate_command_from_template(
             .unwrap_or(&param.default_value)
             .clone();
 
-        // Validate parameter value
-        validate_parameter_value(param, &value)?;
+        // Validate parameter value using CommandParameter's validate method
+        param.validate_value(&value)?;
 
         // Replace {param_name} with value
         let placeholder = format!("{{{}}}", param.name);
@@ -45,59 +53,6 @@ pub async fn generate_command_from_template(
     }
 
     Ok(command)
-}
-
-/// Validate parameter value against parameter constraints
-fn validate_parameter_value(param: &CommandParameter, value: &str) -> Result<(), String> {
-    // Check regex validation if present
-    if let Some(regex_pattern) = &param.validation_regex {
-        let regex = regex::Regex::new(regex_pattern)
-            .map_err(|e| format!("Invalid regex pattern: {}", e))?;
-        if !regex.is_match(value) {
-            return Err(format!(
-                "Invalid value for {}: must match pattern {}",
-                param.name, regex_pattern
-            ));
-        }
-    }
-
-    // Check integer constraints
-    if param.data_type == "integer" {
-        let int_value: i32 = value
-            .parse()
-            .map_err(|_| format!("Invalid integer value for {}", param.name))?;
-
-        if let Some(min) = param.min_value {
-            if int_value < min {
-                return Err(format!(
-                    "{} must be at least {}",
-                    param.name, min
-                ));
-            }
-        }
-
-        if let Some(max) = param.max_value {
-            if int_value > max {
-                return Err(format!(
-                    "{} must be at most {}",
-                    param.name, max
-                ));
-            }
-        }
-    }
-
-    // Check enum values if present
-    if let Some(enum_values) = &param.enum_values {
-        if !enum_values.contains(&value.to_string()) {
-            return Err(format!(
-                "{} must be one of: {}",
-                param.name,
-                enum_values.join(", ")
-            ));
-        }
-    }
-
-    Ok(())
 }
 
 #[cfg(test)]
