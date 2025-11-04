@@ -42,6 +42,30 @@ const lightThemeColors = {
   '--color-scrollbar-thumb-hover': '#909090',
   '--color-form-bg': '#ffffff',
   '--color-form-shadow': 'rgba(0, 0, 0, 0.08)',
+  // Status colors
+  '--color-status-success': '#34c759',
+  '--color-status-success-bg': 'rgba(52, 199, 89, 0.15)',
+  '--color-status-success-border': 'rgba(52, 199, 89, 0.3)',
+  '--color-status-error': '#ff3b30',
+  '--color-status-error-bg': 'rgba(255, 59, 48, 0.15)',
+  '--color-status-error-border': 'rgba(255, 59, 48, 0.3)',
+  '--color-status-warning': '#ff9500',
+  '--color-status-warning-bg': 'rgba(255, 149, 0, 0.1)',
+  '--color-status-warning-border': 'rgba(255, 149, 0, 0.3)',
+  '--color-status-stopped': '#8e8e93',
+  '--color-status-unknown': '#636366',
+  // Log level colors
+  '--color-log-error': '#d70015',
+  '--color-log-warn': '#ff9500',
+  '--color-log-info': '#007aff',
+  '--color-log-debug': '#6b7280',
+  '--color-log-default': '#6b7280',
+  // Button variants
+  '--color-button-success-bg': 'rgba(52, 199, 89, 0.15)',
+  '--color-button-success-border': 'rgba(52, 199, 89, 0.3)',
+  '--color-button-success-text': '#34c759',
+  '--color-button-success-hover-bg': 'rgba(52, 199, 89, 0.25)',
+  '--color-button-success-hover-border': 'rgba(52, 199, 89, 0.4)',
 } as const;
 
 /**
@@ -76,6 +100,30 @@ const darkThemeColors = {
   '--color-scrollbar-thumb-hover': '#606060',
   '--color-form-bg': '#1e1e1e',
   '--color-form-shadow': 'rgba(0, 0, 0, 0.4)',
+  // Status colors
+  '--color-status-success': '#30d158',
+  '--color-status-success-bg': 'rgba(48, 209, 88, 0.15)',
+  '--color-status-success-border': 'rgba(48, 209, 88, 0.3)',
+  '--color-status-error': '#ff3b30',
+  '--color-status-error-bg': 'rgba(255, 59, 48, 0.15)',
+  '--color-status-error-border': 'rgba(255, 59, 48, 0.3)',
+  '--color-status-warning': '#ff9500',
+  '--color-status-warning-bg': 'rgba(255, 149, 0, 0.1)',
+  '--color-status-warning-border': 'rgba(255, 149, 0, 0.3)',
+  '--color-status-stopped': '#8e8e93',
+  '--color-status-unknown': '#636366',
+  // Log level colors
+  '--color-log-error': '#f48771',
+  '--color-log-warn': '#dcdcaa',
+  '--color-log-info': '#4fc1ff',
+  '--color-log-debug': '#b5b5b5',
+  '--color-log-default': '#d4d4d4',
+  // Button variants
+  '--color-button-success-bg': 'rgba(48, 209, 88, 0.15)',
+  '--color-button-success-border': 'rgba(48, 209, 88, 0.3)',
+  '--color-button-success-text': '#30d158',
+  '--color-button-success-hover-bg': 'rgba(48, 209, 88, 0.25)',
+  '--color-button-success-hover-border': 'rgba(48, 209, 88, 0.4)',
 } as const;
 
 /**

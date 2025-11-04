@@ -692,14 +692,14 @@
   }
 
   .toolbar-btn-save {
-    background: rgba(52, 199, 89, 0.15);
-    border-color: rgba(52, 199, 89, 0.3);
-    color: #34c759;
+    background: var(--color-button-success-bg);
+    border-color: var(--color-button-success-border);
+    color: var(--color-button-success-text);
   }
 
   .toolbar-btn-save:hover:not(:disabled) {
-    background: rgba(52, 199, 89, 0.25);
-    border-color: rgba(52, 199, 89, 0.4);
+    background: var(--color-button-success-hover-bg);
+    border-color: var(--color-button-success-hover-border);
   }
 
   .toolbar-btn-save:disabled {

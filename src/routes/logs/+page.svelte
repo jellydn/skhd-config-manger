@@ -475,26 +475,26 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-stopped {
-    background: #8e8e93;
+    background: var(--color-status-stopped);
   }
 
   .status-transitioning {
-    background: #ff9500;
+    background: var(--color-status-warning);
     animation: pulse 1.5s ease-in-out infinite;
   }
 
   .status-error {
-    background: #ff3b30;
-    box-shadow: 0 0 6px rgba(255, 59, 48, 0.4);
+    background: var(--color-status-error);
+    box-shadow: 0 0 6px var(--color-status-error-bg);
   }
 
   .status-unknown {
-    background: #636366;
+    background: var(--color-status-unknown);
   }
 
   @keyframes pulse {
@@ -670,15 +670,15 @@
   }
 
   .import-feedback-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   .import-feedback-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-status-error-bg);
+    border: 1px solid var(--color-status-error-border);
+    color: var(--color-status-error);
   }
 
   @keyframes slideIn {
@@ -756,15 +756,15 @@
   }
 
   .import-feedback-inline.import-feedback-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   .import-feedback-inline.import-feedback-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-status-error-bg);
+    border: 1px solid var(--color-status-error-border);
+    color: var(--color-status-error);
   }
 
   .import-feedback-inline svg {

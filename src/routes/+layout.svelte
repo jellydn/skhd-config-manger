@@ -315,8 +315,8 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-text {
@@ -343,11 +343,11 @@
   }
 
   :global(::-webkit-scrollbar-thumb) {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-scrollbar-thumb);
     border-radius: 4px;
   }
 
   :global(::-webkit-scrollbar-thumb:hover) {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-scrollbar-thumb-hover);
   }
 </style>

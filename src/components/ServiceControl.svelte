@@ -258,26 +258,26 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-stopped {
-    background: #8e8e93;
+    background: var(--color-status-stopped);
   }
 
   .status-transitioning {
-    background: #ff9500;
+    background: var(--color-status-warning);
     animation: pulse 1.5s ease-in-out infinite;
   }
 
   .status-error {
-    background: #ff3b30;
-    box-shadow: 0 0 6px rgba(255, 59, 48, 0.4);
+    background: var(--color-status-error);
+    box-shadow: 0 0 6px var(--color-status-error-bg);
   }
 
   .status-unknown {
-    background: #636366;
+    background: var(--color-status-unknown);
   }
 
   @keyframes pulse {

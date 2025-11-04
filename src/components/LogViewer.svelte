@@ -432,25 +432,25 @@
     min-width: 4rem;
   }
 
-  /* Log level colors optimized for dark background */
+  /* Log level colors */
   .log-entry__level:global(.log-level-error) {
-    color: #f48771;
+    color: var(--color-log-error);
   }
 
   .log-entry__level:global(.log-level-warn) {
-    color: #dcdcaa;
+    color: var(--color-log-warn);
   }
 
   .log-entry__level:global(.log-level-info) {
-    color: #4fc1ff;
+    color: var(--color-log-info);
   }
 
   .log-entry__level:global(.log-level-debug) {
-    color: #b5b5b5;
+    color: var(--color-log-debug);
   }
 
   .log-entry__level:global(.log-level-default) {
-    color: #d4d4d4;
+    color: var(--color-log-default);
   }
 
   .log-entry__message {
