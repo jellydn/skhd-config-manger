@@ -337,13 +337,6 @@
       {/each}
     {/if}
   </div>
-
-  <!-- Footer with status only -->
-  <div class="log-viewer__footer">
-    <span class="log-viewer__status log-viewer__status--active">
-      ● Live
-    </span>
-  </div>
 </div>
 
 <style>
