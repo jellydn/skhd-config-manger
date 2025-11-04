@@ -1920,6 +1920,7 @@ dependencies = [
  "dirs 5.0.1",
  "mockall",
  "notify",
+ "objc",
  "pest",
  "pest_derive",
  "plist",

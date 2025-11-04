@@ -237,8 +237,8 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 1rem;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -290,12 +290,12 @@
   }
 
   .status-text {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text);
     font-weight: 500;
   }
 
   .status-pid {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
     margin-left: auto;
   }
@@ -306,10 +306,10 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: rgba(10, 132, 255, 0.15);
-    border: 1px solid rgba(10, 132, 255, 0.3);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: #0a84ff;
+    color: var(--color-border-hover);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -317,8 +317,8 @@
   }
 
   .btn-reload:hover:not(:disabled) {
-    background: rgba(10, 132, 255, 0.25);
-    border-color: rgba(10, 132, 255, 0.5);
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-border-hover);
   }
 
   .btn-reload:disabled {
@@ -350,15 +350,15 @@
   }
 
   .notification-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   .notification-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff6b6b;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   .notification-error strong {

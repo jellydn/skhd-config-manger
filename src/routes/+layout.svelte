@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import type { Snippet } from 'svelte';
+  import { applyTheme } from '../services/themeService';
+  import { getSystemTheme, startThemeMonitor, stopThemeMonitor } from '../services/tauri';
+  import { listen } from '@tauri-apps/api/event';
 
   // Props
   let { children }: { children: Snippet } = $props();
@@ -12,11 +15,22 @@
   // Sidebar collapse state
   let isCollapsed = $state(false);
 
-  // Load collapse state from localStorage
-  onMount(() => {
+  // Load collapse state from localStorage and detect system theme on mount
+  onMount(async () => {
+    // Load sidebar collapse state
     const saved = localStorage.getItem('sidebarCollapsed');
     if (saved !== null) {
       isCollapsed = saved === 'true';
+    }
+
+    // Detect and apply system theme on launch
+    try {
+      const theme = await getSystemTheme();
+      applyTheme(theme);
+    } catch (error) {
+      // Fallback to dark mode on error (maintains current default behavior)
+      console.error('Failed to detect system theme, defaulting to dark mode:', error);
+      applyTheme('dark');
     }
   });
 
@@ -99,8 +113,11 @@
 
 <style>
   /* Color System - Light and Dark Theme Variables */
+  /* Default to light theme - will be overridden by themeService.ts */
+  /* Add smooth transitions for theme changes */
   :global(:root) {
-    /* Light Theme Colors */
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    /* Light Theme Colors (default) */
     --color-background: #ffffff;
     --color-surface: #ffffff;
     --color-surface-secondary: #f9fafb;
@@ -141,9 +158,11 @@
     --color-form-shadow: rgba(0, 0, 0, 0.08);
   }
 
+  /* Fallback: Use CSS media query for initial theme detection */
+  /* This provides browser-level fallback if JavaScript fails */
   @media (prefers-color-scheme: dark) {
     :global(:root) {
-      /* Dark Theme Colors */
+      /* Dark Theme Colors (fallback only) */
       --color-background: #1e1e1e;
       --color-surface: #1e1e1e;
       --color-surface-secondary: #1f2937;
@@ -206,8 +225,8 @@
   /* Sidebar - Native macOS style */
   .sidebar {
     width: 200px;
-    background: #1c1c1c;
-    border-right: 1px solid #2d2d2d;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -236,7 +255,7 @@
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.3px;
-    color: #ffffff;
+    color: var(--color-text);
     margin: 0;
     text-transform: uppercase;
     opacity: 0.6;
@@ -246,7 +265,7 @@
   .collapse-btn {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     padding: 4px;
     cursor: pointer;
     border-radius: 4px;
@@ -258,8 +277,8 @@
   }
 
   .collapse-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .sidebar-nav {
@@ -275,7 +294,7 @@
     padding: 6px 10px;
     margin-bottom: 2px;
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--color-text-secondary);
     text-decoration: none;
     font-size: 13px;
     font-weight: 400;
@@ -295,13 +314,13 @@
   }
 
   .nav-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.95);
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .nav-item.active {
-    background: rgba(10, 132, 255, 0.15);
-    color: #0a84ff;
+    background: var(--color-surface-secondary);
+    color: var(--color-border-hover);
     font-weight: 500;
   }
 
@@ -325,7 +344,7 @@
     align-items: center;
     gap: 8px;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
   }
 
   .sidebar.collapsed .service-status {
@@ -353,7 +372,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background: #1e1e1e;
+    background: var(--color-background);
   }
 
   /* Scrollbar styling for macOS look */

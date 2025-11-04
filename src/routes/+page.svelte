@@ -604,8 +604,8 @@
 
   <ConfirmDialog
     open={showDestructiveWarning}
-    title="⚠️ DANGER: Potentially Destructive Command!"
-    message={pendingDestructiveCommand ? `Command: ${pendingDestructiveCommand.command}\n\nThis command may:\n• Delete important files or directories\n• Modify system files\n• Terminate critical processes\n• Cause data loss or system instability\n\nAre you ABSOLUTELY SURE you want to execute this command?` : ''}
+    title="?? DANGER: Potentially Destructive Command!"
+    message={pendingDestructiveCommand ? `Command: ${pendingDestructiveCommand.command}\n\nThis command may:\n? Delete important files or directories\n? Modify system files\n? Terminate critical processes\n? Cause data loss or system instability\n\nAre you ABSOLUTELY SURE you want to execute this command?` : ''}
     confirmLabel="Execute Anyway"
     cancelLabel="Cancel"
     variant="danger"
@@ -663,10 +663,10 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-button-secondary-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -674,13 +674,13 @@
   }
 
   .toolbar-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .toolbar-btn:active {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-surface-secondary);
   }
 
   .toolbar-btn svg {
@@ -708,14 +708,14 @@
   }
 
   .toolbar-btn-primary {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    border-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .toolbar-btn-primary:hover {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .app-content {
@@ -723,7 +723,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
-    background: #1e1e1e;
+    background: var(--color-background);
   }
 
   .loading-state {
@@ -738,8 +738,8 @@
   .spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top: 3px solid #0a84ff;
+    border: 3px solid var(--color-border);
+    border-top: 3px solid var(--color-button-primary-bg);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -754,7 +754,7 @@
   }
 
   .loading-state p {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     margin: 0;
     font-size: 13px;
   }
@@ -771,26 +771,26 @@
 
   .error-icon {
     margin-bottom: 1.5rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--color-text-tertiary);
   }
 
   .error-state h2 {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--color-text);
     margin: 0 0 0.5rem 0;
     font-size: 1.5rem;
     font-weight: 600;
   }
 
   .error-subtitle {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     margin: 0 0 2rem 0;
     font-size: 0.9rem;
   }
 
   .config-locations {
     width: 100%;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 1.25rem;
     margin-bottom: 2rem;
@@ -799,7 +799,7 @@
 
   .locations-header {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     margin-bottom: 1rem;
     font-weight: 500;
   }
@@ -809,13 +809,13 @@
   }
 
   .location-item code {
-    background: #1c1c1c;
+    background: var(--color-surface);
     padding: 0.375rem 0.625rem;
     border-radius: 4px;
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 0.8rem;
-    color: #d4d4d4;
-    border: 1px solid #3a3a3a;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
   }
 
   .error-actions {
@@ -843,45 +843,25 @@
   }
 
   .action-btn-primary {
-    background: #0a84ff;
-    color: white;
-    border: 1px solid #0a84ff;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    border: 1px solid var(--color-button-primary-bg);
   }
 
   .action-btn-primary:hover {
-    background: #0066cc;
-    border-color: #0066cc;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .action-btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
   }
 
   .action-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(body) {
-      background: #1d1d1f;
-      color: #f5f5f7;
-    }
-
-    h1 {
-      color: #f5f5f7;
-    }
-
-    .loading-state p {
-      color: #999;
-    }
-
-    .spinner {
-      border-color: #3a3a3a;
-      border-top-color: #007aff;
-    }
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
   }
 
   .welcome-state {
@@ -893,12 +873,12 @@
   .welcome-state h2 {
     font-size: 22px;
     margin-bottom: 8px;
-    color: #ffffff;
+    color: var(--color-text);
     font-weight: 600;
   }
 
   .welcome-state > p {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     margin-bottom: 32px;
     font-size: 14px;
   }
@@ -914,8 +894,8 @@
     align-items: center;
     gap: 16px;
     padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     text-align: left;
     cursor: pointer;
@@ -923,24 +903,24 @@
   }
 
   .welcome-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(10, 132, 255, 0.5);
+    background: var(--color-surface-secondary);
+    border-color: var(--color-border-hover);
     transform: translateY(-1px);
   }
 
   .welcome-btn-primary {
-    border-color: rgba(10, 132, 255, 0.3);
-    background: rgba(10, 132, 255, 0.1);
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-secondary);
   }
 
   .welcome-btn-primary:hover {
-    background: rgba(10, 132, 255, 0.15);
-    border-color: rgba(10, 132, 255, 0.5);
+    background: var(--color-surface-secondary);
+    border-color: var(--color-border-hover);
   }
 
   .welcome-btn svg {
     flex-shrink: 0;
-    color: #0a84ff;
+    color: var(--color-border-hover);
     align-self: flex-start;
   }
 
@@ -952,49 +932,12 @@
     margin: 0 0 4px 0;
     font-size: 14px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-text);
   }
 
   .welcome-btn p {
     margin: 0;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .welcome-state h2 {
-      color: #f5f5f7;
-    }
-
-    .welcome-state > p {
-      color: #999;
-    }
-
-    .welcome-btn {
-      background: #2a2a2a;
-      border-color: #4a4a4a;
-    }
-
-    .welcome-btn:hover {
-      border-color: #007aff;
-      background: #333;
-    }
-
-    .welcome-btn-primary {
-      background: #1a2a3a;
-      border-color: #007aff;
-    }
-
-    .welcome-btn-primary:hover {
-      background: #1f3545;
-    }
-
-    .welcome-btn h3 {
-      color: #f5f5f7;
-    }
-
-    .welcome-btn p {
-      color: #999;
-    }
+    color: var(--color-text-secondary);
   }
 </style>

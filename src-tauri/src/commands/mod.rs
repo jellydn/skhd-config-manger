@@ -8,6 +8,7 @@ pub mod service;
 pub mod shortcuts;
 pub mod templates;
 pub mod testing;
+pub mod theme;
 pub mod validation;
 
 // Re-export commands for easy access
@@ -20,4 +21,5 @@ pub use service::{get_service_status, reload_service};
 pub use shortcuts::{create_shortcut, delete_shortcut, update_shortcut};
 pub use templates::{generate_command_from_template, get_command_categories, get_command_templates};
 pub use testing::{cancel_shortcut_execution, execute_shortcut_command, execute_test_command, test_shortcut};
+pub use theme::{get_system_theme, start_theme_monitor, stop_theme_monitor};
 pub use validation::{validate_config, validate_shortcut};

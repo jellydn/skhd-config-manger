@@ -125,7 +125,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-modal-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -145,14 +145,15 @@
   }
 
   .modal-dialog {
-    background: white;
+    background: var(--color-modal-bg);
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px var(--color-form-shadow);
     width: 600px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
     animation: slideIn 0.2s ease-out;
+    border: 1px solid var(--color-modal-border);
   }
 
   @keyframes slideIn {
@@ -171,21 +172,21 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text);
   }
 
   .close-btn {
     background: none;
     border: none;
     font-size: 1.5rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     cursor: pointer;
     padding: 0.25rem;
     line-height: 1;
@@ -193,7 +194,7 @@
   }
 
   .close-btn:hover {
-    color: #111827;
+    color: var(--color-text);
   }
 
   .modal-body {
@@ -208,18 +209,21 @@
   .search-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-input-border);
     border-radius: 8px;
     font-size: 0.875rem;
     transition: border-color 0.15s, box-shadow 0.15s;
     margin-bottom: 1rem;
     box-sizing: border-box;
+    background: var(--color-input-bg);
+    color: var(--color-text);
   }
 
   .search-input:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--color-input-focus-border);
+    box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
+    background: var(--color-input-focus-bg);
   }
 
   .loading,
@@ -232,15 +236,15 @@
     justify-content: center;
     gap: 1rem;
     padding: 3rem 1rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     text-align: center;
   }
 
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #e5e7eb;
-    border-top-color: #3b82f6;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-input-focus-border);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -252,12 +256,12 @@
   }
 
   .error {
-    color: #dc2626;
+    color: var(--color-text);
   }
 
   .hint {
     font-size: 0.875rem;
-    color: #9ca3af;
+    color: var(--color-text-secondary);
   }
 
   .app-list {
@@ -301,8 +305,8 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1rem;
-    background: none;
-    border: 1px solid #e5e7eb;
+    background: transparent;
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s;
@@ -310,12 +314,12 @@
   }
 
   .app-button:hover {
-    background: #f9fafb;
-    border-color: #3b82f6;
+    background: var(--color-surface-secondary);
+    border-color: var(--color-input-focus-border);
   }
 
   .app-button:active {
-    background: #eff6ff;
+    background: var(--color-input-focus-bg);
   }
 
   .app-icon-placeholder {
@@ -337,7 +341,7 @@
 
   .app-name {
     font-weight: 500;
-    color: #111827;
+    color: var(--color-text);
     font-size: 0.875rem;
   }
 
@@ -348,110 +352,32 @@
   }
 
   .app-version {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
   }
 
 
   .modal-footer {
     padding: 1rem 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
     display: flex;
     justify-content: flex-end;
   }
 
   .cancel-btn {
     padding: 0.5rem 1rem;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--color-button-secondary-text);
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s;
   }
 
   .cancel-btn:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .modal-backdrop {
-      background: rgba(0, 0, 0, 0.7);
-    }
-
-    .modal-dialog {
-      background: #1f2937;
-    }
-
-    .modal-header {
-      border-bottom-color: #374151;
-    }
-
-    .modal-header h2 {
-      color: #f9fafb;
-    }
-
-    .close-btn {
-      color: #9ca3af;
-    }
-
-    .close-btn:hover {
-      color: #f9fafb;
-    }
-
-    .search-input {
-      background: #111827;
-      border-color: #374151;
-      color: #f9fafb;
-    }
-
-    .search-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    }
-
-    .spinner {
-      border-color: #374151;
-      border-top-color: #3b82f6;
-    }
-
-    .app-button {
-      border-color: #374151;
-    }
-
-    .app-button:hover {
-      background: #1f2937;
-      border-color: #3b82f6;
-    }
-
-    .app-button:active {
-      background: #1a2332;
-    }
-
-    .app-name {
-      color: #f9fafb;
-    }
-
-    .app-version {
-      color: #9ca3af;
-    }
-
-    .modal-footer {
-      border-top-color: #374151;
-    }
-
-    .cancel-btn {
-      background: #374151;
-      border-color: #4b5563;
-      color: #f9fafb;
-    }
-
-    .cancel-btn:hover {
-      background: #4b5563;
-      border-color: #6b7280;
-    }
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
   }
 </style>

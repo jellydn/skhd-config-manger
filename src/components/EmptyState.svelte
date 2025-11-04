@@ -40,11 +40,11 @@
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0 0 0.5rem 0;
-    color: #1d1d1f;
+    color: var(--color-text);
   }
 
   p {
-    color: #666;
+    color: var(--color-text-secondary);
     margin: 0.5rem 0;
     max-width: 500px;
   }
@@ -57,8 +57,8 @@
   .btn-primary {
     margin-top: 2rem;
     padding: 0.75rem 2rem;
-    background: #007aff;
-    color: white;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
     border: none;
     border-radius: 8px;
     font-size: 1rem;
@@ -68,16 +68,6 @@
   }
 
   .btn-primary:hover {
-    background: #0051d5;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    h2 {
-      color: #f5f5f7;
-    }
-
-    p {
-      color: #999;
-    }
+    background: var(--color-button-primary-hover);
   }
 </style>

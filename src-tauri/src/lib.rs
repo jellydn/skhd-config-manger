@@ -8,7 +8,7 @@ pub mod utils;
 use commands::config::ConfigState;
 use commands::logs::LogStreamState;
 use commands::testing::ExecutionState;
-use services::ServiceManager;
+use services::{ServiceManager, ThemeMonitorState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,6 +18,7 @@ pub fn run() {
         .manage(ExecutionState::default())
         .manage(LogStreamState::default())
         .manage(ServiceManager::new())
+        .manage(ThemeMonitorState::new())
         .invoke_handler(tauri::generate_handler![
             commands::applications::get_installed_applications,
             commands::config::detect_active_config,
@@ -53,6 +54,9 @@ pub fn run() {
             commands::file_picker::check_file_executable,
             commands::file_picker::escape_path_for_shell,
             commands::file_picker::detect_script_interpreter,
+            commands::theme::get_system_theme,
+            commands::theme::start_theme_monitor,
+            commands::theme::stop_theme_monitor,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

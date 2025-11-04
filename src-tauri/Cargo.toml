@@ -29,6 +29,7 @@ dirs = "5.0"
 tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util"] }
 regex = "1.10"
 plist = "1.6"
+objc = "0.2"
 
 [dev-dependencies]
 mockall = "0.12"

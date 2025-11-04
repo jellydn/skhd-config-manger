@@ -782,10 +782,10 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -793,13 +793,13 @@
   }
 
   .log-control-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-btn:active:not(:disabled) {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-secondary);
   }
 
   .log-control-btn:disabled {
@@ -817,25 +817,25 @@
   }
 
   .log-control-btn-primary {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    border-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .log-control-btn-primary:hover:not(:disabled) {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .log-control-btn-stop {
-    background: rgba(255, 59, 48, 0.15);
-    border-color: rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-button-secondary-bg);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-btn-stop:hover:not(:disabled) {
-    background: rgba(255, 59, 48, 0.25);
-    border-color: rgba(255, 59, 48, 0.4);
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
   }
 
   .log-control-checkbox {
@@ -843,10 +843,10 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -854,23 +854,23 @@
   }
 
   .log-control-checkbox:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-checkbox svg {
     flex-shrink: 0;
-    color: #0a84ff;
+    color: var(--color-border-hover);
   }
 
   /* Sort Order Dropdown */
   .log-control-select {
     padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -884,28 +884,28 @@
   }
 
   .log-control-select:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background-color: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-select:focus {
     outline: none;
-    border-color: #0a84ff;
-    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-input-focus-border);
+    background-color: var(--color-button-secondary-hover);
   }
 
   .log-control-select option {
-    background: #2a2a2a;
-    color: #ffffff;
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   /* Log Level Filter */
   .filter-group {
     display: flex;
     gap: 0;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
     overflow: hidden;
   }
@@ -914,8 +914,8 @@
     padding: 5px 10px;
     background: transparent;
     border: none;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.8);
+    border-right: 1px solid var(--color-button-secondary-border);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -927,13 +927,13 @@
   }
 
   .filter-btn:hover:not(.filter-btn-active) {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    color: var(--color-text);
   }
 
   .filter-btn-active {
-    background: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   /* Pagination Controls */
@@ -949,18 +949,18 @@
     align-items: center;
     justify-content: center;
     padding: 5px 6px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .pagination-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .pagination-btn:disabled {
@@ -974,7 +974,7 @@
 
   .pagination-info {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
     font-weight: 500;
     min-width: 40px;
     text-align: center;
@@ -988,7 +988,7 @@
 
   .log-count {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
     white-space: nowrap;
   }
@@ -1006,10 +1006,10 @@
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-button-secondary-text);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -1017,9 +1017,9 @@
   }
 
   .load-more-bottom-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .load-more-bottom-btn:disabled {
