@@ -363,7 +363,8 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn-cancel {
@@ -377,6 +378,15 @@
     border-color: var(--color-button-secondary-border);
   }
 
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-cancel:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
+  }
+
   .btn-browse {
     background: var(--color-button-secondary-bg);
     border: 1px solid var(--color-button-secondary-border);
@@ -386,6 +396,15 @@
   .btn-browse:hover {
     background: var(--color-button-secondary-hover);
     border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-browse:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-browse:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-use {
@@ -399,8 +418,21 @@
     border-color: var(--color-button-primary-hover);
   }
 
+  .btn-use:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-use:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
+  }
+
   .btn-use:disabled {
-    opacity: 0.5;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 </style>

@@ -199,18 +199,24 @@
   }
 
   button {
-    padding: 0.4rem 0.5rem;
+    padding: 0.375rem 0.625rem;
     border-radius: 6px;
     border: 1px solid transparent;
     font-size: 0.8125rem;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
+    min-width: 32px;
+    min-height: 28px;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   button svg {
@@ -229,9 +235,22 @@
     border-color: var(--color-button-primary-hover);
   }
 
+  .btn-test:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-test:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
+  }
+
   .btn-test:disabled {
-    opacity: 0.7;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .btn-test.executing {
@@ -264,6 +283,10 @@
     border-color: var(--color-button-secondary-border);
   }
 
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
+  }
+
   .btn-edit {
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
@@ -273,6 +296,11 @@
   .btn-edit:hover {
     background: var(--color-button-primary-hover);
     border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-edit:active {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
   }
 
   .btn-duplicate {
@@ -287,6 +315,10 @@
     border-color: var(--color-button-secondary-border);
   }
 
+  .btn-duplicate:active {
+    background: var(--color-button-secondary-active);
+  }
+
   .btn-delete {
     background: var(--color-button-secondary-bg);
     color: var(--color-button-secondary-text);
@@ -297,5 +329,9 @@
     background: var(--color-button-secondary-hover);
     color: var(--color-text);
     border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-delete:active {
+    background: var(--color-button-secondary-active);
   }
 </style>

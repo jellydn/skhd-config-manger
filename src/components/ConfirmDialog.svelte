@@ -119,12 +119,13 @@
 
   button {
     padding: 0.625rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     border: 1px solid;
+    min-height: 32px;
   }
 
   .btn-cancel {
@@ -137,6 +138,15 @@
     background: var(--color-button-secondary-hover);
   }
 
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-cancel:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
+  }
+
   .btn-confirm {
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
@@ -146,6 +156,16 @@
   .btn-confirm:hover {
     background: var(--color-button-primary-hover);
     border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-confirm:active {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-confirm:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .btn-danger {

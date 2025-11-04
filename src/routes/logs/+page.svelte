@@ -520,29 +520,38 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-button-secondary-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .toolbar-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .toolbar-btn:active:not(:disabled) {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-button-secondary-active);
+  }
+
+  .toolbar-btn:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .toolbar-btn:disabled {
-    opacity: 0.4;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .toolbar-btn svg {
@@ -598,6 +607,24 @@
   .toolbar-btn-primary:hover:not(:disabled) {
     background: var(--color-button-primary-hover);
     border-color: var(--color-button-primary-hover);
+  }
+
+  .toolbar-btn-primary:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .toolbar-btn-primary:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
+  }
+
+  .toolbar-btn-primary:disabled {
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .logs-page__content {

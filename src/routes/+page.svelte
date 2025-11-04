@@ -671,16 +671,30 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    min-height: 28px;
   }
 
-  .toolbar-btn:hover {
+  .toolbar-btn:hover:not(:disabled) {
     background: var(--color-button-secondary-hover);
     border-color: var(--color-button-secondary-border);
     color: var(--color-text);
   }
 
-  .toolbar-btn:active {
-    background: var(--color-surface-secondary);
+  .toolbar-btn:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .toolbar-btn:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
+  }
+
+  .toolbar-btn:disabled {
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .toolbar-btn svg {
@@ -702,9 +716,22 @@
     border-color: var(--color-button-success-hover-border);
   }
 
+  .toolbar-btn-save:active:not(:disabled) {
+    background: var(--color-button-success-hover-bg);
+    opacity: 0.9;
+  }
+
+  .toolbar-btn-save:focus-visible {
+    outline: 2px solid var(--color-button-success-border);
+    outline-offset: 2px;
+  }
+
   .toolbar-btn-save:disabled {
-    opacity: 0.4;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .toolbar-btn-primary {
@@ -713,9 +740,19 @@
     color: var(--color-button-primary-text);
   }
 
-  .toolbar-btn-primary:hover {
+  .toolbar-btn-primary:hover:not(:disabled) {
     background: var(--color-button-primary-hover);
     border-color: var(--color-button-primary-hover);
+  }
+
+  .toolbar-btn-primary:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .toolbar-btn-primary:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .app-content {

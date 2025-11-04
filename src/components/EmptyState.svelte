@@ -56,18 +56,30 @@
 
   .btn-primary {
     margin-top: 2rem;
-    padding: 0.75rem 2rem;
+    padding: 0.625rem 1.5rem;
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    border: 1px solid var(--color-button-primary-bg);
+    border-radius: 6px;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.15s ease;
+    min-height: 32px;
   }
 
   .btn-primary:hover {
     background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-primary:active {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 </style>

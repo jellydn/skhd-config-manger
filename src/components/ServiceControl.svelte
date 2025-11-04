@@ -314,16 +314,30 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn-reload:hover:not(:disabled) {
     background: var(--color-button-secondary-hover);
     border-color: var(--color-border-hover);
+    color: var(--color-text);
+  }
+
+  .btn-reload:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-reload:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-reload:disabled {
-    opacity: 0.5;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .btn-reload svg {

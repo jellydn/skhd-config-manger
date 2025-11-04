@@ -417,11 +417,11 @@
 
   .btn-picker {
     padding: 0.5rem 0.875rem;
-    border: 1.5px solid var(--color-input-border);
+    border: 1px solid var(--color-button-secondary-border);
     background: var(--color-button-secondary-bg);
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
     color: var(--color-button-secondary-text);
@@ -429,14 +429,22 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    letter-spacing: -0.01em;
+    min-height: 28px;
   }
 
   .btn-picker:hover {
     background: var(--color-button-secondary-hover);
     border-color: var(--color-input-focus-border);
     color: var(--color-text);
-    transform: translateY(-1px);
+  }
+
+  .btn-picker:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-picker:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .form-actions {
@@ -450,45 +458,64 @@
 
   button[type='submit'],
   .btn-cancel {
-    padding: 0.875rem 2rem;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    padding: 0.625rem 1.5rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
-    border: none;
-    letter-spacing: -0.01em;
+    border: 1px solid;
+    min-height: 32px;
   }
 
   .btn-cancel {
     background: var(--color-button-secondary-bg);
     color: var(--color-button-secondary-text);
-    border: 1.5px solid var(--color-button-secondary-border);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-cancel:hover:not(:disabled) {
     background: var(--color-button-secondary-hover);
     color: var(--color-text);
     border-color: var(--color-button-secondary-border);
-    transform: translateY(-1px);
+  }
+
+  .btn-cancel:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-cancel:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-save {
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
-    box-shadow: 0 2px 8px var(--color-input-focus-shadow);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-save:hover:not(:disabled) {
     background: var(--color-button-primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--color-input-focus-shadow);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-save:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-save:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   button:disabled {
-    opacity: 0.4;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
-    transform: none !important;
+    opacity: 0.6;
   }
 
   input,
