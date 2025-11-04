@@ -743,11 +743,13 @@
   .toolbar-btn-primary:hover:not(:disabled) {
     background: var(--color-button-primary-hover);
     border-color: var(--color-button-primary-hover);
+    color: var(--color-button-primary-text);
   }
 
   .toolbar-btn-primary:active:not(:disabled) {
     background: var(--color-button-primary-active);
     border-color: var(--color-button-primary-active);
+    color: var(--color-button-primary-text);
   }
 
   .toolbar-btn-primary:focus-visible {
