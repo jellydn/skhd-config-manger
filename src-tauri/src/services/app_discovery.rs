@@ -20,7 +20,11 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
 
     let mut apps = Vec::new();
 
-    for path in search_paths {
+    // Use depth-first traversal to find all .app bundles, including in subdirectories
+    // This ensures we find apps in /Applications/Utilities, /System/Applications/Utilities, etc.
+    let mut stack: Vec<PathBuf> = search_paths;
+
+    while let Some(path) = stack.pop() {
         if let Ok(entries) = fs::read_dir(&path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
@@ -33,9 +37,13 @@ pub fn discover_applications() -> Result<Vec<Application>, String> {
                         continue;
                     }
                 } else if entry_path.extension() == Some(std::ffi::OsStr::new("app")) {
+                    // Found an .app bundle, parse it
                     if let Ok(app) = parse_app_bundle(&entry_path) {
                         apps.push(app);
                     }
+                } else if entry_path.is_dir() {
+                    // Recurse into subdirectories (e.g., /Applications/Utilities)
+                    stack.push(entry_path);
                 }
             }
         }
@@ -166,6 +174,7 @@ pub fn parse_app_bundle(app_path: &Path) -> Result<Application, String> {
 mod tests {
     use super::*;
 
+    #[cfg(target_os = "macos")]
     #[test]
     fn test_discover_applications() {
         let apps = discover_applications().unwrap();
@@ -177,6 +186,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_os = "macos")]
     #[test]
     fn test_parse_safari_bundle() {
         let safari_path = PathBuf::from("/Applications/Safari.app");

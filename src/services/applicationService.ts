@@ -23,9 +23,12 @@ export const applicationService = {
   },
 
   /**
-   * Generates the `open -a` command for launching an application
+   * Generates the `open` command for launching an application
+   * Uses app_path instead of display_name to avoid issues with special characters
    */
   generateLaunchCommand(app: Application): string {
-    return `open -a "${app.display_name}"`;
+    // Use app_path for robust launching - handles special characters in names
+    // The path is already properly formatted from the backend
+    return `open "${app.app_path}"`;
   },
 };

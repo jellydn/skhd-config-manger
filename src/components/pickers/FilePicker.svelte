@@ -98,7 +98,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if !loading && selectedPath}
+{#if !loading && (selectedPath || error)}
   <div
     class="modal-backdrop"
     onclick={handleBackdropClick}
