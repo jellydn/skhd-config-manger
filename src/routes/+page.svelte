@@ -624,8 +624,8 @@
 
   /* Toolbar - Native macOS style */
   .toolbar {
-    background: #1c1c1c;
-    border-bottom: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border-bottom: 1px solid var(--color-border);
     padding: 20px 20px 12px;
     display: flex;
     justify-content: space-between;
@@ -643,13 +643,13 @@
   .toolbar-title h1 {
     font-size: 15px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-text);
     margin: 0;
   }
 
   .toolbar-subtitle {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     font-weight: 400;
   }
 

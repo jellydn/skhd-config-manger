@@ -593,7 +593,7 @@
   }
 
   .template-details > .template-description {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
     margin: 0;
   }

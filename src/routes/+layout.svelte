@@ -158,51 +158,8 @@
     --color-form-shadow: rgba(0, 0, 0, 0.08);
   }
 
-  /* Fallback: Use CSS media query for initial theme detection */
-  /* This provides browser-level fallback if JavaScript fails */
-  @media (prefers-color-scheme: dark) {
-    :global(:root) {
-      /* Dark Theme Colors (fallback only) */
-      --color-background: #1e1e1e;
-      --color-surface: #1e1e1e;
-      --color-surface-secondary: #1f2937;
-      --color-border: #374151;
-      --color-border-hover: #3b82f6;
-      --color-text: #f9fafb;
-      --color-text-secondary: #9ca3af;
-      --color-text-tertiary: #6b7280;
-
-      /* Input Colors */
-      --color-input-bg: #2a2a2a;
-      --color-input-border: #3a3a3a;
-      --color-input-focus-border: #007aff;
-      --color-input-focus-bg: #1e1e1e;
-      --color-input-focus-shadow: rgba(0, 122, 255, 0.2);
-
-      /* Button Colors */
-      --color-button-primary-bg: #007aff;
-      --color-button-primary-hover: #0051d5;
-      --color-button-primary-text: #ffffff;
-      --color-button-secondary-bg: #2a2a2a;
-      --color-button-secondary-hover: #3a3a3a;
-      --color-button-secondary-border: #3a3a3a;
-      --color-button-secondary-text: #f5f5f7;
-
-      /* Modal Colors */
-      --color-modal-backdrop: rgba(0, 0, 0, 0.7);
-      --color-modal-bg: #1f2937;
-      --color-modal-border: #374151;
-
-      /* Scrollbar Colors */
-      --color-scrollbar-track: #2a2a2a;
-      --color-scrollbar-thumb: #505050;
-      --color-scrollbar-thumb-hover: #606060;
-
-      /* Form Colors */
-      --color-form-bg: #1e1e1e;
-      --color-form-shadow: rgba(0, 0, 0, 0.4);
-    }
-  }
+  /* Note: Theme is now handled via JavaScript (themeService.ts) */
+  /* CSS variables are set dynamically based on macOS system theme */
 
   :global(body) {
     margin: 0;
@@ -330,7 +287,7 @@
 
   .sidebar-footer {
     padding: 12px 16px;
-    border-top: 1px solid #2d2d2d;
+    border-top: 1px solid var(--color-border);
   }
 
   .sidebar.collapsed .sidebar-footer {

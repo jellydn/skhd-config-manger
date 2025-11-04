@@ -66,7 +66,11 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 
 - **Welcome Screen**: Guided onboarding with clear action paths
 - **Error Handling**: Helpful error messages with actionable solutions
-- **Dark Mode**: Full dark mode support following system preferences
+- **System Theme Integration**: Automatic detection and application of macOS system theme (light/dark mode)
+  - **Launch Detection**: App automatically detects and applies system theme on startup
+  - **Runtime Updates**: Theme updates dynamically when system theme changes (within 2 seconds)
+  - **Consistent Theming**: All interface elements (backgrounds, text, borders, buttons, modals, inputs) adapt to the active theme
+  - **Smooth Transitions**: CSS transitions provide seamless theme switching without visual glitches
 - **Keyboard Shortcuts Count**: Real-time shortcut count display
 
 ## Prerequisites

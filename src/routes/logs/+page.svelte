@@ -436,8 +436,8 @@
 
   /* Toolbar - Native macOS style */
   .toolbar {
-    background: #1c1c1c;
-    border-bottom: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border-bottom: 1px solid var(--color-border);
     padding: 20px 20px 12px;
     display: flex;
     justify-content: space-between;
@@ -455,7 +455,7 @@
   .toolbar-left h1 {
     font-size: 15px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-text);
     margin: 0;
   }
 
@@ -464,7 +464,7 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text);
   }
 
   .status-indicator {
@@ -568,10 +568,10 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-button-secondary-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -579,32 +579,32 @@
   }
 
   .toolbar-checkbox:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .toolbar-checkbox svg {
     flex-shrink: 0;
-    color: #0a84ff;
+    color: var(--color-border-hover);
   }
 
   .toolbar-btn-primary {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    border-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .toolbar-btn-primary:hover:not(:disabled) {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .logs-page__content {
     flex: 1;
     overflow: hidden;
     padding: 20px;
-    background: #1e1e1e;
+    background: var(--color-background);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -617,24 +617,24 @@
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 12px;
   }
 
   .config-path-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
   .config-path-value {
     flex: 1;
     padding: 4px 10px;
-    background: #1c1c1c;
-    border: 1px solid #3a3a3a;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: #d4d4d4;
+    color: var(--color-text);
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 11px;
     overflow: hidden;
@@ -698,8 +698,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 16px;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     margin-bottom: 12px;
   }
@@ -719,7 +719,7 @@
   .log-controls-left h2 {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-text);
     margin: 0;
   }
 
@@ -731,16 +731,16 @@
   }
 
   .config-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
   .config-value {
     padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text);
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 10px;
   }
