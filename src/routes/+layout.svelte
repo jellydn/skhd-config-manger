@@ -232,7 +232,7 @@
 
   .sidebar-header {
     padding: 20px 16px 12px;
-    border-bottom: 1px solid #2d2d2d;
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
