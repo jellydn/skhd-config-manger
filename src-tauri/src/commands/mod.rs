@@ -2,6 +2,7 @@
 pub mod applications;
 pub mod backups;
 pub mod config;
+pub mod file_picker;
 pub mod logs;
 pub mod service;
 pub mod shortcuts;
@@ -13,6 +14,7 @@ pub mod validation;
 pub use applications::get_installed_applications;
 pub use backups::{create_backup, list_backups, restore_backup};
 pub use config::{detect_active_config, export_config, import_config, load_config, reload_config, save_config};
+pub use file_picker::{check_file_executable, detect_script_interpreter, escape_path_for_shell, open_file_picker};
 pub use logs::{is_log_stream_running, start_log_stream, stop_log_stream};
 pub use service::{get_service_status, reload_service};
 pub use shortcuts::{create_shortcut, delete_shortcut, update_shortcut};

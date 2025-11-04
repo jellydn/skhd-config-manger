@@ -7,8 +7,8 @@ pub(crate) struct TemplateData {
     pub templates: Vec<CommandTemplate>,
 }
 
-/// Load command templates from embedded JSON
-pub fn load_templates() -> Result<TemplateData, String> {
+/// Load command templates from embedded JSON (internal use only)
+fn load_templates() -> Result<TemplateData, String> {
     let json_data = include_str!("../data/command_templates.json");
     serde_json::from_str(json_data).map_err(|e| format!("Failed to parse templates: {}", e))
 }

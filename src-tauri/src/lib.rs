@@ -49,6 +49,10 @@ pub fn run() {
             commands::templates::get_command_templates,
             commands::templates::get_command_categories,
             commands::templates::generate_command_from_template,
+            commands::file_picker::open_file_picker,
+            commands::file_picker::check_file_executable,
+            commands::file_picker::escape_path_for_shell,
+            commands::file_picker::detect_script_interpreter,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

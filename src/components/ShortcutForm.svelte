@@ -3,6 +3,7 @@
   import { validateShortcut as validateShortcutAPI } from '../services/tauri';
   import ApplicationPicker from './pickers/ApplicationPicker.svelte';
   import CommandPicker from './pickers/CommandPicker.svelte';
+  import FilePicker from './pickers/FilePicker.svelte';
 
   interface Props {
     shortcut?: Shortcut;
@@ -24,6 +25,7 @@
   let saving = $state(false);
   let showAppPicker = $state(false);
   let showCommandPicker = $state(false);
+  let showFilePicker = $state(false);
 
   // Helper to compare arrays efficiently without JSON.stringify
   function arraysEqual(a: string[], b: string[]): boolean {
@@ -130,6 +132,15 @@
   function handleCommandPickerCancel() {
     showCommandPicker = false;
   }
+
+  function handleFileSelect(selectedCommand: string) {
+    command = selectedCommand;
+    showFilePicker = false;
+  }
+
+  function handleFilePickerCancel() {
+    showFilePicker = false;
+  }
 </script>
 
 <div class="shortcut-form">
@@ -201,6 +212,14 @@
           >
             📱 Applications
           </button>
+          <button
+            type="button"
+            class="btn-picker"
+            onclick={() => (showFilePicker = true)}
+            title="Browse files and scripts"
+          >
+            📁 Files
+          </button>
         </div>
       </div>
       <textarea
@@ -240,6 +259,10 @@
 
 {#if showCommandPicker}
   <CommandPicker onSelect={handleCommandSelect} onCancel={handleCommandPickerCancel} />
+{/if}
+
+{#if showFilePicker}
+  <FilePicker onSelect={handleFileSelect} onCancel={handleFilePickerCancel} />
 {/if}
 
 <style>

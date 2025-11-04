@@ -14,5 +14,5 @@ pub use file_io::{read_config_safe, write_config_atomic};
 pub use log_tailer::{parse_log_line, LogTailer};
 pub use path_validator::{detect_interpreter, escape_shell_path, validate_file_executable};
 pub use service_manager::ServiceManager;
-pub use template_loader::{get_categories, get_templates, load_templates};
+pub use template_loader::{get_categories, get_templates};
 pub use validation::{validate_config, validate_shortcut};
