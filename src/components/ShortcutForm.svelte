@@ -354,14 +354,14 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
     letter-spacing: -0.01em;
   }
 
   .modifier-btn:hover {
     border-color: var(--color-input-focus-border);
     background: var(--color-input-focus-bg);
-    color: var(--color-input-focus-border);
+    color: var(--color-text);
     transform: translateY(-1px);
   }
 
@@ -418,13 +418,13 @@
   .btn-picker {
     padding: 0.5rem 0.875rem;
     border: 1.5px solid var(--color-input-border);
-    background: var(--color-input-bg);
+    background: var(--color-button-secondary-bg);
     border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: var(--color-input-focus-border);
+    color: var(--color-button-secondary-text);
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
@@ -433,8 +433,9 @@
   }
 
   .btn-picker:hover {
-    background: var(--color-input-focus-bg);
+    background: var(--color-button-secondary-hover);
     border-color: var(--color-input-focus-border);
+    color: var(--color-text);
     transform: translateY(-1px);
   }
 
@@ -467,6 +468,8 @@
 
   .btn-cancel:hover:not(:disabled) {
     background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
     transform: translateY(-1px);
   }
 

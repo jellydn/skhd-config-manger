@@ -203,13 +203,14 @@
     border-radius: 6px;
     border: 1px solid transparent;
     font-size: 0.8125rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 36px;
   }
 
   button svg {
@@ -220,10 +221,12 @@
   .btn-test {
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-test:hover:not(:disabled) {
     background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .btn-test:disabled {
@@ -233,6 +236,7 @@
 
   .btn-test.executing {
     background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   @keyframes spin {
@@ -256,15 +260,19 @@
 
   .btn-cancel:hover {
     background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-edit {
     background: var(--color-button-primary-bg);
     color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-edit:hover {
     background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .btn-duplicate {
@@ -275,16 +283,19 @@
 
   .btn-duplicate:hover {
     background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-delete {
-    background: transparent;
-    color: var(--color-text);
-    border-color: var(--color-border);
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-delete:hover {
-    background: var(--color-surface-secondary);
+    background: var(--color-button-secondary-hover);
     color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
   }
 </style>
