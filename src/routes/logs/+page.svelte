@@ -146,13 +146,6 @@
 
   // Log viewer control functions
 
-  function handleSortChange() {
-    if (logViewerRef) {
-      logViewerRef.toggleSortOrder();
-      updateLogState();
-    }
-  }
-
   // Pagination controls
   function handlePrevPage() {
     if (currentPage > 1) {
@@ -206,7 +199,6 @@
   function updateLogState() {
     if (logViewerRef) {
       logsCount = logViewerRef.getLogsCount();
-      sortDescending = logViewerRef.getSortDescending();
     }
   }
 
@@ -345,16 +337,12 @@
           </button>
         </div>
 
-        <!-- Sort Order Dropdown -->
-        <select
-          class="log-control-select"
-          bind:value={sortDescending}
-          onchange={handleSortChange}
-          aria-label="Sort order"
-        >
-          <option value={true}>Newest First</option>
-          <option value={false}>Oldest First</option>
-        </select>
+        <!-- Sort Order Indicator (descending by default) -->
+        <div class="sort-indicator" title="Newest First">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2L14 8H10V14H6V8H2L8 2Z" fill="currentColor" opacity="0.8"/>
+          </svg>
+        </div>
 
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
@@ -891,40 +879,15 @@
     color: var(--color-border-hover);
   }
 
-  /* Sort Order Dropdown */
-  .log-control-select {
-    padding: 5px 10px;
-    background: var(--color-button-secondary-bg);
-    border: 1px solid var(--color-button-secondary-border);
-    border-radius: 5px;
-    color: var(--color-button-secondary-text);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    appearance: none;
-    padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.8)' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-    background-size: 12px;
-  }
-
-  .log-control-select:hover {
-    background-color: var(--color-button-secondary-hover);
-    border-color: var(--color-button-secondary-border);
-    color: var(--color-text);
-  }
-
-  .log-control-select:focus {
-    outline: none;
-    border-color: var(--color-input-focus-border);
-    background-color: var(--color-button-secondary-hover);
-  }
-
-  .log-control-select option {
-    background: var(--color-surface-secondary);
-    color: var(--color-text);
+  /* Sort Order Indicator */
+  .sort-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--color-text-secondary);
+    opacity: 0.7;
   }
 
   /* Log Level Filter */
