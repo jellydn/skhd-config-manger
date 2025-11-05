@@ -317,32 +317,27 @@
         {/if}
       </div>
       <div class="log-controls-actions">
-        <!-- Log Level Filter (Compact Toggle) -->
-        <div class="filter-group">
-          <button
-            class="filter-btn {logLevelFilter === 'error' ? 'filter-btn-active' : ''}"
-            onclick={() => logLevelFilter = 'error'}
-            aria-label="Show error logs only"
-            aria-pressed={logLevelFilter === 'error'}
-          >
-            Error
-          </button>
-          <button
-            class="filter-btn {logLevelFilter === 'info' ? 'filter-btn-active' : ''}"
-            onclick={() => logLevelFilter = 'info'}
-            aria-label="Show info logs only"
-            aria-pressed={logLevelFilter === 'info'}
-          >
-            Info
-          </button>
-        </div>
-
-        <!-- Sort Order Indicator (descending by default) -->
-        <div class="sort-indicator" title="Newest First">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 2L14 8H10V14H6V8H2L8 2Z" fill="currentColor" opacity="0.8"/>
-          </svg>
-        </div>
+        <!-- Log Level Filter Toggle Icon -->
+        <button
+          class="filter-toggle-icon"
+          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
+          aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
+          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
+        >
+          {#if logLevelFilter === 'error'}
+            <!-- Error icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <path d="M8 5V8M8 11H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {:else}
+            <!-- Info icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <path d="M8 6V8M8 10H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {/if}
+        </button>
 
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
@@ -879,40 +874,35 @@
     color: var(--color-border-hover);
   }
 
-  /* Log Level Filter */
-  .filter-group {
+  /* Log Level Filter Toggle Icon */
+  .filter-toggle-icon {
     display: flex;
-    gap: 0;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
     background: var(--color-button-secondary-bg);
     border: 1px solid var(--color-button-secondary-border);
-    border-radius: 5px;
-    overflow: hidden;
-  }
-
-  .filter-btn {
-    padding: 5px 10px;
-    background: transparent;
-    border: none;
-    border-right: 1px solid var(--color-button-secondary-border);
+    border-radius: 6px;
     color: var(--color-button-secondary-text);
-    font-size: 11px;
-    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
-  .filter-btn:last-child {
-    border-right: none;
-  }
-
-  .filter-btn:hover:not(.filter-btn-active) {
+  .filter-toggle-icon:hover {
     background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
     color: var(--color-text);
   }
 
-  .filter-btn-active {
-    background: var(--color-button-primary-bg);
-    color: var(--color-button-primary-text);
+  .filter-toggle-icon:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
+  }
+
+  .filter-toggle-icon svg {
+    flex-shrink: 0;
   }
 
   /* Pagination Controls */
