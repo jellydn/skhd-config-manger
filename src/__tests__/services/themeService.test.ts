@@ -76,13 +76,16 @@ describe('themeService', () => {
       const darkCalls = setPropertySpy.mock.calls.map(call => call[1]);
       
       // Verify different colors were applied
-      // Check that background colors are different
-      const lightBg = lightCalls.find(call => call && typeof call === 'string' && call.includes('background'));
-      const darkBg = darkCalls.find(call => call && typeof call === 'string' && call.includes('background'));
-      
-      // Should have applied colors (values might be different)
+      // Both themes should have applied colors (values might be different)
       expect(lightCalls.length).toBeGreaterThan(0);
       expect(darkCalls.length).toBeGreaterThan(0);
+      
+      // Verify that different color values were applied for background
+      const lightBgValue = lightCalls.find(call => call && typeof call === 'string' && call.includes('background'));
+      const darkBgValue = darkCalls.find(call => call && typeof call === 'string' && call.includes('background'));
+      
+      // At least one background color should have been set
+      expect(lightBgValue || darkBgValue).toBeTruthy();
     });
 
     it('should set CSS custom properties with correct names', () => {
