@@ -3,6 +3,10 @@
  * 
  * This service provides functions to apply theme colors via CSS variables
  * and manages theme state synchronization with macOS system preferences.
+ * 
+ * Uses Kanagawa color scheme (https://github.com/rebelot/kanagawa.nvim)
+ * - Dark theme: Kanagawa Wave variant
+ * - Light theme: Kanagawa Lotus variant
  */
 
 /**
@@ -11,133 +15,145 @@
 export type ThemeMode = 'light' | 'dark';
 
 /**
- * Light theme color definitions
+ * Light theme color definitions (Kanagawa Lotus)
  */
 const lightThemeColors = {
-  '--color-background': '#ffffff',
-  '--color-surface': '#ffffff',
-  '--color-surface-secondary': '#f9fafb',
-  '--color-border': '#e5e7eb',
-  '--color-border-hover': '#3b82f6',
-  '--color-text': '#111827',
-  '--color-text-secondary': '#6b7280',
-  '--color-text-tertiary': '#9ca3af',
-  '--color-input-bg': '#fafafa',
-  '--color-input-border': '#e5e5e7',
-  '--color-input-focus-border': '#007aff',
-  '--color-input-focus-bg': '#ffffff',
-  '--color-input-focus-shadow': 'rgba(0, 122, 255, 0.1)',
-  '--color-button-primary-bg': '#007aff',
-  '--color-button-primary-hover': '#0051d5',
-  '--color-button-primary-active': '#0040b3',
-  '--color-button-primary-text': '#ffffff',
-  '--color-button-primary-focus': 'rgba(0, 122, 255, 0.3)',
-  '--color-button-secondary-bg': '#f5f5f7',
-  '--color-button-secondary-hover': '#e8e8ed',
-  '--color-button-secondary-active': '#d1d5db',
-  '--color-button-secondary-border': '#d1d5db',
-  '--color-button-secondary-text': '#111827',
-  '--color-button-secondary-focus': 'rgba(0, 122, 255, 0.2)',
-  '--color-button-disabled-bg': '#f9fafb',
-  '--color-button-disabled-text': '#9ca3af',
-  '--color-button-disabled-border': '#e5e7eb',
-  '--color-modal-backdrop': 'rgba(0, 0, 0, 0.5)',
-  '--color-modal-bg': '#ffffff',
-  '--color-modal-border': '#e5e7eb',
-  '--color-scrollbar-track': '#f0f0f0',
-  '--color-scrollbar-thumb': '#b0b0b0',
-  '--color-scrollbar-thumb-hover': '#909090',
-  '--color-form-bg': '#ffffff',
-  '--color-form-shadow': 'rgba(0, 0, 0, 0.08)',
-  // Status colors
-  '--color-status-success': '#34c759',
-  '--color-status-success-bg': 'rgba(52, 199, 89, 0.15)',
-  '--color-status-success-border': 'rgba(52, 199, 89, 0.3)',
-  '--color-status-error': '#ff3b30',
-  '--color-status-error-bg': 'rgba(255, 59, 48, 0.15)',
-  '--color-status-error-border': 'rgba(255, 59, 48, 0.3)',
-  '--color-status-warning': '#ff9500',
-  '--color-status-warning-bg': 'rgba(255, 149, 0, 0.1)',
-  '--color-status-warning-border': 'rgba(255, 149, 0, 0.3)',
-  '--color-status-stopped': '#8e8e93',
-  '--color-status-unknown': '#636366',
+  // Base colors - Kanagawa Lotus palette
+  '--color-background': '#FAF6F3', // lotusWave1 - warm white
+  '--color-surface': '#FFFFFF', // pure white for cards
+  '--color-surface-secondary': '#F5E9DD', // lotusWave2 - light beige
+  '--color-border': '#D5C9A1', // lotusWave5 - light border
+  '--color-border-hover': '#957FB8', // lotusViolet - purple accent
+  '--color-text': '#545464', // lotusWave7 - dark gray
+  '--color-text-secondary': '#727169', // lotusWave6 - medium gray
+  '--color-text-tertiary': '#9C9C93', // lotusWave5 - light gray
+  // Input colors
+  '--color-input-bg': '#FFF9F0', // lotusWave0 - very light beige
+  '--color-input-border': '#D5C9A1', // lotusWave5
+  '--color-input-focus-border': '#7E9CD8', // lotusBlue - blue accent
+  '--color-input-focus-bg': '#FFFFFF',
+  '--color-input-focus-shadow': 'rgba(126, 156, 216, 0.2)',
+  // Button colors
+  '--color-button-primary-bg': '#7E9CD8', // lotusBlue
+  '--color-button-primary-hover': '#6A8BC5', // darker blue
+  '--color-button-primary-active': '#5A7BB5', // even darker
+  '--color-button-primary-text': '#FFFFFF',
+  '--color-button-primary-focus': 'rgba(126, 156, 216, 0.3)',
+  '--color-button-secondary-bg': '#F5E9DD', // lotusWave2
+  '--color-button-secondary-hover': '#E8D9C8', // darker beige
+  '--color-button-secondary-active': '#DBC9B3', // even darker
+  '--color-button-secondary-border': '#D5C9A1', // lotusWave5
+  '--color-button-secondary-text': '#545464', // lotusWave7
+  '--color-button-secondary-focus': 'rgba(126, 156, 216, 0.2)',
+  '--color-button-disabled-bg': '#F5E9DD',
+  '--color-button-disabled-text': '#9C9C93',
+  '--color-button-disabled-border': '#D5C9A1',
+  // Modal colors
+  '--color-modal-backdrop': 'rgba(84, 84, 100, 0.5)',
+  '--color-modal-bg': '#FFFFFF',
+  '--color-modal-border': '#D5C9A1',
+  // Scrollbar colors
+  '--color-scrollbar-track': '#F5E9DD',
+  '--color-scrollbar-thumb': '#C8A384', // lotusPeach2
+  '--color-scrollbar-thumb-hover': '#B8967A',
+  // Form colors
+  '--color-form-bg': '#FFFFFF',
+  '--color-form-shadow': 'rgba(84, 84, 100, 0.1)',
+  // Status colors - Kanagawa accent colors
+  '--color-status-success': '#76946A', // lotusGreen
+  '--color-status-success-bg': 'rgba(118, 148, 106, 0.15)',
+  '--color-status-success-border': 'rgba(118, 148, 106, 0.3)',
+  '--color-status-error': '#C34043', // lotusRed
+  '--color-status-error-bg': 'rgba(195, 64, 67, 0.15)',
+  '--color-status-error-border': 'rgba(195, 64, 67, 0.3)',
+  '--color-status-warning': '#C0A36E', // lotusYellow
+  '--color-status-warning-bg': 'rgba(192, 163, 110, 0.15)',
+  '--color-status-warning-border': 'rgba(192, 163, 110, 0.3)',
+  '--color-status-stopped': '#727169', // lotusWave6
+  '--color-status-unknown': '#9C9C93', // lotusWave5
   // Log level colors
-  '--color-log-error': '#d70015',
-  '--color-log-warn': '#ff9500',
-  '--color-log-info': '#007aff',
-  '--color-log-debug': '#6b7280',
-  '--color-log-default': '#6b7280',
+  '--color-log-error': '#C34043', // lotusRed
+  '--color-log-warn': '#C0A36E', // lotusYellow
+  '--color-log-info': '#7E9CD8', // lotusBlue
+  '--color-log-debug': '#727169', // lotusWave6
+  '--color-log-default': '#545464', // lotusWave7
   // Button variants
-  '--color-button-success-bg': 'rgba(52, 199, 89, 0.15)',
-  '--color-button-success-border': 'rgba(52, 199, 89, 0.3)',
-  '--color-button-success-text': '#34c759',
-  '--color-button-success-hover-bg': 'rgba(52, 199, 89, 0.25)',
-  '--color-button-success-hover-border': 'rgba(52, 199, 89, 0.4)',
+  '--color-button-success-bg': 'rgba(118, 148, 106, 0.15)',
+  '--color-button-success-border': 'rgba(118, 148, 106, 0.3)',
+  '--color-button-success-text': '#76946A',
+  '--color-button-success-hover-bg': 'rgba(118, 148, 106, 0.25)',
+  '--color-button-success-hover-border': 'rgba(118, 148, 106, 0.4)',
 } as const;
 
 /**
- * Dark theme color definitions
+ * Dark theme color definitions (Kanagawa Wave)
  */
 const darkThemeColors = {
-  '--color-background': '#1e1e1e',
-  '--color-surface': '#1e1e1e',
-  '--color-surface-secondary': '#1f2937',
-  '--color-border': '#374151',
-  '--color-border-hover': '#3b82f6',
-  '--color-text': '#f9fafb',
-  '--color-text-secondary': '#9ca3af',
-  '--color-text-tertiary': '#6b7280',
-  '--color-input-bg': '#2a2a2a',
-  '--color-input-border': '#3a3a3a',
-  '--color-input-focus-border': '#007aff',
-  '--color-input-focus-bg': '#1e1e1e',
-  '--color-input-focus-shadow': 'rgba(0, 122, 255, 0.2)',
-  '--color-button-primary-bg': '#007aff',
-  '--color-button-primary-hover': '#0051d5',
-  '--color-button-primary-active': '#0040b3',
-  '--color-button-primary-text': '#ffffff',
-  '--color-button-primary-focus': 'rgba(0, 122, 255, 0.4)',
-  '--color-button-secondary-bg': '#2a2a2a',
-  '--color-button-secondary-hover': '#3a3a3a',
-  '--color-button-secondary-active': '#4a4a4a',
-  '--color-button-secondary-border': '#3a3a3a',
-  '--color-button-secondary-text': '#f5f5f7',
-  '--color-button-secondary-focus': 'rgba(0, 122, 255, 0.3)',
-  '--color-button-disabled-bg': '#1f2937',
-  '--color-button-disabled-text': '#6b7280',
-  '--color-button-disabled-border': '#374151',
+  // Base colors - Kanagawa Wave palette
+  '--color-background': '#1F1F28', // waveBg - dark blue-gray
+  '--color-surface': '#1F1F28', // waveBg
+  '--color-surface-secondary': '#2A2A37', // waveBg2 - slightly lighter
+  '--color-border': '#363646', // waveBlue2 - blue-gray border
+  '--color-border-hover': '#957FB8', // waveViolet - purple accent
+  '--color-text': '#DCD7BA', // waveFg - warm beige
+  '--color-text-secondary': '#C8C093', // waveFg2 - lighter beige
+  '--color-text-tertiary': '#9CAB88', // waveGreen2 - muted green-gray
+  // Input colors
+  '--color-input-bg': '#2A2A37', // waveBg2
+  '--color-input-border': '#363646', // waveBlue2
+  '--color-input-focus-border': '#7E9CD8', // waveBlue - blue accent
+  '--color-input-focus-bg': '#1F1F28',
+  '--color-input-focus-shadow': 'rgba(126, 156, 216, 0.3)',
+  // Button colors
+  '--color-button-primary-bg': '#7E9CD8', // waveBlue
+  '--color-button-primary-hover': '#6A8BC5', // darker blue
+  '--color-button-primary-active': '#5A7BB5', // even darker
+  '--color-button-primary-text': '#1F1F28', // dark text on light button
+  '--color-button-primary-focus': 'rgba(126, 156, 216, 0.4)',
+  '--color-button-secondary-bg': '#2A2A37', // waveBg2
+  '--color-button-secondary-hover': '#363646', // waveBlue2
+  '--color-button-secondary-active': '#414350', // darker
+  '--color-button-secondary-border': '#363646', // waveBlue2
+  '--color-button-secondary-text': '#DCD7BA', // waveFg
+  '--color-button-secondary-focus': 'rgba(126, 156, 216, 0.3)',
+  '--color-button-disabled-bg': '#2A2A37',
+  '--color-button-disabled-text': '#727169', // waveGray
+  '--color-button-disabled-border': '#363646',
+  // Modal colors
   '--color-modal-backdrop': 'rgba(0, 0, 0, 0.7)',
-  '--color-modal-bg': '#1f2937',
-  '--color-modal-border': '#374151',
-  '--color-scrollbar-track': '#2a2a2a',
-  '--color-scrollbar-thumb': '#505050',
-  '--color-scrollbar-thumb-hover': '#606060',
-  '--color-form-bg': '#1e1e1e',
-  '--color-form-shadow': 'rgba(0, 0, 0, 0.4)',
-  // Status colors
-  '--color-status-success': '#30d158',
-  '--color-status-success-bg': 'rgba(48, 209, 88, 0.15)',
-  '--color-status-success-border': 'rgba(48, 209, 88, 0.3)',
-  '--color-status-error': '#ff3b30',
-  '--color-status-error-bg': 'rgba(255, 59, 48, 0.15)',
-  '--color-status-error-border': 'rgba(255, 59, 48, 0.3)',
-  '--color-status-warning': '#ff9500',
-  '--color-status-warning-bg': 'rgba(255, 149, 0, 0.1)',
-  '--color-status-warning-border': 'rgba(255, 149, 0, 0.3)',
-  '--color-status-stopped': '#8e8e93',
-  '--color-status-unknown': '#636366',
+  '--color-modal-bg': '#2A2A37', // waveBg2
+  '--color-modal-border': '#363646', // waveBlue2
+  // Scrollbar colors
+  '--color-scrollbar-track': '#2A2A37',
+  '--color-scrollbar-thumb': '#54546D', // waveBlue1
+  '--color-scrollbar-thumb-hover': '#6A6A85',
+  // Form colors
+  '--color-form-bg': '#1F1F28',
+  '--color-form-shadow': 'rgba(0, 0, 0, 0.5)',
+  // Status colors - Kanagawa accent colors
+  '--color-status-success': '#76946A', // waveGreen
+  '--color-status-success-bg': 'rgba(118, 148, 106, 0.15)',
+  '--color-status-success-border': 'rgba(118, 148, 106, 0.3)',
+  '--color-status-error': '#C34043', // waveRed
+  '--color-status-error-bg': 'rgba(195, 64, 67, 0.15)',
+  '--color-status-error-border': 'rgba(195, 64, 67, 0.3)',
+  '--color-status-warning': '#C0A36E', // waveYellow
+  '--color-status-warning-bg': 'rgba(192, 163, 110, 0.15)',
+  '--color-status-warning-border': 'rgba(192, 163, 110, 0.3)',
+  '--color-status-stopped': '#727169', // waveGray
+  '--color-status-unknown': '#9CAB88', // waveGreen2
   // Log level colors
-  '--color-log-error': '#f48771',
-  '--color-log-warn': '#dcdcaa',
-  '--color-log-info': '#4fc1ff',
-  '--color-log-debug': '#b5b5b5',
-  '--color-log-default': '#d4d4d4',
+  '--color-log-error': '#C34043', // waveRed
+  '--color-log-warn': '#C0A36E', // waveYellow
+  '--color-log-info': '#7E9CD8', // waveBlue
+  '--color-log-debug': '#727169', // waveGray
+  '--color-log-default': '#DCD7BA', // waveFg
   // Button variants
-  '--color-button-success-bg': 'rgba(48, 209, 88, 0.15)',
-  '--color-button-success-border': 'rgba(48, 209, 88, 0.3)',
-  '--color-button-success-text': '#30d158',
-  '--color-button-success-hover-bg': 'rgba(48, 209, 88, 0.25)',
-  '--color-button-success-hover-border': 'rgba(48, 209, 88, 0.4)',
+  '--color-button-success-bg': 'rgba(118, 148, 106, 0.15)',
+  '--color-button-success-border': 'rgba(118, 148, 106, 0.3)',
+  '--color-button-success-text': '#76946A',
+  '--color-button-success-hover-bg': 'rgba(118, 148, 106, 0.25)',
+  '--color-button-success-hover-border': 'rgba(118, 148, 106, 0.4)',
 } as const;
 
 /**
