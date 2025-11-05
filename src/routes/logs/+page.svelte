@@ -317,29 +317,6 @@
         {/if}
       </div>
       <div class="log-controls-actions">
-        <!-- Log Level Filter Toggle Icon -->
-        <button
-          class="filter-toggle-icon"
-          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
-          aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
-          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
-        >
-          {#if logLevelFilter === 'error'}
-            <!-- Error/Warning icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          {:else}
-            <!-- Info/List icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
-            </svg>
-          {/if}
-        </button>
-
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
           <span class="log-count">
@@ -371,6 +348,29 @@
             </button>
           </div>
         </div>
+
+        <!-- Log Level Filter Toggle Icon -->
+        <button
+          class="filter-toggle-icon"
+          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
+          aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
+          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
+        >
+          {#if logLevelFilter === 'error'}
+            <!-- Error/Warning icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {:else}
+            <!-- Info/List icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
+            </svg>
+          {/if}
+        </button>
       </div>
     </div>
 
