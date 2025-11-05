@@ -11,7 +11,7 @@ I've created an automated CI workflow that will:
 
 ## Files Created/Modified
 
-### 1. `.github/workflows/auto-merge.yml` (NEW)
+### 1. `docs/workflows-to-add/auto-merge.yml` (NEW - Ready to Install)
 This workflow automatically approves and merges PRs when the PR Checks workflow completes successfully.
 
 **Features:**
@@ -22,7 +22,9 @@ This workflow automatically approves and merges PRs when the PR Checks workflow 
 - Uses squash merge method
 - Provides clear success/failure messages
 
-### 2. `.github/workflows/pr-checks.yml` (UPDATED)
+**To Install:** Copy or move this file to `.github/workflows/auto-merge.yml`
+
+### 2. `docs/workflows-to-add/pr-checks.yml` (UPDATED - Ready to Install)
 Added `make test` step to ensure comprehensive validation before merge.
 
 **Now runs:**
@@ -30,27 +32,40 @@ Added `make test` step to ensure comprehensive validation before merge.
 2. `make check` - Type checking
 3. `make lint` - Linting
 
-## Manual Setup Required
+**To Install:** Copy or move this file to `.github/workflows/pr-checks.yml`
 
-Due to GitHub security restrictions, workflow files cannot be pushed automatically. You need to manually add the new workflow file:
+## Installation Instructions
 
-### Option 1: Manual File Creation
-1. Navigate to `.github/workflows/` in your repository
-2. Create a new file named `auto-merge.yml`
-3. Copy the contents from the local file created in this branch
-4. Update `pr-checks.yml` with the test step added
+Due to GitHub security restrictions, workflow files cannot be pushed automatically. The workflow files are ready in `docs/workflows-to-add/` - you just need to install them:
 
-### Option 2: Review and Merge This Branch
-1. Review the changes in this branch: `claude/setup-ci-auto-approve-011CUpwznde3Bdz1iEx19ACn`
-2. Create a PR from this branch to main
-3. Manually push the workflow files or merge via PR
-
-### Option 3: Git Commands
+### Quick Install (Recommended)
 ```bash
-# Manually push the workflow files from your local machine
-git checkout claude/setup-ci-auto-approve-011CUpwznde3Bdz1iEx19ACn
-git push origin claude/setup-ci-auto-approve-011CUpwznde3Bdz1iEx19ACn
+# Copy the workflow files to the correct location
+cp docs/workflows-to-add/auto-merge.yml .github/workflows/
+cp docs/workflows-to-add/pr-checks.yml .github/workflows/
+
+# Commit and push
+git add .github/workflows/
+git commit -m "feat: add auto-merge workflow and update PR checks"
+git push origin main  # or your target branch
 ```
+
+### Option 1: Via GitHub Web Interface
+1. Navigate to `.github/workflows/` in your repository
+2. Click "Add file" → "Upload files"
+3. Upload both files from `docs/workflows-to-add/`
+4. Commit directly to main branch
+
+### Option 2: Manual File Creation
+1. Copy contents from `docs/workflows-to-add/auto-merge.yml`
+2. Create `.github/workflows/auto-merge.yml` in your repo
+3. Copy contents from `docs/workflows-to-add/pr-checks.yml`
+4. Update `.github/workflows/pr-checks.yml` in your repo
+
+### Option 3: Merge This PR and Install
+1. This branch contains the workflow files in `docs/workflows-to-add/`
+2. Merge this PR to get the documentation and files
+3. Then run the Quick Install commands above
 
 ## Testing the Workflow
 
