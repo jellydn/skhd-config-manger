@@ -104,7 +104,8 @@ impl ThemeMonitorState {
         let (tx, mut rx) = mpsc::unbounded_channel::<String>();
         let monitoring_flag = self.is_monitoring.clone();
 
-        unsafe {
+        // Create observer handle synchronously (before any await points)
+        let observer_handle = unsafe {
             // Get NSDistributedNotificationCenter class
             let notification_center_class = Class::get("NSDistributedNotificationCenter")
                 .ok_or("NSDistributedNotificationCenter class not available")?;
@@ -153,12 +154,15 @@ impl ThemeMonitorState {
 
             let observer: Id<Object, Shared> = Id::from_retained_ptr(observer);
 
-            // Store the observer handle for cleanup
-            *self.observer.lock().await = Some(ObserverHandle {
+            // Return the observer handle (block is dropped here, before await)
+            ObserverHandle {
                 observer,
                 notification_center,
-            });
-        }
+            }
+        };
+
+        // Store the observer handle for cleanup (block is no longer in scope)
+        *self.observer.lock().await = Some(observer_handle);
 
         // Spawn task to handle notifications from the channel
         tokio::spawn(async move {
