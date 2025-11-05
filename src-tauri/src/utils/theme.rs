@@ -2,7 +2,6 @@
 ///
 /// This module provides shared utilities for detecting the macOS system theme
 /// (light or dark mode) via NSUserDefaults and command-line fallback.
-
 use objc::rc::autoreleasepool;
 use objc::runtime::{Class, Object};
 use objc::{msg_send, sel, sel_impl};

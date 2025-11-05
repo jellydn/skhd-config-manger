@@ -1,3 +1,7 @@
+// Allow unexpected cfgs from objc crate macros
+// The objc crate uses cfg conditions that clippy doesn't recognize
+#![allow(unexpected_cfgs)]
+
 // Modules
 pub mod commands;
 pub mod models;
