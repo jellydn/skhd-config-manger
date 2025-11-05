@@ -1,0 +1,108 @@
+name: Auto Approve and Merge
+
+# Trigger when PR checks workflow completes successfully
+on:
+  workflow_run:
+    workflows: ["PR Checks"]
+    types: [completed]
+    branches:
+      - '**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  auto-approve-and-merge:
+    name: Auto Approve and Merge PR
+    runs-on: ubuntu-latest
+    # Only run if PR checks passed and it's a PR event
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get PR information
+        id: pr_info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: context.payload.workflow_run.head_repository.owner.login + ':' + context.payload.workflow_run.head_branch
+            });
+
+            if (pullRequests.length === 0) {
+              core.info('No open PR found for this branch');
+              return { number: null };
+            }
+
+            const pr = pullRequests[0];
+            core.setOutput('number', pr.number);
+            core.setOutput('sha', pr.head.sha);
+            return { number: pr.number, sha: pr.head.sha };
+
+      - name: Approve PR
+        if: steps.pr_info.outputs.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr_info.outputs.number }};
+
+            try {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                event: 'APPROVE',
+                body: '✅ Auto-approved: All checks passed (make test, make lint, make check)'
+              });
+              core.info('PR approved successfully');
+            } catch (error) {
+              if (error.message.includes('already reviewed')) {
+                core.info('PR already approved');
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Merge PR
+        if: steps.pr_info.outputs.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr_info.outputs.number }};
+
+            try {
+              // Check if PR is mergeable
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+
+              if (!pr.mergeable) {
+                core.setFailed('PR is not mergeable (conflicts detected)');
+                return;
+              }
+
+              // Merge the PR
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash',
+                commit_title: pr.title,
+                commit_message: 'Auto-merged after all checks passed'
+              });
+
+              core.info('PR merged successfully');
+            } catch (error) {
+              core.setFailed(`Failed to merge PR: ${error.message}`);
+            }
