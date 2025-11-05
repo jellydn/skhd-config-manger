@@ -20,9 +20,10 @@ pub fn get_system_theme() -> Result<String, String> {
 
 /// Start monitoring macOS system theme changes
 ///
-/// Subscribes to theme changes via polling (every 2 seconds).
+/// Subscribes to theme changes via NSDistributedNotificationCenter (primary method)
+/// or falls back to polling every 2 seconds if notifications are unavailable.
 /// Emits 'theme-changed' Tauri event when system theme changes.
-/// 
+///
 /// # Arguments
 /// * `app_handle` - Tauri AppHandle for emitting events
 /// * `state` - Shared ThemeMonitorState
@@ -35,8 +36,8 @@ pub async fn start_theme_monitor(
 }
 
 /// Stop monitoring macOS system theme changes
-/// 
-/// Stops polling and cleans up resources.
+///
+/// Stops notification observer or polling and cleans up resources.
 /// 
 /// # Arguments
 /// * `state` - Shared ThemeMonitorState
