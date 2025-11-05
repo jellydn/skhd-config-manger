@@ -202,7 +202,7 @@
   }
 
   pre {
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
     line-height: 1.6;
     background: var(--color-surface-secondary);

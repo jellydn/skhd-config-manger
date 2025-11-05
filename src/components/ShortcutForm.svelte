@@ -386,7 +386,7 @@
   }
 
   textarea {
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     resize: vertical;
     line-height: 1.5;
   }

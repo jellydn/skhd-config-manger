@@ -292,7 +292,7 @@
     background: var(--color-surface-secondary);
     border: 1px solid var(--color-border);
     border-radius: 6px;
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
     color: var(--color-text);
     word-break: break-all;

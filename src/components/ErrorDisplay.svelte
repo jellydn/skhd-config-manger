@@ -103,7 +103,7 @@
     font-weight: 600;
     color: var(--color-text-secondary);
     margin-bottom: 0.25rem;
-    font-family: 'SF Mono', Monaco, monospace;
+    font-family: Monaco, 'Menlo', monospace;
   }
 
   .error-message {
@@ -112,7 +112,7 @@
   }
 
   .error-code {
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
     background: var(--color-surface-secondary);
     padding: 0.5rem;
