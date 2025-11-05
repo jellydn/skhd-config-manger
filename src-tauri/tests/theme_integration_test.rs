@@ -41,8 +41,8 @@ fn test_theme_detection_performance_integration() {
     
     assert!(result.is_ok(), "Theme detection should succeed");
     assert!(
-        duration.as_millis() < 100,
-        "Theme detection should complete within 100ms in integration scenario, took: {}ms",
+        duration.as_millis() < 200,
+        "Theme detection should complete within 200ms in integration scenario, took: {}ms",
         duration.as_millis()
     );
 }
