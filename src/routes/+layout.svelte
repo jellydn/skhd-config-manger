@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import type { Snippet } from 'svelte';
+  import { applyTheme } from '../services/themeService';
+  import { getSystemTheme, startThemeMonitor, stopThemeMonitor } from '../services/tauri';
+  import { listen } from '@tauri-apps/api/event';
 
   // Props
   let { children }: { children: Snippet } = $props();
@@ -12,11 +15,58 @@
   // Sidebar collapse state
   let isCollapsed = $state(false);
 
-  // Load collapse state from localStorage
-  onMount(() => {
+  // Store unsubscribe function for cleanup
+  let unsubscribeThemeListener: (() => void) | null = $state(null);
+
+  // Load collapse state from localStorage and detect system theme on mount
+  onMount(async () => {
+    // Load sidebar collapse state
     const saved = localStorage.getItem('sidebarCollapsed');
     if (saved !== null) {
       isCollapsed = saved === 'true';
+    }
+
+    // Detect and apply system theme on launch
+    try {
+      const theme = await getSystemTheme();
+      applyTheme(theme);
+    } catch (error) {
+      // Fallback to dark mode on error (maintains current default behavior)
+      console.error('Failed to detect system theme, defaulting to dark mode:', error);
+      applyTheme('dark');
+    }
+
+    // Start theme monitoring for real-time updates
+    try {
+      await startThemeMonitor();
+      console.log('Theme monitoring started');
+    } catch (error) {
+      console.error('Failed to start theme monitoring:', error);
+    }
+
+    // Listen for theme change events
+    try {
+      const unsubscribe = await listen<{ theme: string; timestamp: string }>('theme-changed', (event) => {
+        const newTheme = event.payload.theme as 'light' | 'dark';
+        console.log('System theme changed to:', newTheme);
+        applyTheme(newTheme);
+      });
+      unsubscribeThemeListener = unsubscribe;
+    } catch (error) {
+      console.error('Failed to set up theme change listener:', error);
+    }
+  });
+
+  // Cleanup on destroy
+  onDestroy(async () => {
+    if (unsubscribeThemeListener) {
+      unsubscribeThemeListener();
+    }
+    try {
+      await stopThemeMonitor();
+      console.log('Theme monitoring stopped');
+    } catch (error) {
+      console.error('Failed to stop theme monitoring:', error);
     }
   });
 
@@ -99,8 +149,11 @@
 
 <style>
   /* Color System - Light and Dark Theme Variables */
+  /* Default to light theme - will be overridden by themeService.ts */
+  /* Add smooth transitions for theme changes */
   :global(:root) {
-    /* Light Theme Colors */
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    /* Light Theme Colors (default) */
     --color-background: #ffffff;
     --color-surface: #ffffff;
     --color-surface-secondary: #f9fafb;
@@ -141,54 +194,13 @@
     --color-form-shadow: rgba(0, 0, 0, 0.08);
   }
 
-  @media (prefers-color-scheme: dark) {
-    :global(:root) {
-      /* Dark Theme Colors */
-      --color-background: #1e1e1e;
-      --color-surface: #1e1e1e;
-      --color-surface-secondary: #1f2937;
-      --color-border: #374151;
-      --color-border-hover: #3b82f6;
-      --color-text: #f9fafb;
-      --color-text-secondary: #9ca3af;
-      --color-text-tertiary: #6b7280;
-
-      /* Input Colors */
-      --color-input-bg: #2a2a2a;
-      --color-input-border: #3a3a3a;
-      --color-input-focus-border: #007aff;
-      --color-input-focus-bg: #1e1e1e;
-      --color-input-focus-shadow: rgba(0, 122, 255, 0.2);
-
-      /* Button Colors */
-      --color-button-primary-bg: #007aff;
-      --color-button-primary-hover: #0051d5;
-      --color-button-primary-text: #ffffff;
-      --color-button-secondary-bg: #2a2a2a;
-      --color-button-secondary-hover: #3a3a3a;
-      --color-button-secondary-border: #3a3a3a;
-      --color-button-secondary-text: #f5f5f7;
-
-      /* Modal Colors */
-      --color-modal-backdrop: rgba(0, 0, 0, 0.7);
-      --color-modal-bg: #1f2937;
-      --color-modal-border: #374151;
-
-      /* Scrollbar Colors */
-      --color-scrollbar-track: #2a2a2a;
-      --color-scrollbar-thumb: #505050;
-      --color-scrollbar-thumb-hover: #606060;
-
-      /* Form Colors */
-      --color-form-bg: #1e1e1e;
-      --color-form-shadow: rgba(0, 0, 0, 0.4);
-    }
-  }
+  /* Note: Theme is now handled via JavaScript (themeService.ts) */
+  /* CSS variables are set dynamically based on macOS system theme */
 
   :global(body) {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background: #1e1e1e;
@@ -206,8 +218,8 @@
   /* Sidebar - Native macOS style */
   .sidebar {
     width: 200px;
-    background: #1c1c1c;
-    border-right: 1px solid #2d2d2d;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -220,7 +232,7 @@
 
   .sidebar-header {
     padding: 20px 16px 12px;
-    border-bottom: 1px solid #2d2d2d;
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -236,7 +248,7 @@
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.3px;
-    color: #ffffff;
+    color: var(--color-text);
     margin: 0;
     text-transform: uppercase;
     opacity: 0.6;
@@ -246,7 +258,7 @@
   .collapse-btn {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     padding: 4px;
     cursor: pointer;
     border-radius: 4px;
@@ -258,8 +270,8 @@
   }
 
   .collapse-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .sidebar-nav {
@@ -275,7 +287,7 @@
     padding: 6px 10px;
     margin-bottom: 2px;
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--color-text-secondary);
     text-decoration: none;
     font-size: 13px;
     font-weight: 400;
@@ -295,13 +307,13 @@
   }
 
   .nav-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.95);
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .nav-item.active {
-    background: rgba(10, 132, 255, 0.15);
-    color: #0a84ff;
+    background: var(--color-surface-secondary);
+    color: var(--color-border-hover);
     font-weight: 500;
   }
 
@@ -311,7 +323,7 @@
 
   .sidebar-footer {
     padding: 12px 16px;
-    border-top: 1px solid #2d2d2d;
+    border-top: 1px solid var(--color-border);
   }
 
   .sidebar.collapsed .sidebar-footer {
@@ -325,7 +337,7 @@
     align-items: center;
     gap: 8px;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
   }
 
   .sidebar.collapsed .service-status {
@@ -339,8 +351,8 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-text {
@@ -353,7 +365,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background: #1e1e1e;
+    background: var(--color-background);
   }
 
   /* Scrollbar styling for macOS look */
@@ -367,11 +379,11 @@
   }
 
   :global(::-webkit-scrollbar-thumb) {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-scrollbar-thumb);
     border-radius: 4px;
   }
 
   :global(::-webkit-scrollbar-thumb:hover) {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-scrollbar-thumb-hover);
   }
 </style>

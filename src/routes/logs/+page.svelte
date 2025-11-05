@@ -146,13 +146,6 @@
 
   // Log viewer control functions
 
-  function handleSortChange() {
-    if (logViewerRef) {
-      logViewerRef.toggleSortOrder();
-      updateLogState();
-    }
-  }
-
   // Pagination controls
   function handlePrevPage() {
     if (currentPage > 1) {
@@ -206,7 +199,6 @@
   function updateLogState() {
     if (logViewerRef) {
       logsCount = logViewerRef.getLogsCount();
-      sortDescending = logViewerRef.getSortDescending();
     }
   }
 
@@ -325,37 +317,6 @@
         {/if}
       </div>
       <div class="log-controls-actions">
-        <!-- Log Level Filter (Compact Toggle) -->
-        <div class="filter-group">
-          <button
-            class="filter-btn {logLevelFilter === 'error' ? 'filter-btn-active' : ''}"
-            onclick={() => logLevelFilter = 'error'}
-            aria-label="Show error logs only"
-            aria-pressed={logLevelFilter === 'error'}
-          >
-            Error
-          </button>
-          <button
-            class="filter-btn {logLevelFilter === 'info' ? 'filter-btn-active' : ''}"
-            onclick={() => logLevelFilter = 'info'}
-            aria-label="Show info logs only"
-            aria-pressed={logLevelFilter === 'info'}
-          >
-            Info
-          </button>
-        </div>
-
-        <!-- Sort Order Dropdown -->
-        <select
-          class="log-control-select"
-          bind:value={sortDescending}
-          onchange={handleSortChange}
-          aria-label="Sort order"
-        >
-          <option value={true}>Newest First</option>
-          <option value={false}>Oldest First</option>
-        </select>
-
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
           <span class="log-count">
@@ -387,6 +348,29 @@
             </button>
           </div>
         </div>
+
+        <!-- Log Level Filter Toggle Icon -->
+        <button
+          class="filter-toggle-icon"
+          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
+          aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
+          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
+        >
+          {#if logLevelFilter === 'error'}
+            <!-- Error/Warning icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {:else}
+            <!-- Info/List icon -->
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
+            </svg>
+          {/if}
+        </button>
       </div>
     </div>
 
@@ -436,8 +420,8 @@
 
   /* Toolbar - Native macOS style */
   .toolbar {
-    background: #1c1c1c;
-    border-bottom: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border-bottom: 1px solid var(--color-border);
     padding: 20px 20px 12px;
     display: flex;
     justify-content: space-between;
@@ -455,7 +439,7 @@
   .toolbar-left h1 {
     font-size: 15px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-text);
     margin: 0;
   }
 
@@ -464,7 +448,7 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text);
   }
 
   .status-indicator {
@@ -475,26 +459,26 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-stopped {
-    background: #8e8e93;
+    background: var(--color-status-stopped);
   }
 
   .status-transitioning {
-    background: #ff9500;
+    background: var(--color-status-warning);
     animation: pulse 1.5s ease-in-out infinite;
   }
 
   .status-error {
-    background: #ff3b30;
-    box-shadow: 0 0 6px rgba(255, 59, 48, 0.4);
+    background: var(--color-status-error);
+    box-shadow: 0 0 6px var(--color-status-error-bg);
   }
 
   .status-unknown {
-    background: #636366;
+    background: var(--color-status-unknown);
   }
 
   @keyframes pulse {
@@ -520,29 +504,38 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-button-secondary-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .toolbar-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .toolbar-btn:active:not(:disabled) {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-button-secondary-active);
+  }
+
+  .toolbar-btn:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .toolbar-btn:disabled {
-    opacity: 0.4;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .toolbar-btn svg {
@@ -568,10 +561,10 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-button-secondary-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -579,32 +572,50 @@
   }
 
   .toolbar-checkbox:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .toolbar-checkbox svg {
     flex-shrink: 0;
-    color: #0a84ff;
+    color: var(--color-border-hover);
   }
 
   .toolbar-btn-primary {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    border-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .toolbar-btn-primary:hover:not(:disabled) {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .toolbar-btn-primary:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .toolbar-btn-primary:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
+  }
+
+  .toolbar-btn-primary:disabled {
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .logs-page__content {
     flex: 1;
     overflow: hidden;
     padding: 20px;
-    background: #1e1e1e;
+    background: var(--color-background);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -617,24 +628,24 @@
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     font-size: 12px;
   }
 
   .config-path-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
   .config-path-value {
     flex: 1;
     padding: 4px 10px;
-    background: #1c1c1c;
-    border: 1px solid #3a3a3a;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: #d4d4d4;
+    color: var(--color-text);
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 11px;
     overflow: hidden;
@@ -670,15 +681,15 @@
   }
 
   .import-feedback-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   .import-feedback-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-status-error-bg);
+    border: 1px solid var(--color-status-error-border);
+    color: var(--color-status-error);
   }
 
   @keyframes slideIn {
@@ -698,8 +709,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 16px;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     margin-bottom: 12px;
   }
@@ -719,7 +730,7 @@
   .log-controls-left h2 {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-text);
     margin: 0;
   }
 
@@ -731,16 +742,16 @@
   }
 
   .config-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
   .config-value {
     padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text);
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 10px;
   }
@@ -756,15 +767,15 @@
   }
 
   .import-feedback-inline.import-feedback-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   .import-feedback-inline.import-feedback-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-status-error-bg);
+    border: 1px solid var(--color-status-error-border);
+    color: var(--color-status-error);
   }
 
   .import-feedback-inline svg {
@@ -782,10 +793,10 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -793,13 +804,13 @@
   }
 
   .log-control-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-btn:active:not(:disabled) {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-secondary);
   }
 
   .log-control-btn:disabled {
@@ -817,25 +828,25 @@
   }
 
   .log-control-btn-primary {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
+    background: var(--color-button-primary-bg);
+    border-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .log-control-btn-primary:hover:not(:disabled) {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   .log-control-btn-stop {
-    background: rgba(255, 59, 48, 0.15);
-    border-color: rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
+    background: var(--color-button-secondary-bg);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-btn-stop:hover:not(:disabled) {
-    background: rgba(255, 59, 48, 0.25);
-    border-color: rgba(255, 59, 48, 0.4);
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
   }
 
   .log-control-checkbox {
@@ -843,10 +854,10 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -854,86 +865,45 @@
   }
 
   .log-control-checkbox:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .log-control-checkbox svg {
     flex-shrink: 0;
-    color: #0a84ff;
+    color: var(--color-border-hover);
   }
 
-  /* Sort Order Dropdown */
-  .log-control-select {
-    padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    appearance: none;
-    padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.8)' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-    background-size: 12px;
-  }
-
-  .log-control-select:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-  }
-
-  .log-control-select:focus {
-    outline: none;
-    border-color: #0a84ff;
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .log-control-select option {
-    background: #2a2a2a;
-    color: #ffffff;
-  }
-
-  /* Log Level Filter */
-  .filter-group {
+  /* Log Level Filter Toggle Icon */
+  .filter-toggle-icon {
     display: flex;
-    gap: 0;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 5px;
-    overflow: hidden;
-  }
-
-  .filter-btn {
-    padding: 5px 10px;
-    background: transparent;
-    border: none;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 11px;
-    font-weight: 500;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
+    border-radius: 6px;
+    color: var(--color-button-secondary-text);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
-  .filter-btn:last-child {
-    border-right: none;
+  .filter-toggle-icon:hover {
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
-  .filter-btn:hover:not(.filter-btn-active) {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+  .filter-toggle-icon:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
-  .filter-btn-active {
-    background: #0a84ff;
-    color: #ffffff;
+  .filter-toggle-icon svg {
+    flex-shrink: 0;
   }
 
   /* Pagination Controls */
@@ -949,18 +919,18 @@
     align-items: center;
     justify-content: center;
     padding: 5px 6px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 5px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-button-secondary-text);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .pagination-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .pagination-btn:disabled {
@@ -974,7 +944,7 @@
 
   .pagination-info {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
     font-weight: 500;
     min-width: 40px;
     text-align: center;
@@ -988,7 +958,7 @@
 
   .log-count {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-secondary);
     font-weight: 500;
     white-space: nowrap;
   }
@@ -1006,10 +976,10 @@
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-button-secondary-text);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -1017,9 +987,9 @@
   }
 
   .load-more-bottom-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+    color: var(--color-text);
   }
 
   .load-more-bottom-btn:disabled {

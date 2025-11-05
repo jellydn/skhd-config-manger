@@ -337,13 +337,6 @@
       {/each}
     {/if}
   </div>
-
-  <!-- Footer with status only -->
-  <div class="log-viewer__footer">
-    <span class="log-viewer__status log-viewer__status--active">
-      ● Live
-    </span>
-  </div>
 </div>
 
 <style>
@@ -382,19 +375,19 @@
 
   .log-viewer__error {
     padding: 0.75rem;
-    background: #3a1a1a;
-    border: 1px solid #5a2a2a;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 0.25rem;
-    color: #ff6b6b;
+    color: var(--color-text);
   }
 
   .log-viewer__container {
-    background: #1e1e1e;
-    border: 1px solid var(--border-color, #ddd);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
     border-radius: 0.25rem;
     font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
-    color: #d4d4d4;
+    color: var(--color-text);
     flex: 1;
     overflow-y: auto;
     min-height: 0;
@@ -405,25 +398,25 @@
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
-    color: #888;
+    color: var(--color-text-secondary);
   }
 
   .log-entry {
     display: flex;
     gap: 0.75rem;
     padding: 0.25rem 0.75rem;
-    border-bottom: 1px solid #2d2d2d;
+    border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
     overflow: hidden;
     min-height: 24px;
   }
 
   .log-entry:hover {
-    background: #252525;
+    background: var(--color-surface-secondary);
   }
 
   .log-entry__timestamp {
-    color: #858585;
+    color: var(--color-text-tertiary);
     min-width: 5rem;
   }
 
@@ -432,82 +425,108 @@
     min-width: 4rem;
   }
 
-  /* Log level colors optimized for dark background */
+  /* Log level colors */
   .log-entry__level:global(.log-level-error) {
-    color: #f48771;
+    color: var(--color-log-error);
   }
 
   .log-entry__level:global(.log-level-warn) {
-    color: #dcdcaa;
+    color: var(--color-log-warn);
   }
 
   .log-entry__level:global(.log-level-info) {
-    color: #4fc1ff;
+    color: var(--color-log-info);
   }
 
   .log-entry__level:global(.log-level-debug) {
-    color: #b5b5b5;
+    color: var(--color-log-debug);
   }
 
   .log-entry__level:global(.log-level-default) {
-    color: #d4d4d4;
+    color: var(--color-log-default);
   }
 
   .log-entry__message {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #d4d4d4;
+    color: var(--color-text);
   }
 
-  .log-viewer__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-    color: var(--text-muted, #666);
-  }
-
-  .log-viewer__status {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .log-viewer__status--active {
-    color: var(--success-color, #0a0);
-  }
 
   .btn {
     padding: 0.5rem 1rem;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 0.25rem;
-    background: var(--bg-primary, #fff);
+    border: 1px solid var(--color-button-secondary-border);
+    border-radius: 6px;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
     cursor: pointer;
     font-size: 0.875rem;
-    transition: all 0.2s;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn:hover:not(:disabled) {
-    background: var(--bg-hover, #f5f5f5);
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn:disabled {
-    opacity: 0.5;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .btn--primary {
-    background: var(--primary-color, #007bff);
-    color: white;
-    border-color: var(--primary-color, #007bff);
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn--primary:hover:not(:disabled) {
-    background: var(--primary-hover, #0056b3);
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn--primary:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn--primary:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .btn--secondary {
-    background: var(--bg-secondary, #f9f9f9);
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn--secondary:hover:not(:disabled) {
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn--secondary:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn--secondary:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 </style>

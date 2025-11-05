@@ -191,3 +191,30 @@ export async function cancelShortcutExecution(shortcutId: string): Promise<void>
 export async function getExecutionConfig(): Promise<{ timeout_seconds: number; max_output_length: number }> {
   return invoke('get_execution_config');
 }
+
+/**
+ * Theme Commands
+ */
+
+/**
+ * Get the current macOS system theme (light or dark)
+ * @returns Theme mode ('light' or 'dark')
+ */
+export async function getSystemTheme(): Promise<'light' | 'dark'> {
+  return invoke<'light' | 'dark'>('get_system_theme');
+}
+
+/**
+ * Start monitoring macOS system theme changes
+ * Theme changes will be emitted via 'theme-changed' event
+ */
+export async function startThemeMonitor(): Promise<void> {
+  return invoke('start_theme_monitor');
+}
+
+/**
+ * Stop monitoring macOS system theme changes
+ */
+export async function stopThemeMonitor(): Promise<void> {
+  return invoke('stop_theme_monitor');
+}

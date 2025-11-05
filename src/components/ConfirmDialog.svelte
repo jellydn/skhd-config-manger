@@ -67,7 +67,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-modal-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,13 +77,14 @@
   }
 
   .confirm-dialog {
-    background: white;
+    background: var(--color-modal-bg);
     border-radius: 12px;
     padding: 2rem;
     max-width: 400px;
     width: 100%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 40px var(--color-form-shadow);
     animation: slideIn 0.2s ease-out;
+    border: 1px solid var(--color-modal-border);
   }
 
   @keyframes slideIn {
@@ -101,12 +102,12 @@
     margin: 0 0 1rem 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1d1d1f;
+    color: var(--color-text);
   }
 
   p {
     margin: 0 0 1.5rem 0;
-    color: #666;
+    color: var(--color-text-secondary);
     line-height: 1.5;
   }
 
@@ -118,82 +119,74 @@
 
   button {
     padding: 0.625rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     border: 1px solid;
+    min-height: 32px;
   }
 
   .btn-cancel {
-    background: #f5f5f7;
-    color: #1d1d1f;
-    border-color: #d2d2d7;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-cancel:hover {
-    background: #e8e8ed;
+    background: var(--color-button-secondary-hover);
+  }
+
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-cancel:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-confirm {
-    background: #ff3b30;
-    color: white;
-    border-color: #ff3b30;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-confirm:hover {
-    background: #d93025;
-    border-color: #d93025;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-confirm:active {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-confirm:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .btn-danger {
-    background: #ff3b30 !important;
-    color: white !important;
-    border-color: #ff3b30 !important;
+    background: var(--color-button-primary-bg) !important;
+    color: var(--color-button-primary-text) !important;
+    border-color: var(--color-button-primary-bg) !important;
     font-weight: 600 !important;
     animation: pulseWarning 2s infinite;
   }
 
   .btn-danger:hover {
-    background: #d93025 !important;
-    border-color: #d93025 !important;
+    background: var(--color-button-primary-hover) !important;
+    border-color: var(--color-button-primary-hover) !important;
   }
 
   @keyframes pulseWarning {
     0%, 100% {
-      box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+      box-shadow: 0 0 0 0 var(--color-input-focus-shadow);
     }
     50% {
-      box-shadow: 0 0 0 8px rgba(255, 59, 48, 0.1);
-    }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .modal-backdrop {
-      background: rgba(0, 0, 0, 0.7);
-    }
-
-    .confirm-dialog {
-      background: #2a2a2a;
-    }
-
-    h2 {
-      color: #f5f5f7;
-    }
-
-    p {
-      color: #999;
-    }
-
-    .btn-cancel {
-      background: #3a3a3a;
-      border-color: #4a4a4a;
-      color: #f5f5f7;
-    }
-
-    .btn-cancel:hover {
-      background: #4a4a4a;
+      box-shadow: 0 0 0 8px var(--color-input-focus-shadow);
     }
   }
 </style>

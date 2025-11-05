@@ -94,6 +94,14 @@
       onCancel();
     }
   }
+
+  function handleDialogClick(event: MouseEvent) {
+    event.stopPropagation();
+  }
+
+  function handleDialogKeydown(event: KeyboardEvent) {
+    event.stopPropagation();
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -108,7 +116,8 @@
     aria-label="File Picker Result"
     tabindex="-1"
   >
-    <div class="modal-dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div class="modal-dialog" onclick={handleDialogClick} onkeydown={handleDialogKeydown} role="document">
       <div class="modal-header">
         <h2>Selected File</h2>
         <button class="close-btn" onclick={onCancel} aria-label="Close">✕</button>
@@ -176,7 +185,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-modal-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -196,14 +205,15 @@
   }
 
   .modal-dialog {
-    background: white;
+    background: var(--color-modal-bg);
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px var(--color-form-shadow);
     width: 600px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
     animation: slideIn 0.2s ease-out;
+    border: 1px solid var(--color-modal-border);
   }
 
   @keyframes slideIn {
@@ -222,21 +232,21 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text);
   }
 
   .close-btn {
     background: none;
     border: none;
     font-size: 1.5rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     cursor: pointer;
     padding: 0.25rem;
     line-height: 1;
@@ -244,7 +254,7 @@
   }
 
   .close-btn:hover {
-    color: #111827;
+    color: var(--color-text);
   }
 
   .modal-body {
@@ -254,7 +264,7 @@
   }
 
   .error {
-    color: #dc2626;
+    color: var(--color-text);
     text-align: center;
     padding: 2rem;
   }
@@ -274,26 +284,26 @@
   .detail-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--color-text);
   }
 
   code {
     padding: 0.75rem 1rem;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
-    color: #111827;
+    color: var(--color-text);
     word-break: break-all;
   }
 
   .file-path {
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 
   .command-preview {
-    color: #059669;
+    color: var(--color-text);
   }
 
   .status-badges {
@@ -310,29 +320,31 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .badge-success {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .badge-warning {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .badge-info {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-surface-secondary);
+    color: var(--color-text);
   }
 
   .warning-message {
     padding: 1rem;
-    background: #fef3c7;
-    border: 1px solid #fbbf24;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    color: #92400e;
+    color: var(--color-text);
   }
 
   .warning-message p {
@@ -340,13 +352,13 @@
   }
 
   .warning-message code {
-    background: #fff;
-    color: #92400e;
+    background: var(--color-surface);
+    color: var(--color-text);
   }
 
   .modal-footer {
     padding: 1rem 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
@@ -360,135 +372,76 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn-cancel {
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    color: #374151;
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
+    color: var(--color-button-secondary-text);
   }
 
   .btn-cancel:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-cancel:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-browse {
-    background: white;
-    border: 1px solid #d1d5db;
-    color: #374151;
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
+    color: var(--color-button-secondary-text);
   }
 
   .btn-browse:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-browse:active {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-browse:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-use {
-    background: #3b82f6;
-    border: 1px solid #3b82f6;
-    color: white;
+    background: var(--color-button-primary-bg);
+    border: 1px solid var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
   }
 
   .btn-use:hover:not(:disabled) {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-use:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-use:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .btn-use:disabled {
-    opacity: 0.5;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .modal-backdrop {
-      background: rgba(0, 0, 0, 0.7);
-    }
-
-    .modal-dialog {
-      background: #1f2937;
-    }
-
-    .modal-header {
-      border-bottom-color: #374151;
-    }
-
-    .modal-header h2 {
-      color: #f9fafb;
-    }
-
-    .close-btn {
-      color: #9ca3af;
-    }
-
-    .close-btn:hover {
-      color: #f9fafb;
-    }
-
-    .error {
-      color: #fca5a5;
-    }
-
-    .detail-label {
-      color: #d1d5db;
-    }
-
-    code {
-      background: #111827;
-      border-color: #374151;
-      color: #f9fafb;
-    }
-
-    .file-path {
-      color: #9ca3af;
-    }
-
-    .command-preview {
-      color: #34d399;
-    }
-
-    .badge-success {
-      background: #065f46;
-      color: #d1fae5;
-    }
-
-    .badge-warning {
-      background: #92400e;
-      color: #fef3c7;
-    }
-
-    .badge-info {
-      background: #1e40af;
-      color: #dbeafe;
-    }
-
-    .warning-message {
-      background: #451a03;
-      border-color: #92400e;
-      color: #fef3c7;
-    }
-
-    .warning-message code {
-      background: #1c1917;
-      color: #fef3c7;
-    }
-
-    .modal-footer {
-      border-top-color: #374151;
-    }
-
-    .btn-cancel,
-    .btn-browse {
-      background: #374151;
-      border-color: #4b5563;
-      color: #f9fafb;
-    }
-
-    .btn-cancel:hover,
-    .btn-browse:hover {
-      background: #4b5563;
-      border-color: #6b7280;
-    }
+    opacity: 0.6;
   }
 </style>

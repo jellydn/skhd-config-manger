@@ -237,8 +237,8 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 1rem;
-    background: #252525;
-    border: 1px solid #2d2d2d;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -258,26 +258,26 @@
   }
 
   .status-running {
-    background: #30d158;
-    box-shadow: 0 0 6px rgba(48, 209, 88, 0.4);
+    background: var(--color-status-success);
+    box-shadow: 0 0 6px var(--color-status-success-bg);
   }
 
   .status-stopped {
-    background: #8e8e93;
+    background: var(--color-status-stopped);
   }
 
   .status-transitioning {
-    background: #ff9500;
+    background: var(--color-status-warning);
     animation: pulse 1.5s ease-in-out infinite;
   }
 
   .status-error {
-    background: #ff3b30;
-    box-shadow: 0 0 6px rgba(255, 59, 48, 0.4);
+    background: var(--color-status-error);
+    box-shadow: 0 0 6px var(--color-status-error-bg);
   }
 
   .status-unknown {
-    background: #636366;
+    background: var(--color-status-unknown);
   }
 
   @keyframes pulse {
@@ -290,12 +290,12 @@
   }
 
   .status-text {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text);
     font-weight: 500;
   }
 
   .status-pid {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
     margin-left: auto;
   }
@@ -306,24 +306,38 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: rgba(10, 132, 255, 0.15);
-    border: 1px solid rgba(10, 132, 255, 0.3);
+    background: var(--color-button-secondary-bg);
+    border: 1px solid var(--color-button-secondary-border);
     border-radius: 6px;
-    color: #0a84ff;
+    color: var(--color-border-hover);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    min-height: 28px;
   }
 
   .btn-reload:hover:not(:disabled) {
-    background: rgba(10, 132, 255, 0.25);
-    border-color: rgba(10, 132, 255, 0.5);
+    background: var(--color-button-secondary-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+  }
+
+  .btn-reload:active:not(:disabled) {
+    background: var(--color-button-secondary-active);
+  }
+
+  .btn-reload:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   .btn-reload:disabled {
-    opacity: 0.5;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .btn-reload svg {
@@ -350,15 +364,15 @@
   }
 
   .notification-success {
-    background: rgba(48, 209, 88, 0.15);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-    color: #30d158;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   .notification-error {
-    background: rgba(255, 59, 48, 0.15);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: #ff6b6b;
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   .notification-error strong {

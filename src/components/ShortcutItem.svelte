@@ -128,9 +128,9 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem;
-    border: 1px solid #2d2d2d;
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    background: #252525;
+    background: var(--color-surface-secondary);
     margin-bottom: 0.5rem;
     transition: all 0.2s;
   }
@@ -143,8 +143,8 @@
   }
 
   .shortcut-item:hover {
-    background: #2a2a2a;
-    border-color: #3a3a3a;
+    background: var(--color-surface);
+    border-color: var(--color-border-hover);
   }
 
   .shortcut-keys {
@@ -152,43 +152,43 @@
     gap: 0.5rem;
     align-items: center;
     flex-wrap: wrap;
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
   }
 
   .modifiers {
-    color: #999;
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
   .key {
-    background: #1c1c1c;
+    background: var(--color-surface);
     padding: 0.25rem 0.75rem;
     border-radius: 4px;
-    border: 1px solid #3a3a3a;
+    border: 1px solid var(--color-border);
     font-weight: 600;
-    color: #f5f5f7;
+    color: var(--color-text);
   }
 
   .shortcut-command {
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-family: Monaco, 'Menlo', 'Courier New', monospace;
     font-size: 0.875rem;
   }
 
   .shortcut-command code {
-    background: #1c1c1c;
+    background: var(--color-surface);
     padding: 0.5rem;
     border-radius: 4px;
     display: block;
-    color: #d4d4d4;
+    color: var(--color-text);
   }
 
   .shortcut-comment {
     font-size: 0.875rem;
-    color: #888;
+    color: var(--color-text-secondary);
     font-style: italic;
     padding-left: 0.5rem;
-    border-left: 3px solid #3a3a3a;
+    border-left: 3px solid var(--color-border);
   }
 
   .shortcut-actions {
@@ -199,17 +199,24 @@
   }
 
   button {
-    padding: 0.4rem 0.5rem;
+    padding: 0.375rem 0.625rem;
     border-radius: 6px;
     border: 1px solid transparent;
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 32px;
+    min-height: 28px;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-button-secondary-focus);
+    outline-offset: 2px;
   }
 
   button svg {
@@ -218,21 +225,37 @@
   }
 
   .btn-test {
-    background: #34c759;
-    color: white;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-test:hover:not(:disabled) {
-    background: #28a745;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-test:active:not(:disabled) {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
+  }
+
+  .btn-test:focus-visible {
+    outline: 2px solid var(--color-button-primary-focus);
+    outline-offset: 2px;
   }
 
   .btn-test:disabled {
-    opacity: 0.7;
+    background: var(--color-button-disabled-bg);
+    color: var(--color-button-disabled-text);
+    border-color: var(--color-button-disabled-border);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .btn-test.executing {
-    background: #28a745;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
   }
 
   @keyframes spin {
@@ -249,74 +272,66 @@
   }
 
   .btn-cancel {
-    background: #ff9500;
-    color: white;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-cancel:hover {
-    background: #d17e00;
+    background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-cancel:active {
+    background: var(--color-button-secondary-active);
   }
 
   .btn-edit {
-    background: #007aff;
-    color: white;
+    background: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    border-color: var(--color-button-primary-bg);
   }
 
   .btn-edit:hover {
-    background: #0051d5;
+    background: var(--color-button-primary-hover);
+    border-color: var(--color-button-primary-hover);
+  }
+
+  .btn-edit:active {
+    background: var(--color-button-primary-active);
+    border-color: var(--color-button-primary-active);
   }
 
   .btn-duplicate {
-    background: #8e8e93;
-    color: white;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-duplicate:hover {
-    background: #636366;
+    background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
+  }
+
+  .btn-duplicate:active {
+    background: var(--color-button-secondary-active);
   }
 
   .btn-delete {
-    background: transparent;
-    color: #ff3b30;
-    border-color: #ff3b30;
+    background: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    border-color: var(--color-button-secondary-border);
   }
 
   .btn-delete:hover {
-    background: #ff3b30;
-    color: white;
+    background: var(--color-button-secondary-hover);
+    color: var(--color-text);
+    border-color: var(--color-button-secondary-border);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .shortcut-item {
-      background: #1e1e1e;
-      border-color: #3a3a3a;
-    }
-
-    .key {
-      background: #2a2a2a;
-      border-color: #4a4a4a;
-      color: #e0e0e0;
-    }
-
-    .shortcut-command code {
-      background: #2a2a2a;
-      color: #e0e0e0;
-    }
-
-    .modifiers {
-      color: #aaa;
-    }
-
-    .btn-duplicate {
-      background: #636366;
-    }
-
-    .btn-duplicate:hover {
-      background: #8e8e93;
-    }
-
-    .shortcut-comment {
-      color: #999;
-    }
+  .btn-delete:active {
+    background: var(--color-button-secondary-active);
   }
 </style>

@@ -56,7 +56,7 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Service Reload**: One-click service restart to apply configuration changes
 - **Configuration Import**: Import external configs with visual pending state before reload
 - **Auto-scroll Control**: Smart auto-scroll that pauses when scrolling manually
-- **Sort Options**: Toggle between newest-first and oldest-first log display
+- **Descending Order**: Logs displayed in descending order (newest first) by default for optimal viewing
 - **Clear Logs**: Remove all logs from viewer with one click
 - **Accessibility**: Full ARIA support for screen readers and keyboard navigation
 - **Circuit Breaker**: Automatic polling pause after repeated failures to prevent resource exhaustion
@@ -66,7 +66,11 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 
 - **Welcome Screen**: Guided onboarding with clear action paths
 - **Error Handling**: Helpful error messages with actionable solutions
-- **Dark Mode**: Full dark mode support following system preferences
+- **System Theme Integration**: Automatic detection and application of macOS system theme (light/dark mode)
+  - **Launch Detection**: App automatically detects and applies system theme on startup
+  - **Runtime Updates**: Theme updates dynamically when system theme changes (within 2 seconds)
+  - **Consistent Theming**: All interface elements (backgrounds, text, borders, buttons, modals, inputs) adapt to the active theme
+  - **Smooth Transitions**: CSS transitions provide seamless theme switching without visual glitches
 - **Keyboard Shortcuts Count**: Real-time shortcut count display
 
 ## Prerequisites
@@ -194,18 +198,21 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 3. **Historical Logs** - Automatically loads the last 100 recent logs
 4. **Progressive Loading** - Scroll to load more historical logs (500 at a time)
 5. **Level Filtering**:
-   - **ERROR Tab**: Shows only stderr messages (critical issues)
-   - **INFO Tab**: Shows stdout messages (general information)
-   - Each tab has independent pagination and filtering
+   - Click the **filter icon** (after pagination controls) to toggle between views
+   - **Error Filter** (warning triangle icon): Shows only stderr messages (critical issues)
+   - **Info Filter** (list icon): Shows stdout messages (general information)
+   - Filter maintains pagination state when switching
 6. **Color-Coded Levels**:
    - 🔴 ERROR: Red text for critical issues
    - 🔵 INFO: Blue text for general information
 
 #### Log Controls
 
-- **Level Tabs**: Switch between ERROR and INFO log views
+- **Filter Icon**: Click the filter icon (positioned after pagination) to toggle between ERROR and INFO log views
+  - Shows warning triangle icon when filtering errors
+  - Shows list icon when filtering info logs
 - **Pagination**: Navigate through logs 50 entries at a time
-- **Sort Order**: Toggle between newest-first (↓) and oldest-first (↑)
+- **Descending Order**: Logs displayed newest-first by default (no toggle needed)
 - **Auto-scroll**: Enable/disable automatic scrolling to new logs
 - **Load More**: Button to fetch older historical logs (500 more entries)
 - **Keyboard Navigation**: Arrow keys, Page Up/Down, Home/End for scrolling
