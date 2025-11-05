@@ -108,7 +108,7 @@ const darkThemeColors = {
   '--color-button-primary-bg': '#7E9CD8', // waveBlue
   '--color-button-primary-hover': '#6A8BC5', // darker blue
   '--color-button-primary-active': '#5A7BB5', // even darker
-  '--color-button-primary-text': '#1F1F28', // dark text on light button
+  '--color-button-primary-text': '#1F1F28', // dark text for contrast on blue
   '--color-button-primary-focus': 'rgba(126, 156, 216, 0.4)',
   '--color-button-secondary-bg': '#2A2A37', // waveBg2
   '--color-button-secondary-hover': '#363646', // waveBlue2
