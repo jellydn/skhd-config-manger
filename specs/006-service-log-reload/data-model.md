@@ -25,7 +25,7 @@ Represents a single log line from the skhd service.
 **State Transitions**: N/A (immutable once created)
 
 **Relationships**:
-- Ordered by timestamp (newest first or oldest first based on user preference)
+- Ordered by timestamp in descending order (newest first)
 - No persistence - logs are read-only from skhd service
 
 ### LogLevel (Enum)

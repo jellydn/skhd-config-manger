@@ -93,7 +93,7 @@
 - [x] T029 [US1] Implement virtual scrolling in `LogViewer.svelte` to handle large log volumes (max 1000 entries in memory)
 - [x] T030 [US1] Add auto-scroll to bottom for new entries with pause-on-user-scroll in `LogViewer.svelte`
 - [x] T031 [US1] Add log entry timestamp formatting in `LogViewer.svelte` (ISO 8601 display)
-- [x] T031a [US1] Add log sort order toggle in `LogViewer.svelte` (newest first / oldest first) with preference persistence in localStorage
+- [x] T031a [US1] Display logs in descending order (newest first) by default in `LogViewer.svelte` (removed user toggle for cleaner UI)
 - [x] T032 [US1] Create log viewer page `src/routes/logs/+page.svelte` that uses `LogViewer` component
 - [x] T033 [US1] Add onMount hook in `src/routes/logs/+page.svelte` to load recent logs and start streaming
 - [x] T034 [US1] Add onDestroy hook in `src/routes/logs/+page.svelte` to stop log stream and cleanup
