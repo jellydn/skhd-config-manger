@@ -25,7 +25,7 @@ const THEME_POLL_INTERVAL_SECS: u64 = 2;
 
 /// Monitoring strategy used
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum MonitoringStrategy {
+pub(crate) enum MonitoringStrategy {
     /// Using NSDistributedNotificationCenter notifications
     Notification,
     /// Using polling fallback
@@ -281,7 +281,7 @@ impl ThemeMonitorState {
 
     /// Get the current monitoring strategy (for testing/debugging)
     #[allow(dead_code)]
-    pub async fn get_strategy(&self) -> Option<MonitoringStrategy> {
+    pub(crate) async fn get_strategy(&self) -> Option<MonitoringStrategy> {
         *self.strategy.lock().await
     }
 }
