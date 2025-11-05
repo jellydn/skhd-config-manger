@@ -879,17 +879,6 @@
     color: var(--color-border-hover);
   }
 
-  /* Sort Order Indicator */
-  .sort-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    color: var(--color-text-secondary);
-    opacity: 0.7;
-  }
-
   /* Log Level Filter */
   .filter-group {
     display: flex;
