@@ -4,57 +4,76 @@
  * Tests theme application, color scheme switching, and CSS variable management
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { applyTheme, type ThemeMode } from '../../services/themeService';
 
 describe('themeService', () => {
+  let setPropertySpy: MockInstance<typeof CSSStyleDeclaration.prototype.setProperty> | null = null;
+
   beforeEach(() => {
+    // Ensure document is available (jsdom should provide this)
+    if (typeof document === 'undefined') {
+      // Skip tests if document is not available
+      return;
+    }
     // Mock document.documentElement.style.setProperty
-    vi.spyOn(document.documentElement.style, 'setProperty');
+    setPropertySpy = vi.spyOn(document.documentElement.style, 'setProperty');
   });
 
   afterEach(() => {
     // Restore original methods and clear styles
-    vi.restoreAllMocks();
-    document.documentElement.style.cssText = '';
+    if (typeof document !== 'undefined') {
+      vi.restoreAllMocks();
+      document.documentElement.style.cssText = '';
+    }
+    setPropertySpy = null;
   });
 
   describe('applyTheme', () => {
     it('should apply light theme colors', () => {
+      if (typeof document === 'undefined' || !setPropertySpy) {
+        // Skip test if document is not available
+        return;
+      }
+      
       applyTheme('light');
       
       // Verify setProperty was called (we can't easily verify exact values without DOM)
-      expect(document.documentElement.style.setProperty).toHaveBeenCalled();
+      expect(setPropertySpy).toHaveBeenCalled();
       
       // Count how many times setProperty was called (should be called for each color variable)
-      const callCount = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.length;
+      const callCount = setPropertySpy.mock.calls.length;
       expect(callCount).toBeGreaterThan(50); // Should have many color variables
     });
 
     it('should apply dark theme colors', () => {
-      if (typeof document === 'undefined') {
+      if (typeof document === 'undefined' || !setPropertySpy) {
         return;
       }
       
       applyTheme('dark');
       
-      expect(document.documentElement.style.setProperty).toHaveBeenCalled();
+      expect(setPropertySpy).toHaveBeenCalled();
       
-      const callCount = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.length;
+      const callCount = setPropertySpy.mock.calls.length;
       expect(callCount).toBeGreaterThan(50);
     });
 
     it('should apply different colors for light vs dark theme', () => {
+      if (typeof document === 'undefined' || !setPropertySpy) {
+        return;
+      }
+      
       // Apply light theme
       applyTheme('light');
-      const lightCalls = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.map(call => call[1]);
+      const lightCalls = setPropertySpy.mock.calls.map(call => call[1]);
       
       // Clear mock
       vi.clearAllMocks();
       
       // Apply dark theme
       applyTheme('dark');
-      const darkCalls = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.map(call => call[1]);
+      const darkCalls = setPropertySpy.mock.calls.map(call => call[1]);
       
       // Verify different colors were applied
       // Check that background colors are different
@@ -67,13 +86,13 @@ describe('themeService', () => {
     });
 
     it('should set CSS custom properties with correct names', () => {
-      if (typeof document === 'undefined') {
+      if (typeof document === 'undefined' || !setPropertySpy) {
         return;
       }
       
       applyTheme('light');
       
-      const calls = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls;
+      const calls = setPropertySpy.mock.calls;
       
       // Verify that CSS variable names start with --
       const variableNames = calls.map(call => call[0]);
@@ -89,7 +108,7 @@ describe('themeService', () => {
     });
 
     it('should handle rapid theme switches', () => {
-      if (typeof document === 'undefined') {
+      if (typeof document === 'undefined' || !setPropertySpy) {
         return;
       }
       
@@ -100,16 +119,16 @@ describe('themeService', () => {
       applyTheme('dark');
       
       // Should not throw errors
-      expect(document.documentElement.style.setProperty).toHaveBeenCalled();
+      expect(setPropertySpy).toHaveBeenCalled();
       
-      const callCount = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.length;
+      const callCount = setPropertySpy.mock.calls.length;
       expect(callCount).toBeGreaterThan(200); // Multiple themes * many variables
     });
   });
 
   describe('theme color definitions', () => {
     it('should have consistent color structure for light and dark themes', () => {
-      if (typeof document === 'undefined') {
+      if (typeof document === 'undefined' || !setPropertySpy) {
         return;
       }
       
@@ -117,12 +136,12 @@ describe('themeService', () => {
       // by checking that applyTheme calls setProperty the same number of times
       
       applyTheme('light');
-      const lightCallCount = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.length;
+      const lightCallCount = setPropertySpy.mock.calls.length;
       
       vi.clearAllMocks();
       
       applyTheme('dark');
-      const darkCallCount = (document.documentElement.style.setProperty as ReturnType<typeof vi.spyOn>).mock.calls.length;
+      const darkCallCount = setPropertySpy.mock.calls.length;
       
       // Both themes should have the same number of color variables
       expect(lightCallCount).toBe(darkCallCount);
