@@ -12,9 +12,7 @@ use std::time::{Duration, Instant};
 fn test_theme_detection_performance_single_call() {
     // Verify single theme detection call completes quickly
     let start = Instant::now();
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Theme detection should succeed");
@@ -33,9 +31,7 @@ fn test_theme_detection_performance_multiple_calls() {
     
     for _ in 0..10 {
         let start = Instant::now();
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_system_theme());
+        let result = get_system_theme();
         let duration = start.elapsed();
         
         assert!(result.is_ok(), "Theme detection should succeed");
@@ -105,37 +101,24 @@ fn test_theme_monitor_start_stop_performance() {
 #[cfg(target_os = "macos")]
 fn test_theme_detection_concurrent_calls() {
     // Verify concurrent theme detection calls don't interfere
-    use std::sync::Arc;
-    use tokio::sync::Barrier;
+    use std::thread;
     
-    let runtime = tokio::runtime::Runtime::new().unwrap();
-    let barrier = Arc::new(Barrier::new(5));
     let mut handles = Vec::new();
     
     for _ in 0..5 {
-        let barrier = barrier.clone();
-        handles.push(runtime.spawn(async move {
-            barrier.wait().await;
+        handles.push(thread::spawn(|| {
             let start = Instant::now();
-            let result = get_system_theme().await;
+            let result = get_system_theme();
             let duration = start.elapsed();
             (result, duration)
         }));
     }
     
-    let results: Vec<_> = runtime.block_on(async {
-        let mut joined = Vec::new();
-        for handle in handles {
-            joined.push(handle.await);
-        }
-        joined
-    });
+    let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
     
     // Verify all calls succeeded
-    for result in &results {
-        assert!(result.is_ok(), "Concurrent theme detection should succeed");
-        let (theme_result, duration) = result.as_ref().unwrap();
-        assert!(theme_result.is_ok(), "Theme detection should succeed");
+    for (theme_result, duration) in &results {
+        assert!(theme_result.is_ok(), "Concurrent theme detection should succeed");
         assert!(
             duration.as_millis() < 500,
             "Concurrent theme detection should complete within 500ms, took: {}ms",
@@ -154,9 +137,7 @@ fn test_theme_detection_resource_usage() {
     
     // Perform multiple detections
     for _ in 0..100 {
-        let _ = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_system_theme());
+        let _ = get_system_theme();
     }
     
     let final_memory = get_memory_usage();

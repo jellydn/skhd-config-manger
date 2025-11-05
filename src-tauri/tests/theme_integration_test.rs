@@ -14,9 +14,7 @@ fn test_theme_detection_on_launch() {
     // Integration test: verify theme detection works when called
     // This simulates what happens on app launch
     
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     
     assert!(result.is_ok(), "Theme detection should succeed on app launch");
     let theme = result.unwrap();
@@ -34,9 +32,7 @@ fn test_theme_detection_performance_integration() {
     use std::time::Instant;
     
     let start = Instant::now();
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Theme detection should succeed");
@@ -82,9 +78,7 @@ fn test_theme_detection_error_handling() {
     // Note: On macOS, detection should typically succeed, but we verify
     // the error handling path exists
     
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     
     // Should always return Ok with a valid theme (defaults to dark on error)
     assert!(result.is_ok(), "get_system_theme should always return Ok");

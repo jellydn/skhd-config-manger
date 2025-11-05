@@ -13,9 +13,7 @@ use keybinder_lib::commands::theme::get_system_theme;
 fn test_get_system_theme_returns_valid_theme() {
     // This test requires macOS to run
     // It verifies that get_system_theme returns either "light" or "dark"
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     
     assert!(result.is_ok(), "get_system_theme should succeed on macOS");
     let theme = result.unwrap();
@@ -34,9 +32,7 @@ fn test_get_system_theme_performance() {
     use std::time::Instant;
     
     let start = Instant::now();
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "get_system_theme should succeed");
@@ -51,12 +47,8 @@ fn test_get_system_theme_performance() {
 #[cfg(target_os = "macos")]
 fn test_get_system_theme_consistency() {
     // Verify that multiple calls return consistent results
-    let result1 = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
-    let result2 = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result1 = get_system_theme();
+    let result2 = get_system_theme();
     
     assert_eq!(
         result1, result2,
@@ -68,9 +60,7 @@ fn test_get_system_theme_consistency() {
 #[cfg(not(target_os = "macos"))]
 fn test_get_system_theme_defaults_on_non_macos() {
     // On non-macOS platforms, should default to dark mode
-    let result = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(get_system_theme());
+    let result = get_system_theme();
     
     // Should still return a valid theme (likely defaults to dark)
     assert!(result.is_ok(), "get_system_theme should not fail");
