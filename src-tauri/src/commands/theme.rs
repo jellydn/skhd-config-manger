@@ -14,13 +14,13 @@ use crate::utils::detect_system_theme;
 /// - `Ok("light")` if system is in light mode
 /// - `Ok("dark")` if system is in dark mode or detection fails
 #[tauri::command]
-pub async fn get_system_theme() -> Result<String, String> {
+pub fn get_system_theme() -> Result<String, String> {
     detect_system_theme()
 }
 
 /// Start monitoring macOS system theme changes
-/// 
-/// Subscribes to theme changes via polling (every 500ms).
+///
+/// Subscribes to theme changes via polling (every 2 seconds).
 /// Emits 'theme-changed' Tauri event when system theme changes.
 /// 
 /// # Arguments
