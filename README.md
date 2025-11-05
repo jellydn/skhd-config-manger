@@ -198,9 +198,10 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 3. **Historical Logs** - Automatically loads the last 100 recent logs
 4. **Progressive Loading** - Scroll to load more historical logs (500 at a time)
 5. **Level Filtering**:
-   - **ERROR Tab**: Shows only stderr messages (critical issues)
-   - **INFO Tab**: Shows stdout messages (general information)
-   - Each tab has independent pagination and filtering
+   - Click the **filter icon** (after pagination controls) to toggle between views
+   - **Error Filter** (warning triangle icon): Shows only stderr messages (critical issues)
+   - **Info Filter** (list icon): Shows stdout messages (general information)
+   - Filter maintains pagination state when switching
 6. **Color-Coded Levels**:
    - 🔴 ERROR: Red text for critical issues
    - 🔵 INFO: Blue text for general information
