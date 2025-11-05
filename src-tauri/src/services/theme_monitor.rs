@@ -2,8 +2,7 @@
 /// 
 /// This service monitors macOS system theme changes via NSDistributedNotificationCenter
 /// and emits Tauri events when the system theme changes during application runtime.
-
-use std::ffi::CStr;
+use std::ffi::{CStr, c_char};
 use std::sync::Arc;
 use objc::{msg_send, sel, sel_impl};
 use objc::runtime::{Class, Object};
@@ -129,9 +128,10 @@ fn detect_theme_via_objc() -> Result<String, String> {
     unsafe {
         // Get NSUserDefaults class
         let user_defaults_class = Class::get("NSUserDefaults")
-            .ok_or_else(|| "NSUserDefaults class not available")?;
+            .ok_or("NSUserDefaults class not available")?;
         
         // Get standard user defaults instance
+        #[allow(unexpected_cfgs)]
         let standard_defaults: *mut Object = msg_send![user_defaults_class, standardUserDefaults];
         if standard_defaults.is_null() {
             return Err("Failed to get standard user defaults".to_string());
@@ -139,14 +139,16 @@ fn detect_theme_via_objc() -> Result<String, String> {
         
         // Create NSString for the key "AppleInterfaceStyle"
         let nsstring_class = Class::get("NSString")
-            .ok_or_else(|| "NSString class not available")?;
-        let key: *mut Object = msg_send![nsstring_class, stringWithUTF8String: b"AppleInterfaceStyle\0".as_ptr() as *const i8];
+            .ok_or("NSString class not available")?;
+        #[allow(unexpected_cfgs)]
+        let key: *mut Object = msg_send![nsstring_class, stringWithUTF8String: c"AppleInterfaceStyle".as_ptr()];
         
         if key.is_null() {
             return Err("Failed to create NSString key".to_string());
         }
         
         // Read AppleInterfaceStyle value
+        #[allow(unexpected_cfgs)]
         let style_obj: *mut Object = msg_send![standard_defaults, objectForKey: key];
         
         if style_obj.is_null() {
@@ -155,7 +157,8 @@ fn detect_theme_via_objc() -> Result<String, String> {
         }
         
         // Convert NSString to Rust string
-        let utf8_string: *const i8 = msg_send![style_obj, UTF8String];
+        #[allow(unexpected_cfgs)]
+        let utf8_string: *const c_char = msg_send![style_obj, UTF8String];
         if utf8_string.is_null() {
             return Ok("light".to_string());
         }
