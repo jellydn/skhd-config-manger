@@ -48,6 +48,14 @@
       onCancel();
     }
   }
+
+  function handleDialogClick(event: MouseEvent) {
+    event.stopPropagation();
+  }
+
+  function handleDialogKeydown(event: KeyboardEvent) {
+    event.stopPropagation();
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -61,7 +69,8 @@
   aria-label="Application Picker"
   tabindex="-1"
 >
-  <div class="modal-dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="document">
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+  <div class="modal-dialog" onclick={handleDialogClick} onkeydown={handleDialogKeydown} role="document">
     <div class="modal-header">
       <h2>Select Application</h2>
       <button class="close-btn" onclick={onCancel} aria-label="Close">✕</button>
