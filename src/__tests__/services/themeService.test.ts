@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
-import { applyTheme, type ThemeMode } from '../../services/themeService';
+import { applyTheme } from '../../services/themeService';
 
 describe('themeService', () => {
   let setPropertySpy: MockInstance<typeof CSSStyleDeclaration.prototype.setProperty> | null = null;
