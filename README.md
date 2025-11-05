@@ -56,7 +56,7 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Service Reload**: One-click service restart to apply configuration changes
 - **Configuration Import**: Import external configs with visual pending state before reload
 - **Auto-scroll Control**: Smart auto-scroll that pauses when scrolling manually
-- **Sort Options**: Toggle between newest-first and oldest-first log display
+- **Descending Order**: Logs displayed in descending order (newest first) by default for optimal viewing
 - **Clear Logs**: Remove all logs from viewer with one click
 - **Accessibility**: Full ARIA support for screen readers and keyboard navigation
 - **Circuit Breaker**: Automatic polling pause after repeated failures to prevent resource exhaustion
@@ -207,9 +207,11 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 
 #### Log Controls
 
-- **Level Tabs**: Switch between ERROR and INFO log views
+- **Filter Icon**: Click the filter icon (positioned after pagination) to toggle between ERROR and INFO log views
+  - Shows warning triangle icon when filtering errors
+  - Shows list icon when filtering info logs
 - **Pagination**: Navigate through logs 50 entries at a time
-- **Sort Order**: Toggle between newest-first (↓) and oldest-first (↑)
+- **Descending Order**: Logs displayed newest-first by default (no toggle needed)
 - **Auto-scroll**: Enable/disable automatic scrolling to new logs
 - **Load More**: Button to fetch older historical logs (500 more entries)
 - **Keyboard Navigation**: Arrow keys, Page Up/Down, Home/End for scrolling
