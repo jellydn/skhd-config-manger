@@ -325,16 +325,17 @@
           title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
         >
           {#if logLevelFilter === 'error'}
-            <!-- Error icon -->
+            <!-- Error/Warning icon -->
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <path d="M8 5V8M8 11H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           {:else}
-            <!-- Info icon -->
+            <!-- Info/List icon -->
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <path d="M8 6V8M8 10H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
+              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
             </svg>
           {/if}
         </button>
