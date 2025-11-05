@@ -26,10 +26,13 @@ chrono = { version = "0.4", features = ["serde"] }
 notify = "6.1"
 rfd = "0.14"
 dirs = "5.0"
-tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util"] }
+tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util", "sync"] }
 regex = "1.10"
 plist = "1.6"
 objc = "0.2"
+block = "0.1"
+objc-foundation = "0.1"
+objc_id = "0.1"
 
 [dev-dependencies]
 mockall = "0.12"

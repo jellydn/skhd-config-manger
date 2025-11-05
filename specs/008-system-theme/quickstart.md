@@ -20,12 +20,15 @@ This feature adds:
 
 ### 2. Development Environment Setup
 
-**Install objc crate dependency**:
+**Install required crate dependencies**:
 ```bash
 cd src-tauri
 # Add to Cargo.toml dependencies:
 # objc = "0.2"
-cargo add objc
+# block = "0.1"  # For Objective-C block closures
+# objc-foundation = "0.1"  # NSString helpers
+# objc_id = "0.1"  # Objective-C object lifecycle management
+cargo add objc block objc-foundation objc_id
 ```
 
 **Run development server**:
@@ -73,12 +76,17 @@ src/
 
 **Phase 2: Backend - Theme Monitoring** ?? ~3 hours
 1. Create `src-tauri/src/services/theme_monitor.rs`
-2. Implement `ThemeMonitor` struct:
+2. Implement `ThemeMonitorState` struct with notification-based monitoring:
    - `start_monitoring(app_handle)` - Subscribe to NSDistributedNotificationCenter
-   - `stop_monitoring()` - Unsubscribe from notifications
-   - Emit `theme-changed` Tauri event on system theme change
-3. Handle fallback to polling if notification API unavailable
-4. Write integration tests for theme change events
+     * Uses `addObserverForName:object:queue:usingBlock:` block-based API
+     * Creates Objective-C closure with `block::ConcreteBlock`
+     * Bridges notifications to Rust async via tokio mpsc channel
+     * Stores observer handle (Id<Object>) for cleanup
+   - `stop_monitoring()` - Calls `removeObserver:` to unsubscribe
+   - Emit `theme-changed` Tauri event when notification received
+3. Implement polling fallback (2s interval) if notification setup fails
+4. Ensure Send + Sync safety for ObserverHandle in Arc<Mutex>
+5. Write integration tests for theme change events
 
 **Phase 3: Backend - Command Registration** ?? ~30 minutes
 1. Register commands in `src-tauri/src/lib.rs`:

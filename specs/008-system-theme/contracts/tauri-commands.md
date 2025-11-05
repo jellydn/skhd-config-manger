@@ -63,14 +63,18 @@ invoke('start_theme_monitor'): Promise<void>
 
 **Behavior**:
 - Subscribes to `AppleInterfaceThemeChangedNotification` via NSDistributedNotificationCenter
+  * Uses `addObserverForName:object:queue:usingBlock:` block-based API
+  * Observer block detects theme and sends through tokio mpsc channel
+  * Async task receives channel messages and emits Tauri events
+  * Observer properly removed on `stop_theme_monitor` (automatic cleanup)
 - Emits `theme-changed` Tauri event when system theme changes
 - Continues monitoring until `stop_theme_monitor` is called or app closes
-- Only one monitor allowed at a time (subsequent calls ignored if already monitoring)
-- Falls back to polling every 1-2 seconds if notification API unavailable
+- Only one monitor allowed at a time (subsequent calls return error if already monitoring)
+- Falls back to polling every 2 seconds if notification API unavailable
 
 **Errors**:
-- `"Monitoring already active"` - Theme monitor already running
-- `"API unavailable"` - System theme monitoring APIs not available (fallback to polling)
+- `"Monitoring already active"` - Theme monitor already running (notification or polling)
+- Notification setup failures automatically fall back to polling (not returned as error)
 
 **Example**:
 ```typescript

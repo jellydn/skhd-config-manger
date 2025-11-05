@@ -2,36 +2,70 @@
 ///
 /// This service monitors macOS system theme changes via NSDistributedNotificationCenter
 /// and emits Tauri events when the system theme changes during application runtime.
-use std::ffi::{CStr, c_char};
 use std::sync::Arc;
-use objc::rc::autoreleasepool;
-use objc::{msg_send, sel, sel_impl};
-use objc::runtime::{Class, Object};
 use tauri::{AppHandle, Emitter};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, mpsc};
 use tokio::time::{interval, Duration};
+use crate::utils::detect_system_theme;
+
+#[cfg(target_os = "macos")]
+use objc::{msg_send, sel, sel_impl, runtime::{Class, Object}};
+#[cfg(target_os = "macos")]
+use objc_foundation::{INSString, NSString};
+#[cfg(target_os = "macos")]
+use objc_id::{Id, Shared};
+#[cfg(target_os = "macos")]
+use block::ConcreteBlock;
+
+/// Theme polling interval in seconds (fallback only)
+///
+/// Used only when NSDistributedNotificationCenter is unavailable.
+/// Polls system theme every 2 seconds as fallback to detect changes.
+const THEME_POLL_INTERVAL_SECS: u64 = 2;
+
+/// Monitoring strategy used
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum MonitoringStrategy {
+    /// Using NSDistributedNotificationCenter notifications
+    Notification,
+    /// Using polling fallback
+    Polling,
+}
 
 /// Shared state for theme monitoring
 pub struct ThemeMonitorState {
     is_monitoring: Arc<Mutex<bool>>,
+    observer: Arc<Mutex<Option<ObserverHandle>>>,
+    strategy: Arc<Mutex<Option<MonitoringStrategy>>>,
 }
+
+/// Handle to the NSDistributedNotificationCenter observer
+#[cfg(target_os = "macos")]
+struct ObserverHandle {
+    observer: Id<Object, Shared>,
+    notification_center: Id<Object, Shared>,
+}
+
+#[cfg(not(target_os = "macos"))]
+struct ObserverHandle;
 
 impl ThemeMonitorState {
     /// Create new theme monitor state
     pub fn new() -> Self {
         Self {
             is_monitoring: Arc::new(Mutex::new(false)),
+            observer: Arc::new(Mutex::new(None)),
+            strategy: Arc::new(Mutex::new(None)),
         }
     }
 
     /// Start monitoring theme changes
-    /// 
-    /// This implementation uses polling as a fallback approach.
-    /// A more efficient implementation using NSDistributedNotificationCenter
-    /// would require complex Objective-C callback handling.
+    ///
+    /// Attempts to use NSDistributedNotificationCenter for efficient event-based monitoring.
+    /// Falls back to polling if notification setup fails.
     pub async fn start_monitoring(&self, app_handle: AppHandle) -> Result<(), String> {
         let mut is_monitoring = self.is_monitoring.lock().await;
-        
+
         if *is_monitoring {
             return Err("Monitoring already active".to_string());
         }
@@ -39,47 +73,121 @@ impl ThemeMonitorState {
         *is_monitoring = true;
         drop(is_monitoring);
 
-        // Spawn background task to poll theme changes
+        // Try notification-based monitoring first (macOS only)
+        #[cfg(target_os = "macos")]
+        {
+            match self.try_notification_monitoring(app_handle.clone()).await {
+                Ok(()) => {
+                    eprintln!("Theme monitoring started using NSDistributedNotificationCenter");
+                    *self.strategy.lock().await = Some(MonitoringStrategy::Notification);
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!("Failed to start notification-based monitoring: {}", e);
+                    #[cfg(debug_assertions)]
+                    eprintln!("Error details: {:?}", e);
+                    eprintln!("Falling back to polling...");
+                }
+            }
+        }
+
+        // Fallback to polling
+        self.start_polling_monitoring(app_handle).await;
+        *self.strategy.lock().await = Some(MonitoringStrategy::Polling);
+        Ok(())
+    }
+
+    /// Try to set up notification-based monitoring using NSDistributedNotificationCenter
+    #[cfg(target_os = "macos")]
+    async fn try_notification_monitoring(&self, app_handle: AppHandle) -> Result<(), String> {
+        // Create a channel to communicate from Objective-C callback to async Rust
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
         let monitoring_flag = self.is_monitoring.clone();
-        
+
+        unsafe {
+            // Get NSDistributedNotificationCenter class
+            let notification_center_class = Class::get("NSDistributedNotificationCenter")
+                .ok_or("NSDistributedNotificationCenter class not available")?;
+
+            // Get default center
+            let notification_center: *mut Object = msg_send![notification_center_class, defaultCenter];
+            if notification_center.is_null() {
+                return Err("Failed to get default notification center".to_string());
+            }
+            let notification_center: Id<Object, Shared> = Id::from_retained_ptr(notification_center);
+
+            // Create the notification name NSString
+            let notification_name = NSString::from_str("AppleInterfaceThemeChangedNotification");
+
+            // Create the block that will be called when notification fires
+            // NOTE: The block captures `tx` (channel sender). The block is retained by
+            // NSDistributedNotificationCenter until removeObserver: is called in stop_monitoring(),
+            // which ensures proper cleanup of both the observer and the channel.
+            let block = ConcreteBlock::new(move |_notification: *mut Object| {
+                // Detect current theme
+                match detect_system_theme() {
+                    Ok(theme) => {
+                        // Send theme through channel
+                        let _ = tx.send(theme);
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to detect theme in notification callback: {}", e);
+                    }
+                }
+            });
+            let block = block.copy();
+
+            // Add observer using the block-based API
+            // addObserverForName:object:queue:usingBlock:
+            let observer: *mut Object = msg_send![
+                &*notification_center,
+                addObserverForName: &*notification_name
+                object: std::ptr::null::<Object>()
+                queue: std::ptr::null::<Object>()
+                usingBlock: &*block
+            ];
+
+            if observer.is_null() {
+                return Err("Failed to add notification observer".to_string());
+            }
+
+            let observer: Id<Object, Shared> = Id::from_retained_ptr(observer);
+
+            // Store the observer handle for cleanup
+            *self.observer.lock().await = Some(ObserverHandle {
+                observer,
+                notification_center,
+            });
+        }
+
+        // Spawn task to handle notifications from the channel
         tokio::spawn(async move {
             let mut last_theme: Option<String> = None;
-            let mut poll_interval = interval(Duration::from_secs(2)); // Poll every 2 seconds
-            
-            loop {
-                poll_interval.tick().await;
-                
+
+            while let Some(current_theme) = rx.recv().await {
                 // Check if monitoring is still active
                 let is_active = *monitoring_flag.lock().await;
                 if !is_active {
                     break;
                 }
-                
-                // Detect current theme (synchronous call)
-                match detect_current_theme() {
-                    Ok(current_theme) => {
-                        // Emit event if theme changed
-                        if last_theme.as_ref().map(|t| t != &current_theme).unwrap_or(true) {
-                            if let Some(prev_theme) = &last_theme {
-                                eprintln!("Theme changed from {} to {}", prev_theme, current_theme);
-                            }
-                            
-                            // Emit theme-changed event
-                            let payload = serde_json::json!({
-                                "theme": current_theme,
-                                "timestamp": chrono::Utc::now().to_rfc3339(),
-                            });
-                            
-                            if let Err(e) = app_handle.emit("theme-changed", &payload) {
-                                eprintln!("Failed to emit theme-changed event: {}", e);
-                            }
-                            
-                            last_theme = Some(current_theme);
-                        }
+
+                // Emit event if theme changed
+                if last_theme.as_ref().map(|t| t != &current_theme).unwrap_or(true) {
+                    if let Some(prev_theme) = &last_theme {
+                        eprintln!("Theme changed from {} to {} (notification)", prev_theme, current_theme);
                     }
-                    Err(e) => {
-                        eprintln!("Failed to detect theme during monitoring: {}", e);
+
+                    // Emit theme-changed event
+                    let payload = serde_json::json!({
+                        "theme": current_theme,
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                    });
+
+                    if let Err(e) = app_handle.emit("theme-changed", &payload) {
+                        eprintln!("Failed to emit theme-changed event: {}", e);
                     }
+
+                    last_theme = Some(current_theme);
                 }
             }
         });
@@ -87,16 +195,90 @@ impl ThemeMonitorState {
         Ok(())
     }
 
+    /// Start polling-based monitoring as fallback
+    async fn start_polling_monitoring(&self, app_handle: AppHandle) {
+        let monitoring_flag = self.is_monitoring.clone();
+
+        tokio::spawn(async move {
+            let mut last_theme: Option<String> = None;
+            let mut poll_interval = interval(Duration::from_secs(THEME_POLL_INTERVAL_SECS));
+
+            loop {
+                poll_interval.tick().await;
+
+                // Check if monitoring is still active
+                let is_active = *monitoring_flag.lock().await;
+                if !is_active {
+                    break;
+                }
+
+                // Detect current theme
+                match detect_system_theme() {
+                    Ok(current_theme) => {
+                        // Emit event if theme changed
+                        if last_theme.as_ref().map(|t| t != &current_theme).unwrap_or(true) {
+                            if let Some(prev_theme) = &last_theme {
+                                eprintln!("Theme changed from {} to {} (polling)", prev_theme, current_theme);
+                            }
+
+                            // Emit theme-changed event
+                            let payload = serde_json::json!({
+                                "theme": current_theme,
+                                "timestamp": chrono::Utc::now().to_rfc3339(),
+                            });
+
+                            if let Err(e) = app_handle.emit("theme-changed", &payload) {
+                                eprintln!("Failed to emit theme-changed event: {}", e);
+                            }
+
+                            last_theme = Some(current_theme);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to detect theme during polling: {}", e);
+                    }
+                }
+            }
+        });
+    }
+
     /// Stop monitoring theme changes
     pub async fn stop_monitoring(&self) -> Result<(), String> {
         let mut is_monitoring = self.is_monitoring.lock().await;
         *is_monitoring = false;
+
+        // Remove notification observer if using notification strategy
+        let mut observer = self.observer.lock().await;
+        if let Some(handle) = observer.take() {
+            self.remove_observer(handle).await;
+        }
+
+        *self.strategy.lock().await = None;
         Ok(())
+    }
+
+    /// Remove the NSDistributedNotificationCenter observer
+    #[cfg(target_os = "macos")]
+    async fn remove_observer(&self, handle: ObserverHandle) {
+        unsafe {
+            let _: () = msg_send![&*handle.notification_center, removeObserver: &*handle.observer];
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    async fn remove_observer(&self, _handle: ObserverHandle) {
+        // No-op on non-macOS platforms
     }
 
     /// Check if monitoring is active
     pub async fn is_monitoring(&self) -> bool {
         *self.is_monitoring.lock().await
+    }
+
+    /// Get the current monitoring strategy (for testing/debugging)
+    #[allow(dead_code)]
+    pub async fn get_strategy(&self) -> Option<MonitoringStrategy> {
+        *self.strategy.lock().await
     }
 }
 
@@ -106,97 +288,109 @@ impl Default for ThemeMonitorState {
     }
 }
 
-/// Detect current system theme (duplicated from theme.rs for internal use)
-fn detect_current_theme() -> Result<String, String> {
-    // Try using objc crate to access NSUserDefaults
-    match detect_theme_via_objc() {
-        Ok(theme) => Ok(theme),
-        Err(_) => {
-            // Fallback to defaults command-line tool
-            match detect_theme_via_defaults() {
-                Ok(theme) => Ok(theme),
-                Err(_) => {
-                    // Ultimate fallback: default to dark mode
-                    Ok("dark".to_string())
-                }
-            }
-        }
+// Ensure ObserverHandle is Send + Sync for Arc<Mutex<Option<ObserverHandle>>>
+#[cfg(target_os = "macos")]
+unsafe impl Send for ObserverHandle {}
+#[cfg(target_os = "macos")]
+unsafe impl Sync for ObserverHandle {}
+
+#[cfg(test)]
+#[cfg(target_os = "macos")]
+mod notification_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_notification_monitoring_initial_state() {
+        // Verify initial state has no observer and no strategy
+        let state = ThemeMonitorState::new();
+
+        assert!(!state.is_monitoring().await, "Should not be monitoring initially");
+        assert!(state.get_strategy().await.is_none(), "Should have no strategy initially");
+
+        let observer = state.observer.lock().await;
+        assert!(observer.is_none(), "Should have no observer initially");
+    }
+
+    #[tokio::test]
+    async fn test_observer_cleanup_on_stop() {
+        // This test verifies the state is properly cleaned up when stop_monitoring is called
+        let state = ThemeMonitorState::new();
+
+        // Manually set monitoring state to simulate active monitoring
+        *state.is_monitoring.lock().await = true;
+        *state.strategy.lock().await = Some(MonitoringStrategy::Notification);
+
+        // Stop monitoring
+        let result = state.stop_monitoring().await;
+        assert!(result.is_ok(), "stop_monitoring should succeed");
+
+        // Verify cleanup
+        assert!(!state.is_monitoring().await, "Should not be monitoring after stop");
+        assert!(state.get_strategy().await.is_none(), "Strategy should be cleared");
+
+        let observer = state.observer.lock().await;
+        assert!(observer.is_none(), "Observer should be removed");
+    }
+
+    #[tokio::test]
+    async fn test_multiple_stop_calls_safe() {
+        // Verify multiple stop calls don't cause errors
+        let state = ThemeMonitorState::new();
+
+        let result1 = state.stop_monitoring().await;
+        assert!(result1.is_ok(), "First stop should succeed");
+
+        let result2 = state.stop_monitoring().await;
+        assert!(result2.is_ok(), "Second stop should succeed");
+
+        let result3 = state.stop_monitoring().await;
+        assert!(result3.is_ok(), "Third stop should succeed");
+    }
+
+    #[tokio::test]
+    async fn test_monitoring_strategy_tracking() {
+        // Verify strategy is properly tracked
+        let state = ThemeMonitorState::new();
+
+        // Initially no strategy
+        assert!(state.get_strategy().await.is_none());
+
+        // After setting strategy
+        *state.strategy.lock().await = Some(MonitoringStrategy::Notification);
+        assert_eq!(state.get_strategy().await, Some(MonitoringStrategy::Notification));
+
+        // After setting to polling
+        *state.strategy.lock().await = Some(MonitoringStrategy::Polling);
+        assert_eq!(state.get_strategy().await, Some(MonitoringStrategy::Polling));
+
+        // After clearing
+        *state.strategy.lock().await = None;
+        assert!(state.get_strategy().await.is_none());
     }
 }
 
-/// Detect theme using objc crate and NSUserDefaults (primary method)
-fn detect_theme_via_objc() -> Result<String, String> {
-    autoreleasepool(|| unsafe {
-        // Get NSUserDefaults class
-        let user_defaults_class = Class::get("NSUserDefaults")
-            .ok_or("NSUserDefaults class not available")?;
+#[cfg(test)]
+mod polling_tests {
+    use super::*;
 
-        // Get standard user defaults instance
-        #[allow(unexpected_cfgs)]
-        let standard_defaults: *mut Object = msg_send![user_defaults_class, standardUserDefaults];
-        if standard_defaults.is_null() {
-            return Err("Failed to get standard user defaults".to_string());
-        }
+    #[tokio::test]
+    async fn test_polling_state_management() {
+        // Verify polling state can be managed
+        let state = ThemeMonitorState::new();
 
-        // Create NSString for the key "AppleInterfaceStyle"
-        let nsstring_class = Class::get("NSString")
-            .ok_or("NSString class not available")?;
-        #[allow(unexpected_cfgs)]
-        let key: *mut Object = msg_send![nsstring_class, stringWithUTF8String: c"AppleInterfaceStyle".as_ptr()];
+        assert!(!state.is_monitoring().await);
 
-        if key.is_null() {
-            return Err("Failed to create NSString key".to_string());
-        }
+        // Simulate starting polling
+        *state.is_monitoring.lock().await = true;
+        *state.strategy.lock().await = Some(MonitoringStrategy::Polling);
 
-        // Read AppleInterfaceStyle value
-        #[allow(unexpected_cfgs)]
-        let style_obj: *mut Object = msg_send![standard_defaults, objectForKey: key];
+        assert!(state.is_monitoring().await);
+        assert_eq!(state.get_strategy().await, Some(MonitoringStrategy::Polling));
 
-        if style_obj.is_null() {
-            // Key not set means light mode
-            return Ok("light".to_string());
-        }
+        // Stop
+        state.stop_monitoring().await.unwrap();
 
-        // Convert NSString to Rust string
-        #[allow(unexpected_cfgs)]
-        let utf8_string: *const c_char = msg_send![style_obj, UTF8String];
-        if utf8_string.is_null() {
-            return Ok("light".to_string());
-        }
-
-        let c_str = CStr::from_ptr(utf8_string);
-        let style_str = c_str.to_str()
-            .map_err(|_| "Failed to convert NSString to UTF-8")?;
-
-        // "Dark" means dark mode, anything else (or missing) means light mode
-        if style_str == "Dark" {
-            Ok("dark".to_string())
-        } else {
-            Ok("light".to_string())
-        }
-    })
-}
-
-/// Detect theme using defaults command-line tool (fallback method)
-fn detect_theme_via_defaults() -> Result<String, String> {
-    let output = std::process::Command::new("defaults")
-        .arg("read")
-        .arg("-g")
-        .arg("AppleInterfaceStyle")
-        .output()
-        .map_err(|e| format!("Failed to execute defaults command: {}", e))?;
-    
-    if !output.status.success() {
-        // Command failed (likely means light mode - key doesn't exist)
-        return Ok("light".to_string());
-    }
-    
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let trimmed = stdout.trim();
-    
-    if trimmed == "Dark" {
-        Ok("dark".to_string())
-    } else {
-        Ok("light".to_string())
+        assert!(!state.is_monitoring().await);
+        assert!(state.get_strategy().await.is_none());
     }
 }
