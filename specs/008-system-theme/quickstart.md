@@ -22,7 +22,7 @@ This feature adds:
 
 **Install objc crate dependency**:
 ```bash
-cd /Users/huynhdung/src/tries/2025-11-01-skhd-gui/src-tauri
+cd src-tauri
 # Add to Cargo.toml dependencies:
 # objc = "0.2"
 cargo add objc
@@ -30,7 +30,7 @@ cargo add objc
 
 **Run development server**:
 ```bash
-cd /Users/huynhdung/src/tries/2025-11-01-skhd-gui
+# From repository root
 bun run tauri dev
 ```
 

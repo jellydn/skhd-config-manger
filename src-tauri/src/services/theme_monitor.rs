@@ -1,9 +1,10 @@
 /// Theme monitoring service for macOS system theme changes
-/// 
+///
 /// This service monitors macOS system theme changes via NSDistributedNotificationCenter
 /// and emits Tauri events when the system theme changes during application runtime.
 use std::ffi::{CStr, c_char};
 use std::sync::Arc;
+use objc::rc::autoreleasepool;
 use objc::{msg_send, sel, sel_impl};
 use objc::runtime::{Class, Object};
 use tauri::{AppHandle, Emitter};
@@ -43,7 +44,7 @@ impl ThemeMonitorState {
         
         tokio::spawn(async move {
             let mut last_theme: Option<String> = None;
-            let mut poll_interval = interval(Duration::from_millis(500)); // Poll every 500ms
+            let mut poll_interval = interval(Duration::from_secs(2)); // Poll every 2 seconds
             
             loop {
                 poll_interval.tick().await;
@@ -125,55 +126,55 @@ fn detect_current_theme() -> Result<String, String> {
 
 /// Detect theme using objc crate and NSUserDefaults (primary method)
 fn detect_theme_via_objc() -> Result<String, String> {
-    unsafe {
+    autoreleasepool(|| unsafe {
         // Get NSUserDefaults class
         let user_defaults_class = Class::get("NSUserDefaults")
             .ok_or("NSUserDefaults class not available")?;
-        
+
         // Get standard user defaults instance
         #[allow(unexpected_cfgs)]
         let standard_defaults: *mut Object = msg_send![user_defaults_class, standardUserDefaults];
         if standard_defaults.is_null() {
             return Err("Failed to get standard user defaults".to_string());
         }
-        
+
         // Create NSString for the key "AppleInterfaceStyle"
         let nsstring_class = Class::get("NSString")
             .ok_or("NSString class not available")?;
         #[allow(unexpected_cfgs)]
         let key: *mut Object = msg_send![nsstring_class, stringWithUTF8String: c"AppleInterfaceStyle".as_ptr()];
-        
+
         if key.is_null() {
             return Err("Failed to create NSString key".to_string());
         }
-        
+
         // Read AppleInterfaceStyle value
         #[allow(unexpected_cfgs)]
         let style_obj: *mut Object = msg_send![standard_defaults, objectForKey: key];
-        
+
         if style_obj.is_null() {
             // Key not set means light mode
             return Ok("light".to_string());
         }
-        
+
         // Convert NSString to Rust string
         #[allow(unexpected_cfgs)]
         let utf8_string: *const c_char = msg_send![style_obj, UTF8String];
         if utf8_string.is_null() {
             return Ok("light".to_string());
         }
-        
+
         let c_str = CStr::from_ptr(utf8_string);
         let style_str = c_str.to_str()
             .map_err(|_| "Failed to convert NSString to UTF-8")?;
-        
+
         // "Dark" means dark mode, anything else (or missing) means light mode
         if style_str == "Dark" {
             Ok("dark".to_string())
         } else {
             Ok("light".to_string())
         }
-    }
+    })
 }
 
 /// Detect theme using defaults command-line tool (fallback method)

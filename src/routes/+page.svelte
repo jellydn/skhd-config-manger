@@ -604,8 +604,8 @@
 
   <ConfirmDialog
     open={showDestructiveWarning}
-    title="?? DANGER: Potentially Destructive Command!"
-    message={pendingDestructiveCommand ? `Command: ${pendingDestructiveCommand.command}\n\nThis command may:\n? Delete important files or directories\n? Modify system files\n? Terminate critical processes\n? Cause data loss or system instability\n\nAre you ABSOLUTELY SURE you want to execute this command?` : ''}
+    title="⚠️ DANGER: Potentially Destructive Command!"
+    message={pendingDestructiveCommand ? `Command: ${pendingDestructiveCommand.command}\n\nThis command may:\n• Delete important files or directories\n• Modify system files\n• Terminate critical processes\n• Cause data loss or system instability\n\nAre you ABSOLUTELY SURE you want to execute this command?` : ''}
     confirmLabel="Execute Anyway"
     cancelLabel="Cancel"
     variant="danger"
