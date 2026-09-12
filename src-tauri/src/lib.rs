@@ -18,7 +18,6 @@ use services::{ServiceManager, ThemeMonitorState};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ConfigState::new())
@@ -61,6 +60,7 @@ pub fn run() {
             commands::service::reload_service,
             commands::service::install_service,
             commands::service::uninstall_service,
+            commands::service::open_accessibility_settings,
             commands::templates::get_command_templates,
             commands::templates::get_command_categories,
             commands::templates::generate_command_from_template,

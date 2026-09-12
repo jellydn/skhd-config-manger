@@ -1,8 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { openUrl } from '@tauri-apps/plugin-opener';
   import type { ServiceState, ServiceStatus } from '../types';
-  import { getServiceStatus, restartService, startService } from '../services/service';
+  import {
+    getServiceStatus,
+    openAccessibilitySettings,
+    restartService,
+    startService,
+  } from '../services/service';
 
   let {
     isImporting,
@@ -78,11 +82,9 @@
     }
   }
 
-  async function openAccessibilitySettings() {
+  async function handleOpenAccessibilitySettings() {
     try {
-      await openUrl(
-        'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'
-      );
+      await openAccessibilitySettings();
     } catch (error) {
       feedback = {
         type: 'error',
@@ -225,7 +227,7 @@
         </p>
       {/if}
     </div>
-    <button class="toolbar-btn" onclick={openAccessibilitySettings}
+    <button class="toolbar-btn" onclick={handleOpenAccessibilitySettings}
       >Open Accessibility Settings</button
     >
   </section>

@@ -7,6 +7,9 @@ const AUTOMATIC_CHECK_KEY = 'updates.automaticCheck';
 const AUTOMATIC_DOWNLOAD_KEY = 'updates.automaticDownload';
 const LAST_CHECK_KEY = 'updates.lastCheck';
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/jellydn/keybinder/releases/latest';
+const UPDATER_FEED_ASSET = 'latest.json';
+const MISSING_FEED_ERROR = 'Could not fetch a valid release JSON from the remote';
 
 export type UpdatePhase =
   | 'idle'
@@ -76,6 +79,34 @@ export function parseLastCheck(rawLastCheck: string | null): number | null {
   return Number.isFinite(lastCheck) ? lastCheck : null;
 }
 
+export async function latestReleaseHasUpdaterFeed(): Promise<boolean | null> {
+  try {
+    const response = await fetch(LATEST_RELEASE_API_URL, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!response.ok) return null;
+
+    const release: unknown = await response.json();
+    if (
+      typeof release !== 'object' ||
+      release === null ||
+      !Array.isArray((release as { assets?: unknown }).assets)
+    ) {
+      return null;
+    }
+
+    return (release as { assets: Array<{ name?: unknown }> }).assets.some(
+      (asset) => asset?.name === UPDATER_FEED_ASSET
+    );
+  } catch {
+    return null;
+  }
+}
+
+export function isMissingUpdaterFeed(error: unknown, feedAvailable: boolean | null): boolean {
+  return String(error).includes(MISSING_FEED_ERROR) && feedAvailable === false;
+}
+
 export async function checkForUpdates(userInitiated = true): Promise<void> {
   if (operationActive) return;
   operationActive = true;
@@ -108,6 +139,20 @@ export async function checkForUpdates(userInitiated = true): Promise<void> {
       await downloadUpdate();
     }
   } catch (error) {
+    const feedAvailable = String(error).includes(MISSING_FEED_ERROR)
+      ? await latestReleaseHasUpdaterFeed()
+      : null;
+    if (isMissingUpdaterFeed(error, feedAvailable)) {
+      localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+      updateState.set({
+        ...initialState,
+        message: userInitiated
+          ? 'Signed in-app updates are not available for the current release yet. Use GitHub Releases until the first signed update is published.'
+          : initialState.message,
+      });
+      return;
+    }
+
     updateState.set({
       ...initialState,
       phase: 'error',

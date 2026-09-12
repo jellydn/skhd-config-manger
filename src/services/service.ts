@@ -34,6 +34,10 @@ export async function restartService(): Promise<void> {
   return invoke('restart_service');
 }
 
+export async function openAccessibilitySettings(): Promise<void> {
+  return invoke('open_accessibility_settings');
+}
+
 /**
  * Reload the skhd service
  *

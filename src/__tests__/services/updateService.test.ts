@@ -1,11 +1,19 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   getUpdatePreferences,
+  isMissingUpdaterFeed,
+  latestReleaseHasUpdaterFeed,
   parseLastCheck,
   setAutomaticCheck,
   setAutomaticDownload,
   shouldRunAutomaticCheck,
 } from '../../services/updateService';
+
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
 
 describe('updateService preferences', () => {
   beforeEach(() => {
@@ -58,5 +66,42 @@ describe('automatic update interval', () => {
     expect(parseLastCheck(null)).toBeNull();
     expect(parseLastCheck('not-a-timestamp')).toBeNull();
     expect(parseLastCheck('86400000')).toBe(86_400_000);
+  });
+});
+
+describe('updater feed availability', () => {
+  it('detects whether the latest release contains updater metadata', async () => {
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({ assets: [{ name: 'keybinder.dmg' }, { name: 'latest.json' }] }),
+      }) as Response) as typeof fetch;
+
+    await expect(latestReleaseHasUpdaterFeed()).resolves.toBe(true);
+  });
+
+  it('reports a confirmed missing updater feed', async () => {
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({ assets: [{ name: 'keybinder_0.5.0_universal_darwin.dmg' }] }),
+      }) as Response) as typeof fetch;
+
+    await expect(latestReleaseHasUpdaterFeed()).resolves.toBe(false);
+  });
+
+  it('keeps API failures distinct from a missing feed', async () => {
+    globalThis.fetch = (async () => ({ ok: false }) as Response) as typeof fetch;
+
+    await expect(latestReleaseHasUpdaterFeed()).resolves.toBeNull();
+  });
+
+  it('classifies only the known error with a confirmed missing feed', () => {
+    const missingFeedError = new Error('Could not fetch a valid release JSON from the remote');
+
+    expect(isMissingUpdaterFeed(missingFeedError, false)).toBe(true);
+    expect(isMissingUpdaterFeed(missingFeedError, true)).toBe(false);
+    expect(isMissingUpdaterFeed(missingFeedError, null)).toBe(false);
+    expect(isMissingUpdaterFeed(new Error('network unavailable'), false)).toBe(false);
   });
 });
