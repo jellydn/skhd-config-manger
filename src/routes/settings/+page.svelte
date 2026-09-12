@@ -62,6 +62,7 @@
           onclick={() => checkForUpdates(true)}
           disabled={$updateState.phase === 'checking' ||
             $updateState.phase === 'downloading' ||
+            $updateState.phase === 'ready' ||
             $updateState.phase === 'installing'}
         >
           {$updateState.phase === 'checking' ? 'Checking…' : 'Check for Updates'}

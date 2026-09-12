@@ -450,25 +450,50 @@ impl ServiceManager {
     async fn start_service_original(&self) -> Result<(), String> {
         let plist_path = self.get_plist_path_original()?;
         let domain = Self::gui_domain_target()?;
+        let service_registered = !matches!(
+            self.get_status_original().await?.state,
+            ServiceState::Unknown
+        );
 
-        let output = Command::new("launchctl")
-            .arg("bootstrap")
-            .arg(domain)
-            .arg(&plist_path)
-            .output()
-            .map_err(|e| {
-                format!(
-                    "skhd: Failed to execute launchctl bootstrap: {}. \
-                     Check that you have permission to control launchd services.",
-                    e
-                )
-            })?;
+        let output = if service_registered {
+            Command::new("launchctl")
+                .arg("kickstart")
+                .arg("-k")
+                .arg(format!("{domain}/com.koekeishiya.skhd"))
+                .output()
+        } else {
+            Command::new("launchctl")
+                .arg("bootstrap")
+                .arg(&domain)
+                .arg(&plist_path)
+                .output()
+        }
+        .map_err(|error| {
+            let action = if service_registered {
+                "kickstart"
+            } else {
+                "bootstrap"
+            };
+            format!(
+                "skhd: Failed to execute launchctl {action}: {error}. \
+                 Check that you have permission to control launchd services."
+            )
+        })?;
 
-        let mut command_error = None;
+        let mut command_error = (!output.status.success()).then(|| {
+            let action = if service_registered {
+                "kickstart"
+            } else {
+                "bootstrap"
+            };
+            format!(
+                "skhd: launchctl {action} failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            )
+        });
 
         // Also try the older load command for backwards compatibility.
-        if !output.status.success() {
-            let bootstrap_error = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if !service_registered && !output.status.success() {
             let fallback = Command::new("launchctl")
                 .arg("load")
                 .arg(&plist_path)
@@ -477,15 +502,12 @@ impl ServiceManager {
                 if !fallback.status.success() {
                     command_error = Some(format!(
                         "skhd: launchctl bootstrap failed: {}. launchctl load also failed: {}",
-                        bootstrap_error,
+                        String::from_utf8_lossy(&output.stderr).trim(),
                         String::from_utf8_lossy(&fallback.stderr).trim()
                     ));
+                } else {
+                    command_error = None;
                 }
-            } else {
-                command_error = Some(format!(
-                    "skhd: launchctl bootstrap failed: {}",
-                    bootstrap_error
-                ));
             }
         }
 
