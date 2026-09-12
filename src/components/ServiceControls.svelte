@@ -127,7 +127,7 @@
   <div class="toolbar-left">
     <h1>Service Manager</h1>
     {#if status}
-      <div class="service-status" role="status" aria-label="Service status: {status.state}">
+      <div class="service-status" role="status">
         <div class="status-indicator {getStatusClass(status.state)}" aria-hidden="true"></div>
         <span class="status-text">{status.state}</span>
         <span class="variant-badge">{status.variant === 'zig' ? 'skhd.zig' : 'skhd'}</span>

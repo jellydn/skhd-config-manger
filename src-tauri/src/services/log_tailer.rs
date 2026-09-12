@@ -119,6 +119,21 @@ pub fn log_sources(variant: SkhdVariant, username: &str, home: PathBuf) -> Vec<(
     }
 }
 
+async fn ensure_log_source(path: &std::path::Path) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|error| format!("Failed to create {}: {error}", parent.display()))?;
+    }
+    tokio::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .await
+        .map(|_| ())
+        .map_err(|error| format!("Failed to create {}: {error}", path.display()))
+}
+
 impl LogTailer {
     /// Create a new LogTailer instance
     ///
@@ -169,6 +184,7 @@ impl LogTailer {
         let mut tasks = Vec::new();
 
         for (path, is_error) in log_sources(variant, &username, home) {
+            ensure_log_source(&path).await?;
             let mut process = Command::new("tail")
                 .arg("-f")
                 .arg("-n")
@@ -218,17 +234,19 @@ impl LogTailer {
         let mut handle = self.stream_handle.lock().await;
 
         if let Some(mut stream) = handle.take() {
+            let mut first_error = None;
             for process in &mut stream.processes {
-                process
-                    .kill()
-                    .await
-                    .map_err(|error| format!("Failed to stop a log stream process: {error}"))?;
+                if let Err(error) = process.kill().await {
+                    first_error.get_or_insert_with(|| {
+                        format!("Failed to stop a log stream process: {error}")
+                    });
+                }
             }
             for task in stream.tasks {
                 task.abort();
             }
 
-            Ok(())
+            first_error.map_or(Ok(()), Err)
         } else {
             Err(
                 "Log stream is not running. Start the stream before attempting to stop it."
@@ -322,5 +340,15 @@ mod tests {
                 (PathBuf::from("/tmp/skhd_alice.err.log"), true),
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn test_ensure_log_source_creates_parent_and_file() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("Library/Logs/skhd.log");
+
+        ensure_log_source(&path).await.unwrap();
+
+        assert!(path.is_file());
     }
 }

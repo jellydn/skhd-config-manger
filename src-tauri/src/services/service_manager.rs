@@ -177,10 +177,11 @@ impl ServiceManager {
             return self.get_status_from_skhd_command(app_binary).await;
         }
 
-        let launchctl_status = self
+        let mut launchctl_status = self
             .get_status_from_launchctl(SkhdVariant::Zig.service_label())
             .await?;
         if !matches!(launchctl_status.state, ServiceState::Unknown) {
+            launchctl_status.accessibility_guidance = accessibility_guidance(SkhdVariant::Zig);
             return Ok(launchctl_status);
         }
 
@@ -531,9 +532,10 @@ impl ServiceManager {
         let binary_path = self.get_skhd_binary_path(effective).await?;
 
         if let Ok(config_path) = get_config_path_for_variant(SkhdVariant::Zig) {
-            if std::fs::read_to_string(config_path)
-                .is_ok_and(|content| config_requires_grabber(&content))
-            {
+            let content = std::fs::read_to_string(&config_path).map_err(|error| {
+                format!("skhd.zig: Failed to inspect configuration at {config_path}: {error}")
+            })?;
+            if config_requires_grabber(&content) {
                 return Err(
                     "skhd.zig: This configuration uses block-form .remap rules. Run \
                      'skhd --start-service' manually in Terminal to review privileged helper setup."
