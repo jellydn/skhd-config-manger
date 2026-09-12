@@ -187,5 +187,5 @@ jobs:
           uploadUpdaterJson: true
           args: >-
             --target universal-apple-darwin
-            --bundles dmg
+            --bundles dmg,updater
             --config '{"bundle":{"createUpdaterArtifacts":true}}'
