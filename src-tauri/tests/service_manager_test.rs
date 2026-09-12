@@ -2,7 +2,7 @@
 //!
 //! These tests verify the service manager dispatches correctly based on the effective variant.
 
-use keybinder_lib::models::{ServiceState, ServiceStatus, SkhdVariant};
+use keybinder_lib::models::{AccessibilityPermission, ServiceState, ServiceStatus, SkhdVariant};
 use keybinder_lib::services::ServiceManager;
 
 #[test]
@@ -36,6 +36,8 @@ fn test_service_status_struct_creation() {
         last_updated: chrono::Utc::now(),
         config_path: Some("/Users/test/.config/skhd/skhdrc".to_string()),
         error_message: None,
+        accessibility_permission: AccessibilityPermission::Granted,
+        accessibility_guidance: String::new(),
     };
 
     assert!(matches!(status.state, ServiceState::Running));
@@ -52,6 +54,8 @@ fn test_service_status_error_state() {
         last_updated: chrono::Utc::now(),
         config_path: None,
         error_message: Some("Test error".to_string()),
+        accessibility_permission: AccessibilityPermission::Unknown,
+        accessibility_guidance: String::new(),
     };
 
     assert!(matches!(status.state, ServiceState::Error));
@@ -67,6 +71,8 @@ fn test_service_status_serialization() {
         last_updated: chrono::Utc::now(),
         config_path: Some("/test/path".to_string()),
         error_message: None,
+        accessibility_permission: AccessibilityPermission::Granted,
+        accessibility_guidance: String::new(),
     };
 
     let json = serde_json::to_string(&status).expect("Should serialize");
@@ -165,6 +171,8 @@ fn test_service_status_config_path_handling() {
             last_updated: chrono::Utc::now(),
             config_path: path.clone(),
             error_message: None,
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: String::new(),
         };
 
         assert_eq!(status.config_path, path);
@@ -180,6 +188,8 @@ fn test_service_status_timestamp() {
         last_updated: chrono::Utc::now(),
         config_path: None,
         error_message: None,
+        accessibility_permission: AccessibilityPermission::Granted,
+        accessibility_guidance: String::new(),
     };
     let after = chrono::Utc::now();
 

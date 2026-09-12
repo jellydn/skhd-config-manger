@@ -5,6 +5,7 @@
   import { applyTheme } from '../services/themeService';
   import { getSystemTheme, startThemeMonitor, stopThemeMonitor } from '../services/tauri';
   import { listen } from '@tauri-apps/api/event';
+  import { checkForUpdatesAutomatically } from '../services/updateService';
 
   // Props
   let { children }: { children: Snippet } = $props();
@@ -46,15 +47,20 @@
 
     // Listen for theme change events
     try {
-      const unsubscribe = await listen<{ theme: string; timestamp: string }>('theme-changed', (event) => {
-        const newTheme = event.payload.theme as 'light' | 'dark';
-        console.log('System theme changed to:', newTheme);
-        applyTheme(newTheme);
-      });
+      const unsubscribe = await listen<{ theme: string; timestamp: string }>(
+        'theme-changed',
+        (event) => {
+          const newTheme = event.payload.theme as 'light' | 'dark';
+          console.log('System theme changed to:', newTheme);
+          applyTheme(newTheme);
+        }
+      );
       unsubscribeThemeListener = unsubscribe;
     } catch (error) {
       console.error('Failed to set up theme change listener:', error);
     }
+
+    void checkForUpdatesAutomatically();
   });
 
   // Cleanup on destroy
@@ -84,8 +90,19 @@
       {#if !isCollapsed}
         <h1 class="app-title">Keybinder</h1>
       {/if}
-      <button class="collapse-btn" onclick={toggleSidebar} aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button
+        class="collapse-btn"
+        onclick={toggleSidebar}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           {#if isCollapsed}
             <polyline points="9 18 15 12 9 6"></polyline>
           {:else}
@@ -104,7 +121,14 @@
         title="Shortcuts"
       >
         <!-- Keyboard icon -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <rect x="2" y="4" width="20" height="16" rx="2"></rect>
           <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
         </svg>
@@ -121,7 +145,14 @@
         title="Service Manager"
       >
         <!-- Terminal/Activity icon -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <polyline points="4 17 10 11 4 5"></polyline>
           <line x1="12" y1="19" x2="20" y2="19"></line>
         </svg>
@@ -129,16 +160,32 @@
           <span>Service Manager</span>
         {/if}
       </a>
-    </nav>
 
-    <div class="sidebar-footer">
-      <div class="service-status">
-        <div class="status-indicator status-running"></div>
+      <a
+        href="/settings"
+        class="nav-item"
+        class:active={currentPath === '/settings'}
+        aria-current={currentPath === '/settings' ? 'page' : undefined}
+        title="Settings"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.39.33.74.6 1 .29.28.68.42 1.09.4H21v4h-.09c-.41-.02-.8.12-1.09.4-.27.26-.48.61-.6 1Z"
+          ></path>
+        </svg>
         {#if !isCollapsed}
-          <span class="status-text">skhd running</span>
+          <span>Settings</span>
         {/if}
-      </div>
-    </div>
+      </a>
+    </nav>
   </aside>
 
   <!-- Main Content -->
@@ -152,7 +199,10 @@
   /* Default to light theme - will be overridden by themeService.ts */
   /* Add smooth transitions for theme changes */
   :global(:root) {
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
     /* Light Theme Colors (default) */
     --color-background: #ffffff;
     --color-surface: #ffffff;
@@ -319,44 +369,6 @@
 
   .nav-item.active svg {
     opacity: 1;
-  }
-
-  .sidebar-footer {
-    padding: 12px 16px;
-    border-top: 1px solid var(--color-border);
-  }
-
-  .sidebar.collapsed .sidebar-footer {
-    padding: 12px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .service-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--color-text-secondary);
-  }
-
-  .sidebar.collapsed .service-status {
-    justify-content: center;
-  }
-
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .status-running {
-    background: var(--color-status-success);
-    box-shadow: 0 0 6px var(--color-status-success-bg);
-  }
-
-  .status-text {
-    font-weight: 500;
   }
 
   /* Main Content Area */

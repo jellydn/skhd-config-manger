@@ -3,7 +3,7 @@
  *
  * This service provides:
  * - Getting service status
- * - Reloading the service
+ * - Starting, restarting, and reloading the service
  * - Managing service state
  */
 
@@ -24,6 +24,14 @@ import type { ServiceStatus } from '../types';
  */
 export async function getServiceStatus(): Promise<ServiceStatus> {
   return invoke('get_service_status');
+}
+
+export async function startService(): Promise<void> {
+  return invoke('start_service');
+}
+
+export async function restartService(): Promise<void> {
+  return invoke('restart_service');
 }
 
 /**

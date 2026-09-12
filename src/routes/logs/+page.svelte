@@ -7,14 +7,22 @@
    */
 
   import { onMount, onDestroy } from 'svelte';
+  import { openUrl } from '@tauri-apps/plugin-opener';
   import LogViewer from '../../components/LogViewer.svelte';
   import type { ServiceStatus, ConfigFile } from '../../types';
-  import { getServiceStatus, reloadService } from '../../services/service';
+  import {
+    getServiceStatus,
+    reloadService,
+    restartService,
+    startService,
+  } from '../../services/service';
   import { detectActiveConfig, importConfig, saveConfig } from '../../services/tauri';
 
   // Service status state
   let status = $state<ServiceStatus | null>(null);
   let isReloading = $state(false);
+  let isChangingService = $state(false);
+  let serviceFeedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
   let statusPollInterval: number | null = null;
 
   // Configuration state
@@ -78,7 +86,7 @@
 
       importFeedback = {
         type: 'success',
-        message: `Imported: ${config.file_path}. Click "Reload Service" to apply.`
+        message: `Imported: ${config.file_path}. Click "Reload Service" to apply.`,
       };
 
       // Clear feedback after 5 seconds
@@ -89,7 +97,7 @@
       console.error('Failed to import config:', err);
       importFeedback = {
         type: 'error',
-        message: `Failed to import: ${err}`
+        message: `Failed to import: ${err}`,
       };
 
       // Clear feedback after 10 seconds for errors
@@ -105,6 +113,7 @@
     if (isReloading) return;
     try {
       isReloading = true;
+      serviceFeedback = null;
 
       // If there's a loaded config (from import), save it to the active config path first
       // This ensures skhd reads the imported config when it reloads
@@ -116,6 +125,7 @@
       }
 
       await reloadService();
+      serviceFeedback = { type: 'success', message: 'Service configuration reloaded.' };
 
       // After reload, update what skhd service is actually using
       setTimeout(async () => {
@@ -127,20 +137,63 @@
       }, 1000);
     } catch (err) {
       console.error('Failed to reload service:', err);
+      serviceFeedback = { type: 'error', message: String(err) };
     } finally {
       isReloading = false;
     }
   }
 
+  async function handleServiceAction(action: 'start' | 'restart') {
+    if (isChangingService) return;
+
+    isChangingService = true;
+    serviceFeedback = null;
+    try {
+      if (action === 'start') {
+        await startService();
+      } else {
+        await restartService();
+      }
+      await loadStatus();
+      serviceFeedback = {
+        type: 'success',
+        message: action === 'start' ? 'Service started.' : 'Service restarted.',
+      };
+    } catch (err) {
+      serviceFeedback = { type: 'error', message: String(err) };
+      await loadStatus();
+    } finally {
+      isChangingService = false;
+    }
+  }
+
+  async function openAccessibilitySettings() {
+    try {
+      await openUrl(
+        'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'
+      );
+    } catch (err) {
+      serviceFeedback = {
+        type: 'error',
+        message: `Could not open System Settings: ${err}`,
+      };
+    }
+  }
+
   function getStatusClass(state: string): string {
     switch (state) {
-      case 'Running': return 'status-running';
-      case 'Stopped': return 'status-stopped';
+      case 'Running':
+        return 'status-running';
+      case 'Stopped':
+        return 'status-stopped';
       case 'Starting':
       case 'Stopping':
-      case 'Reloading': return 'status-transitioning';
-      case 'Error': return 'status-error';
-      default: return 'status-unknown';
+      case 'Reloading':
+        return 'status-transitioning';
+      case 'Error':
+        return 'status-error';
+      default:
+        return 'status-unknown';
     }
   }
 
@@ -238,6 +291,23 @@
       {/if}
     </div>
     <div class="toolbar-actions">
+      {#if status && (status.state === 'Stopped' || status.state === 'Unknown')}
+        <button
+          class="toolbar-btn toolbar-btn-primary"
+          onclick={() => handleServiceAction('start')}
+          disabled={isChangingService}
+        >
+          {isChangingService ? 'Starting…' : 'Start Service'}
+        </button>
+      {:else if status?.state === 'Running' || status?.state === 'Error'}
+        <button
+          class="toolbar-btn"
+          onclick={() => handleServiceAction('restart')}
+          disabled={isChangingService}
+        >
+          {isChangingService ? 'Restarting…' : 'Restart Service'}
+        </button>
+      {/if}
       <!-- Configuration Import -->
       <button
         class="toolbar-btn"
@@ -245,7 +315,14 @@
         disabled={isImporting}
         aria-label="Import configuration"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
           <line x1="12" y1="18" x2="12" y2="12"></line>
@@ -263,7 +340,15 @@
         aria-label="Reload skhd service"
       >
         {#if isReloading}
-          <svg class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            class="spinner"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <line x1="12" y1="2" x2="12" y2="6"></line>
             <line x1="12" y1="18" x2="12" y2="22"></line>
             <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
@@ -274,7 +359,14 @@
             <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
           </svg>
         {:else}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
@@ -285,6 +377,42 @@
   </header>
 
   <main class="logs-page__content">
+    {#if status && status.accessibility_permission !== 'Granted'}
+      <section
+        class:permission-denied={status.accessibility_permission === 'Denied'}
+        class="permission-panel"
+        aria-live="polite"
+      >
+        <div>
+          <h2>
+            Accessibility {status.accessibility_permission === 'Denied'
+              ? 'permission denied'
+              : 'permission not verified'}
+          </h2>
+          <p>{status.accessibility_guidance}</p>
+          {#if status.accessibility_permission === 'Unknown'}
+            <p class="permission-note">
+              Keybinder verifies permission from the skhd daemon after it starts; it does not
+              request permission for itself.
+            </p>
+          {/if}
+        </div>
+        <button class="toolbar-btn" onclick={openAccessibilitySettings}
+          >Open Accessibility Settings</button
+        >
+      </section>
+    {/if}
+
+    {#if status?.error_message || serviceFeedback}
+      <div
+        class:error-feedback={(serviceFeedback?.type ?? 'error') === 'error'}
+        class="service-feedback"
+        role="alert"
+      >
+        {serviceFeedback?.message ?? status?.error_message}
+      </div>
+    {/if}
+
     <!-- Log Viewer Controls Panel -->
     <div class="log-controls-panel">
       <div class="log-controls-left">
@@ -302,11 +430,25 @@
         {#if importFeedback}
           <div class="import-feedback-inline import-feedback-{importFeedback.type}">
             {#if importFeedback.type === 'success'}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             {:else}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -320,7 +462,8 @@
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
           <span class="log-count">
-            {logsCount} {logLevelFilter === 'error' ? 'error' : 'info'} logs
+            {logsCount}
+            {logLevelFilter === 'error' ? 'error' : 'info'} logs
           </span>
           <div class="pagination-controls">
             <button
@@ -329,7 +472,14 @@
               disabled={currentPage === 1}
               aria-label="Previous page"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -342,7 +492,14 @@
               disabled={currentPage >= totalPages || totalPages === 0}
               aria-label="Next page"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
@@ -352,22 +509,47 @@
         <!-- Log Level Filter Toggle Icon -->
         <button
           class="filter-toggle-icon"
-          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
+          onclick={() => (logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error')}
           aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
-          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
+          title={logLevelFilter === 'error'
+            ? 'Click to show info logs'
+            : 'Click to show error logs'}
         >
           {#if logLevelFilter === 'error'}
             <!-- Error/Warning icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 2L2 14H14L8 2Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8 6V9M8 12H8.01"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
             </svg>
           {:else}
             <!-- Info/List icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor" />
+              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor" />
+              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor" />
             </svg>
           {/if}
         </button>
@@ -393,12 +575,27 @@
           aria-label="Load more historical logs"
         >
           {#if isLoadingMore}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="spinner"
+            >
               <circle cx="12" cy="12" r="10"></circle>
             </svg>
             Loading more logs...
           {:else}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M3 12h18M3 12l6-6M3 12l6 6"></path>
               <path d="M21 12l-6-6M21 12l-6 6"></path>
             </svg>
@@ -482,8 +679,13 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   .status-text {
@@ -552,8 +754,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .toolbar-checkbox {
@@ -620,6 +826,56 @@
     flex-direction: column;
     gap: 12px;
     min-height: 0;
+  }
+
+  .permission-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 12px 16px;
+    color: var(--color-status-warning);
+    background: var(--color-status-warning-bg);
+    border: 1px solid var(--color-status-warning-border);
+    border-radius: 6px;
+  }
+
+  .permission-panel.permission-denied {
+    color: var(--color-status-error);
+    background: var(--color-status-error-bg);
+    border-color: var(--color-status-error-border);
+  }
+
+  .permission-panel h2 {
+    margin: 0 0 4px;
+    font-size: 13px;
+  }
+
+  .permission-panel p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .permission-note {
+    margin-top: 4px !important;
+    color: var(--color-text-secondary);
+  }
+
+  .service-feedback {
+    padding: 10px 16px;
+    color: var(--color-status-success);
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: pre-line;
+  }
+
+  .service-feedback.error-feedback {
+    color: var(--color-status-error);
+    background: var(--color-status-error-bg);
+    border-color: var(--color-status-error-border);
   }
 
   /* Active Configuration Display */

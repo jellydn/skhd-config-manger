@@ -26,6 +26,7 @@
   "bundle": {
     "active": true,
     "targets": ["dmg", "app"],
+    "createUpdaterArtifacts": true,
     "macOS": {
       "minimumSystemVersion": "11.0",
       "frameworks": [],
@@ -57,6 +58,10 @@
   "plugins": {
     "fs": {
       "scope": ["$HOME/.config/skhd/*"]
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE2MjkwMTgyODNCREMwNTEKUldSUndMMkRnZ0VwcG9DMDluWG1BczdHTXlONlJFTUNqczBkK1hmMkNRbEZWZ3BjQVA4RGRBYUYK",
+      "endpoints": ["https://github.com/jellydn/keybinder/releases/latest/download/latest.json"]
     }
   }
 }
