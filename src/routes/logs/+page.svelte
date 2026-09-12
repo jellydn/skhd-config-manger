@@ -6,24 +6,12 @@
    * logs from the skhd service.
    */
 
-  import { onMount, onDestroy } from 'svelte';
-  import { openUrl } from '@tauri-apps/plugin-opener';
+  import { onMount } from 'svelte';
   import LogViewer from '../../components/LogViewer.svelte';
-  import type { ServiceStatus, ConfigFile } from '../../types';
-  import {
-    getServiceStatus,
-    reloadService,
-    restartService,
-    startService,
-  } from '../../services/service';
+  import ServiceControls from '../../components/ServiceControls.svelte';
+  import type { ConfigFile } from '../../types';
+  import { reloadService } from '../../services/service';
   import { detectActiveConfig, importConfig, saveConfig } from '../../services/tauri';
-
-  // Service status state
-  let status = $state<ServiceStatus | null>(null);
-  let isReloading = $state(false);
-  let isChangingService = $state(false);
-  let serviceFeedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
-  let statusPollInterval: number | null = null;
 
   // Configuration state
   let activeConfigPath = $state<string>('');
@@ -44,23 +32,8 @@
 
   // Lifecycle
   onMount(async () => {
-    await Promise.all([loadStatus(), loadActiveConfig()]);
-    statusPollInterval = window.setInterval(loadStatus, 5000);
+    await loadActiveConfig();
   });
-
-  onDestroy(() => {
-    if (statusPollInterval) {
-      window.clearInterval(statusPollInterval);
-    }
-  });
-
-  async function loadStatus() {
-    try {
-      status = await getServiceStatus();
-    } catch (err) {
-      console.error('Failed to get service status:', err);
-    }
-  }
 
   async function loadActiveConfig() {
     try {
@@ -110,11 +83,7 @@
   }
 
   async function handleReload() {
-    if (isReloading) return;
     try {
-      isReloading = true;
-      serviceFeedback = null;
-
       // If there's a loaded config (from import), save it to the active config path first
       // This ensures skhd reads the imported config when it reloads
       if (loadedConfig && activeConfigPath) {
@@ -125,11 +94,9 @@
       }
 
       await reloadService();
-      serviceFeedback = { type: 'success', message: 'Service configuration reloaded.' };
 
       // After reload, update what skhd service is actually using
       setTimeout(async () => {
-        await loadStatus();
         await loadActiveConfig();
         // Clear loaded config since it's now active
         loadedConfigPath = '';
@@ -137,63 +104,7 @@
       }, 1000);
     } catch (err) {
       console.error('Failed to reload service:', err);
-      serviceFeedback = { type: 'error', message: String(err) };
-    } finally {
-      isReloading = false;
-    }
-  }
-
-  async function handleServiceAction(action: 'start' | 'restart') {
-    if (isChangingService) return;
-
-    isChangingService = true;
-    serviceFeedback = null;
-    try {
-      if (action === 'start') {
-        await startService();
-      } else {
-        await restartService();
-      }
-      await loadStatus();
-      serviceFeedback = {
-        type: 'success',
-        message: action === 'start' ? 'Service started.' : 'Service restarted.',
-      };
-    } catch (err) {
-      serviceFeedback = { type: 'error', message: String(err) };
-      await loadStatus();
-    } finally {
-      isChangingService = false;
-    }
-  }
-
-  async function openAccessibilitySettings() {
-    try {
-      await openUrl(
-        'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'
-      );
-    } catch (err) {
-      serviceFeedback = {
-        type: 'error',
-        message: `Could not open System Settings: ${err}`,
-      };
-    }
-  }
-
-  function getStatusClass(state: string): string {
-    switch (state) {
-      case 'Running':
-        return 'status-running';
-      case 'Stopped':
-        return 'status-stopped';
-      case 'Starting':
-      case 'Stopping':
-      case 'Reloading':
-        return 'status-transitioning';
-      case 'Error':
-        return 'status-error';
-      default:
-        return 'status-unknown';
+      throw err;
     }
   }
 
@@ -276,143 +187,9 @@
 </svelte:head>
 
 <div class="logs-page">
-  <!-- Toolbar -->
-  <header class="toolbar">
-    <div class="toolbar-left">
-      <h1>Service Manager</h1>
-      {#if status}
-        <div class="service-status" role="status" aria-label="Service status: {status.state}">
-          <div class="status-indicator {getStatusClass(status.state)}" aria-hidden="true"></div>
-          <span class="status-text">{status.state}</span>
-          {#if status.pid}
-            <span class="status-pid">PID: {status.pid}</span>
-          {/if}
-        </div>
-      {/if}
-    </div>
-    <div class="toolbar-actions">
-      {#if status && (status.state === 'Stopped' || status.state === 'Unknown')}
-        <button
-          class="toolbar-btn toolbar-btn-primary"
-          onclick={() => handleServiceAction('start')}
-          disabled={isChangingService}
-        >
-          {isChangingService ? 'Starting…' : 'Start Service'}
-        </button>
-      {:else if status?.state === 'Running' || status?.state === 'Error'}
-        <button
-          class="toolbar-btn"
-          onclick={() => handleServiceAction('restart')}
-          disabled={isChangingService}
-        >
-          {isChangingService ? 'Restarting…' : 'Restart Service'}
-        </button>
-      {/if}
-      <!-- Configuration Import -->
-      <button
-        class="toolbar-btn"
-        onclick={handleImportConfig}
-        disabled={isImporting}
-        aria-label="Import configuration"
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <line x1="9" y1="15" x2="12" y2="12"></line>
-          <line x1="15" y1="15" x2="12" y2="12"></line>
-        </svg>
-        Import Config
-      </button>
-
-      <!-- Service Control -->
-      <button
-        class="toolbar-btn"
-        onclick={handleReload}
-        disabled={isReloading || !status || status?.state === 'Error'}
-        aria-label="Reload skhd service"
-      >
-        {#if isReloading}
-          <svg
-            class="spinner"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <line x1="12" y1="2" x2="12" y2="6"></line>
-            <line x1="12" y1="18" x2="12" y2="22"></line>
-            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-            <line x1="2" y1="12" x2="6" y2="12"></line>
-            <line x1="18" y1="12" x2="22" y2="12"></line>
-            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-          </svg>
-        {:else}
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        {/if}
-        Reload Service
-      </button>
-    </div>
-  </header>
+  <ServiceControls {isImporting} onImport={handleImportConfig} onReload={handleReload} />
 
   <main class="logs-page__content">
-    {#if status && status.accessibility_permission !== 'Granted'}
-      <section
-        class:permission-denied={status.accessibility_permission === 'Denied'}
-        class="permission-panel"
-        aria-live="polite"
-      >
-        <div>
-          <h2>
-            Accessibility {status.accessibility_permission === 'Denied'
-              ? 'permission denied'
-              : 'permission not verified'}
-          </h2>
-          <p>{status.accessibility_guidance}</p>
-          {#if status.accessibility_permission === 'Unknown'}
-            <p class="permission-note">
-              Keybinder verifies permission from the skhd daemon after it starts; it does not
-              request permission for itself.
-            </p>
-          {/if}
-        </div>
-        <button class="toolbar-btn" onclick={openAccessibilitySettings}
-          >Open Accessibility Settings</button
-        >
-      </section>
-    {/if}
-
-    {#if status?.error_message || serviceFeedback}
-      <div
-        class:error-feedback={(serviceFeedback?.type ?? 'error') === 'error'}
-        class="service-feedback"
-        role="alert"
-      >
-        {serviceFeedback?.message ?? status?.error_message}
-      </div>
-    {/if}
-
     <!-- Log Viewer Controls Panel -->
     <div class="log-controls-panel">
       <div class="log-controls-left">
@@ -615,208 +392,6 @@
     overflow: hidden;
   }
 
-  /* Toolbar - Native macOS style */
-  .toolbar {
-    background: var(--color-surface-secondary);
-    border-bottom: 1px solid var(--color-border);
-    padding: 20px 20px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    min-height: 52px;
-  }
-
-  .toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .toolbar-left h1 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-text);
-    margin: 0;
-  }
-
-  .service-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--color-text);
-  }
-
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .status-running {
-    background: var(--color-status-success);
-    box-shadow: 0 0 6px var(--color-status-success-bg);
-  }
-
-  .status-stopped {
-    background: var(--color-status-stopped);
-  }
-
-  .status-transitioning {
-    background: var(--color-status-warning);
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  .status-error {
-    background: var(--color-status-error);
-    box-shadow: 0 0 6px var(--color-status-error-bg);
-  }
-
-  .status-unknown {
-    background: var(--color-status-unknown);
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .status-text {
-    font-weight: 500;
-  }
-
-  .status-pid {
-    color: rgba(255, 255, 255, 0.5);
-  }
-
-  .toolbar-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .toolbar-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--color-button-secondary-bg);
-    border: 1px solid var(--color-button-secondary-border);
-    border-radius: 6px;
-    color: var(--color-button-secondary-text);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    min-height: 28px;
-  }
-
-  .toolbar-btn:hover:not(:disabled) {
-    background: var(--color-button-secondary-hover);
-    border-color: var(--color-button-secondary-border);
-    color: var(--color-text);
-  }
-
-  .toolbar-btn:active:not(:disabled) {
-    background: var(--color-button-secondary-active);
-  }
-
-  .toolbar-btn:focus-visible {
-    outline: 2px solid var(--color-button-secondary-focus);
-    outline-offset: 2px;
-  }
-
-  .toolbar-btn:disabled {
-    background: var(--color-button-disabled-bg);
-    color: var(--color-button-disabled-text);
-    border-color: var(--color-button-disabled-border);
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  .toolbar-btn svg {
-    flex-shrink: 0;
-    opacity: 0.8;
-  }
-
-  .toolbar-btn:hover:not(:disabled) svg {
-    opacity: 1;
-  }
-
-  .spinner {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .toolbar-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--color-button-secondary-bg);
-    border: 1px solid var(--color-button-secondary-border);
-    border-radius: 6px;
-    color: var(--color-button-secondary-text);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .toolbar-checkbox:hover {
-    background: var(--color-button-secondary-hover);
-    border-color: var(--color-button-secondary-border);
-    color: var(--color-text);
-  }
-
-  .toolbar-checkbox svg {
-    flex-shrink: 0;
-    color: var(--color-border-hover);
-  }
-
-  .toolbar-btn-primary {
-    background: var(--color-button-primary-bg);
-    border-color: var(--color-button-primary-bg);
-    color: var(--color-button-primary-text);
-  }
-
-  .toolbar-btn-primary:hover:not(:disabled) {
-    background: var(--color-button-primary-hover);
-    border-color: var(--color-button-primary-hover);
-  }
-
-  .toolbar-btn-primary:active:not(:disabled) {
-    background: var(--color-button-primary-active);
-    border-color: var(--color-button-primary-active);
-  }
-
-  .toolbar-btn-primary:focus-visible {
-    outline: 2px solid var(--color-button-primary-focus);
-    outline-offset: 2px;
-  }
-
-  .toolbar-btn-primary:disabled {
-    background: var(--color-button-disabled-bg);
-    color: var(--color-button-disabled-text);
-    border-color: var(--color-button-disabled-border);
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
   .logs-page__content {
     flex: 1;
     overflow: hidden;
@@ -826,56 +401,6 @@
     flex-direction: column;
     gap: 12px;
     min-height: 0;
-  }
-
-  .permission-panel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 12px 16px;
-    color: var(--color-status-warning);
-    background: var(--color-status-warning-bg);
-    border: 1px solid var(--color-status-warning-border);
-    border-radius: 6px;
-  }
-
-  .permission-panel.permission-denied {
-    color: var(--color-status-error);
-    background: var(--color-status-error-bg);
-    border-color: var(--color-status-error-border);
-  }
-
-  .permission-panel h2 {
-    margin: 0 0 4px;
-    font-size: 13px;
-  }
-
-  .permission-panel p {
-    margin: 0;
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
-  .permission-note {
-    margin-top: 4px !important;
-    color: var(--color-text-secondary);
-  }
-
-  .service-feedback {
-    padding: 10px 16px;
-    color: var(--color-status-success);
-    background: var(--color-status-success-bg);
-    border: 1px solid var(--color-status-success-border);
-    border-radius: 6px;
-    font-size: 12px;
-    white-space: pre-line;
-  }
-
-  .service-feedback.error-feedback {
-    color: var(--color-status-error);
-    background: var(--color-status-error-bg);
-    border-color: var(--color-status-error-border);
   }
 
   /* Active Configuration Display */

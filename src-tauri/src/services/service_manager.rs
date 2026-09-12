@@ -136,11 +136,7 @@ impl ServiceManager {
         if let Some(diagnostic) = self.recent_accessibility_denial(variant) {
             status.state = ServiceState::Error;
             status.accessibility_permission = AccessibilityPermission::Denied;
-            status.error_message = Some(format!(
-                "{}\n{}",
-                diagnostic.trim(),
-                status.accessibility_guidance
-            ));
+            status.error_message = Some(diagnostic.trim().to_string());
         }
 
         status
