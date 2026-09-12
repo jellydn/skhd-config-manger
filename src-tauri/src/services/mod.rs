@@ -4,6 +4,7 @@ pub mod backup;
 pub mod file_io;
 pub mod log_tailer;
 pub mod path_validator;
+mod service_diagnostics;
 pub mod service_manager;
 pub mod settings;
 pub mod template_loader;

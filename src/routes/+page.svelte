@@ -28,6 +28,7 @@
   import Modal from '../components/Modal.svelte';
   import TestResultDisplay from '../components/TestResultDisplay.svelte';
   import ConfirmDialog from '../components/ConfirmDialog.svelte';
+  import ReadOnlyDirectiveNotice from '../components/ReadOnlyDirectiveNotice.svelte';
 
   let config = $state<ConfigFile | null>(null);
   let loading = $state(true);
@@ -551,11 +552,7 @@
       </div>
     {:else if config}
       {#if config.read_only_directive_count > 0}
-        <div class="directive-notice" role="status">
-          This file contains {config.read_only_directive_count} skhd.zig
-          {config.read_only_directive_count === 1 ? 'directive' : 'directives'}. Keybinder preserves
-          them unchanged, but does not edit them.
-        </div>
+        <ReadOnlyDirectiveNotice count={config.read_only_directive_count} />
       {/if}
       {#if config.parse_errors.length > 0}
         <ErrorDisplay errors={config.parse_errors} />
@@ -773,16 +770,6 @@
     overflow-x: hidden;
     padding: 20px;
     background: var(--color-background);
-  }
-
-  .directive-notice {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    color: var(--color-status-warning);
-    background: var(--color-status-warning-bg);
-    border: 1px solid var(--color-status-warning-border);
-    border-radius: 6px;
-    font-size: 12px;
   }
 
   .loading-state {
