@@ -145,7 +145,7 @@ impl SettingsManager {
                     is_auto_detected: false,
                     warning: if !is_installed {
                         Some(
-                            "skhd.zig is selected but not detected. Install with: brew install jackielii/tap/skhd-zig".to_string()
+                            "skhd.zig is selected but not detected. Install with: brew install --cask jackielii/tap/skhd-zig".to_string()
                         )
                     } else {
                         None

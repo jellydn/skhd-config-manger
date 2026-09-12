@@ -173,9 +173,8 @@ impl ServiceManager {
             }
         }
 
-        let app_binary = "/Applications/skhd.app/Contents/MacOS/skhd";
-        if std::path::Path::new(app_binary).exists() {
-            return self.get_status_from_skhd_command(app_binary).await;
+        if let Some(binary_path) = find_binary(SkhdVariant::Zig) {
+            return self.get_status_from_skhd_command(&binary_path).await;
         }
 
         let mut launchctl_status = self
@@ -304,7 +303,7 @@ impl ServiceManager {
                         None,
                         AccessibilityPermission::Unknown,
                         InputMonitoringPermission::Unknown,
-                        Some(format!("skhd --status failed: {}", stderr.trim())),
+                        Some(format!("skhd.zig: skhd --status failed: {}", stderr.trim())),
                     )
                 }
             } else {
@@ -313,7 +312,7 @@ impl ServiceManager {
                     None,
                     AccessibilityPermission::Unknown,
                     InputMonitoringPermission::Unknown,
-                    Some("Failed to run skhd --status".to_string()),
+                    Some("skhd.zig: Failed to run skhd --status".to_string()),
                 )
             };
 
@@ -550,9 +549,7 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service started
-        let status = self
-            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
-            .await;
+        let status = self.get_status_zig(effective).await?;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
@@ -643,9 +640,7 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service is running
-        let status = self
-            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
-            .await;
+        let status = self.get_status_zig(effective).await?;
         if !matches!(status.state, ServiceState::Running) {
             return Err(status.error_message.unwrap_or_else(|| {
                 "skhd.zig: Service failed to restart. Check the service status and logs."

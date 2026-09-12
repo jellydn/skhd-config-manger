@@ -166,13 +166,25 @@ async fn ensure_log_source(path: &std::path::Path) -> Result<(), String> {
             .await
             .map_err(|error| format!("Failed to create {}: {error}", parent.display()))?;
     }
-    tokio::fs::OpenOptions::new()
+    let file = tokio::fs::OpenOptions::new()
         .create(true)
         .append(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
         .open(path)
         .await
-        .map(|_| ())
-        .map_err(|error| format!("Failed to create {}: {error}", path.display()))
+        .map_err(|error| format!("Failed to open {} safely: {error}", path.display()))?;
+    if !file
+        .metadata()
+        .await
+        .map_err(|error| format!("Failed to inspect {}: {error}", path.display()))?
+        .is_file()
+    {
+        return Err(format!(
+            "Log source is not a regular file: {}",
+            path.display()
+        ));
+    }
+    Ok(())
 }
 
 impl LogTailer {
@@ -221,33 +233,45 @@ impl LogTailer {
 
         let variant = effective_variant_async().await.variant;
         let home = dirs::home_dir().unwrap_or_default();
+        let sources = log_sources(variant, &username, home);
+        for source in &sources {
+            ensure_log_source(&source.path).await?;
+        }
+
         let mut processes = Vec::new();
+        let mut streams = Vec::new();
         let mut tasks = Vec::new();
 
-        for source in log_sources(variant, &username, home) {
-            ensure_log_source(&source.path).await?;
-            let mut process = Command::new("tail")
+        for source in sources {
+            let mut command = Command::new("tail");
+            command
                 .arg("-f")
                 .arg("-n")
                 .arg("50")
                 .arg(&source.path)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
+                .kill_on_drop(true);
+            let mut process = command
                 .spawn()
                 .map_err(|error| format!("Failed to monitor {}: {error}", source.path.display()))?;
             let stream = process.stdout.take().ok_or_else(|| {
                 format!("Failed to capture log stream for {}", source.path.display())
             })?;
+            processes.push(process);
+            streams.push((stream, source.kind));
+        }
+
+        for (stream, kind) in streams {
             let app_handle = self.app_handle.clone();
             tasks.push(tokio::spawn(async move {
                 let mut lines = BufReader::new(stream).lines();
                 while let Ok(Some(line)) = lines.next_line().await {
-                    if let Some(entry) = parse_source_log_line(&line, source.kind) {
+                    if let Some(entry) = parse_source_log_line(&line, kind) {
                         let _ = app_handle.emit("log-entry", &entry);
                     }
                 }
             }));
-            processes.push(process);
         }
 
         *handle = Some(StreamHandle { processes, tasks });
@@ -421,5 +445,38 @@ mod tests {
         ensure_log_source(&path).await.unwrap();
 
         assert!(path.is_file());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_ensure_log_source_rejects_symlinks() {
+        use std::os::unix::fs::symlink;
+
+        let directory = tempfile::tempdir().unwrap();
+        let target = directory.path().join("target.log");
+        std::fs::write(&target, "existing log").unwrap();
+        let path = directory.path().join("skhd.log");
+        symlink(&target, &path).unwrap();
+
+        assert!(ensure_log_source(&path).await.is_err());
+        assert_eq!(std::fs::read_to_string(target).unwrap(), "existing log");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_ensure_log_source_rejects_fifo_without_blocking() {
+        use std::ffi::CString;
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("skhd.log");
+        let c_path = CString::new(path.to_string_lossy().as_bytes()).unwrap();
+        // SAFETY: c_path is a valid, NUL-terminated path inside a temporary directory.
+        assert_eq!(unsafe { libc::mkfifo(c_path.as_ptr(), 0o600) }, 0);
+
+        let result =
+            tokio::time::timeout(std::time::Duration::from_secs(1), ensure_log_source(&path))
+                .await
+                .expect("opening a FIFO must not block");
+        assert!(result.is_err());
     }
 }
