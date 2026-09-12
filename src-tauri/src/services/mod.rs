@@ -21,4 +21,4 @@ pub use settings::{effective_variant_async, SettingsManager};
 pub use template_loader::{get_categories, get_templates};
 pub use theme_monitor::ThemeMonitorState;
 pub use validation::{validate_config, validate_shortcut};
-pub use variant_detector::{detect_variant, detect_variant_async};
+pub use variant_detector::{detect_variant, detect_variant_async, is_variant_installed};

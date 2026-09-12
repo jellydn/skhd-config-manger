@@ -21,6 +21,22 @@ impl std::fmt::Display for SkhdVariant {
     }
 }
 
+impl SkhdVariant {
+    pub const fn display_name(self) -> &'static str {
+        match self {
+            Self::Original => "skhd",
+            Self::Zig => "skhd.zig",
+        }
+    }
+
+    pub const fn service_label(self) -> &'static str {
+        match self {
+            Self::Original => "com.koekeishiya.skhd",
+            Self::Zig => "com.jackielii.skhd",
+        }
+    }
+}
+
 /// Represents how the variant was detected
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DetectionSource {

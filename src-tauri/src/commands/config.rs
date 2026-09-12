@@ -44,6 +44,13 @@ fn load_config_from_path(
     // Convert parsed config to ConfigFile
     let path_str = path.to_string_lossy().to_string();
     let mut config = ConfigFile::new(path_str);
+    config.original_content = Some(content.clone());
+    config.original_shortcut_lines = parsed
+        .shortcuts()
+        .iter()
+        .map(|shortcut| shortcut.line_number)
+        .collect();
+    config.read_only_directive_count = parsed.directives().len();
 
     for parsed_shortcut in parsed.shortcuts() {
         let shortcut = Shortcut::new(
@@ -363,6 +370,10 @@ pub fn reload_config(state: State<'_, ConfigState>) -> Result<ConfigFile, String
 ///
 /// This ensures round-trip compatibility: parse → modify → serialize → parse
 pub fn serialize_config(config: &ConfigFile) -> String {
+    if let Some(original_content) = &config.original_content {
+        return serialize_preserving_original(config, original_content);
+    }
+
     let mut output = String::new();
 
     // Add global comments at the top
@@ -389,23 +400,69 @@ pub fn serialize_config(config: &ConfigFile) -> String {
             output.push('\n');
         }
 
-        // Build modifier string
-        let modifier_str = if shortcut.modifiers.is_empty() {
-            String::new()
-        } else {
-            let mut mods = shortcut.modifiers.clone();
-            mods.sort(); // Ensure consistent ordering
-            format!("{} ", mods.join(" + "))
-        };
-
-        // Write shortcut line: [modifiers] - key : command
-        output.push_str(&format!(
-            "{}- {} : {}\n",
-            modifier_str, shortcut.key, shortcut.command
-        ));
+        output.push_str(&serialize_shortcut(&shortcut));
     }
 
     output
+}
+
+fn serialize_preserving_original(config: &ConfigFile, original_content: &str) -> String {
+    let original_lines = config
+        .original_shortcut_lines
+        .iter()
+        .copied()
+        .collect::<std::collections::HashSet<_>>();
+    let shortcuts_by_line = config
+        .shortcuts
+        .iter()
+        .filter(|shortcut| original_lines.contains(&shortcut.line_number))
+        .map(|shortcut| (shortcut.line_number, shortcut))
+        .collect::<std::collections::HashMap<_, _>>();
+    let mut output = String::new();
+
+    for (index, line) in original_content.split_inclusive('\n').enumerate() {
+        let line_number = index + 1;
+        if original_lines.contains(&line_number) {
+            if let Some(shortcut) = shortcuts_by_line.get(&line_number) {
+                let serialized = serialize_shortcut(shortcut);
+                if line.ends_with('\n') {
+                    output.push_str(&serialized);
+                } else {
+                    output.push_str(serialized.trim_end_matches('\n'));
+                }
+            }
+        } else {
+            output.push_str(line);
+        }
+    }
+
+    let new_shortcuts = config
+        .shortcuts
+        .iter()
+        .filter(|shortcut| !original_lines.contains(&shortcut.line_number));
+    for shortcut in new_shortcuts {
+        if !output.is_empty() && !output.ends_with('\n') {
+            output.push('\n');
+        }
+        output.push_str(&serialize_shortcut(shortcut));
+    }
+
+    output
+}
+
+fn serialize_shortcut(shortcut: &Shortcut) -> String {
+    let modifier_str = if shortcut.modifiers.is_empty() {
+        String::new()
+    } else {
+        let mut modifiers = shortcut.modifiers.clone();
+        modifiers.sort();
+        format!("{} ", modifiers.join(" + "))
+    };
+
+    format!(
+        "{}- {} : {}\n",
+        modifier_str, shortcut.key, shortcut.command
+    )
 }
 
 #[cfg(test)]
@@ -456,5 +513,45 @@ mod tests {
 
         let serialized = serialize_config(&config);
         assert!(serialized.contains("- f1 : echo test"));
+    }
+
+    #[test]
+    fn test_serialize_config_preserves_zig_directives_and_unsupported_lines() {
+        let original = ".alias $hyper cmd + alt + ctrl + shift\n.remap caps_lock [device builtin] {\n  tap: escape\n  hold: lctrl\n}\nhyper - h : echo old\n";
+        let mut config = ConfigFile::new("/test/path".to_string());
+        config.original_content = Some(original.to_string());
+        config.original_shortcut_lines = vec![6];
+        config.read_only_directive_count = 2;
+        config.shortcuts.push(Shortcut::new(
+            vec!["hyper".to_string()],
+            "h".to_string(),
+            "echo new".to_string(),
+            6,
+        ));
+
+        let serialized = serialize_config(&config);
+
+        assert!(serialized.starts_with(".alias $hyper cmd + alt + ctrl + shift\n.remap"));
+        assert!(serialized.contains("  hold: lctrl\n}"));
+        assert!(serialized.ends_with("hyper - h : echo new\n"));
+        assert!(!serialized.contains("echo old"));
+    }
+
+    #[test]
+    fn test_serialize_config_deletes_old_shortcuts_and_appends_new_ones() {
+        let mut config = ConfigFile::new("/test/path".to_string());
+        config.original_content = Some(".shell /bin/zsh\ncmd - x : old".to_string());
+        config.original_shortcut_lines = vec![2];
+        config.shortcuts.push(Shortcut::new(
+            vec!["alt".to_string()],
+            "y".to_string(),
+            "new".to_string(),
+            3,
+        ));
+
+        assert_eq!(
+            serialize_config(&config),
+            ".shell /bin/zsh\nalt - y : new\n"
+        );
     }
 }

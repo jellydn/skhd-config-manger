@@ -9,7 +9,11 @@
 /// Events emitted:
 /// - `log-entry`: Emitted for each new log entry (payload: LogEntry)
 use crate::models::LogEntry;
-use crate::services::{log_tailer::parse_log_line, LogTailer};
+use crate::services::{
+    effective_variant_async,
+    log_tailer::{log_sources, parse_log_line},
+    LogTailer,
+};
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 use tokio::{
@@ -213,51 +217,35 @@ async fn read_log_file(file_path: &str, limit: usize) -> Result<Vec<String>, Str
 #[tauri::command]
 pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, String> {
     let limit = limit.unwrap_or(100);
-    let limit_per_file = limit / 2; // Split between stdout and stderr
 
     // Get current username for log file paths
     let username = std::env::var("USER")
         .or_else(|_| std::env::var("USERNAME"))
         .unwrap_or_else(|_| "unknown".to_string());
 
-    // Sanitize username (same logic as LogTailer)
-    let sanitized_username = username
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
-        .collect::<String>();
-
-    let stdout_log_file = format!("/tmp/skhd_{}.out.log", sanitized_username);
-    let stderr_log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
-
-    // Read from both log files
-    let stdout_lines = read_log_file(&stdout_log_file, limit_per_file).await?;
-    let stderr_lines = read_log_file(&stderr_log_file, limit_per_file).await?;
-
-    // Check if both files are empty
-    if stdout_lines.is_empty() && stderr_lines.is_empty() {
-        return Err(format!(
-            "No log files found: {} and {}. \
-             The skhd service may not have been started yet, or logs may not have been generated. \
-             Start the skhd service to begin generating logs.",
-            stdout_log_file, stderr_log_file
-        ));
-    }
-
-    // Combine and parse lines into LogEntry objects
+    let variant = effective_variant_async().await.variant;
+    let sources = log_sources(variant, &username, dirs::home_dir().unwrap_or_default());
+    let limit_per_file = limit.div_ceil(sources.len());
     let mut log_entries = Vec::new();
 
-    // Parse stdout lines (INFO logs)
-    for line in stdout_lines {
-        if let Some(entry) = parse_log_line(&line, false) {
-            log_entries.push(entry);
+    for (path, is_error) in &sources {
+        for line in read_log_file(&path.to_string_lossy(), limit_per_file).await? {
+            if let Some(entry) = parse_log_line(&line, *is_error) {
+                log_entries.push(entry);
+            }
         }
     }
 
-    // Parse stderr lines (ERROR logs)
-    for line in stderr_lines {
-        if let Some(entry) = parse_log_line(&line, true) {
-            log_entries.push(entry);
-        }
+    if log_entries.is_empty() {
+        let paths = sources
+            .iter()
+            .map(|(path, _)| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join(" and ");
+        return Err(format!(
+            "No logs found in {paths}. Start {} to generate logs.",
+            variant.display_name()
+        ));
     }
 
     // Sort by timestamp (chronological order)

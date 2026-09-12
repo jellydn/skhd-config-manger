@@ -76,6 +76,15 @@ export interface ConfigFile {
 
   /** Tracks the currently active file path (where saves will write) */
   current_file_path: string;
+
+  /** Original text retained so read-only syntax survives edits */
+  original_content: string | null;
+
+  /** Line numbers occupied by shortcuts in original_content */
+  original_shortcut_lines: number[];
+
+  /** Number of skhd.zig directives preserved as read-only text */
+  read_only_directive_count: number;
 }
 
 /**
@@ -225,11 +234,15 @@ export type ServiceState =
   'Stopped' | 'Starting' | 'Running' | 'Stopping' | 'Reloading' | 'Error' | 'Unknown';
 
 export type AccessibilityPermission = 'Granted' | 'Denied' | 'Unknown';
+export type InputMonitoringPermission = 'Granted' | 'Denied' | 'Unknown' | 'NotRequired';
 
 /**
  * Represents the current state of the skhd service
  */
 export interface ServiceStatus {
+  /** Variant whose service was inspected */
+  variant: SkhdVariant;
+
   /** Current lifecycle state */
   state: ServiceState;
 
@@ -250,6 +263,9 @@ export interface ServiceStatus {
 
   /** Correct macOS permission target and recovery steps */
   accessibility_guidance: string;
+
+  /** Input Monitoring state reported by skhd.zig */
+  input_monitoring_permission: InputMonitoringPermission;
 }
 
 /**

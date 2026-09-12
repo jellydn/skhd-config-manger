@@ -61,6 +61,7 @@ pub fn run() {
             commands::service::install_service,
             commands::service::uninstall_service,
             commands::service::open_accessibility_settings,
+            commands::service::open_input_monitoring_settings,
             commands::templates::get_command_templates,
             commands::templates::get_command_categories,
             commands::templates::generate_command_from_template,

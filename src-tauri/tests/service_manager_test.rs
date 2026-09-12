@@ -2,7 +2,9 @@
 //!
 //! These tests verify the service manager dispatches correctly based on the effective variant.
 
-use keybinder_lib::models::{AccessibilityPermission, ServiceState, ServiceStatus, SkhdVariant};
+use keybinder_lib::models::{
+    AccessibilityPermission, InputMonitoringPermission, ServiceState, ServiceStatus, SkhdVariant,
+};
 use keybinder_lib::services::ServiceManager;
 
 #[test]
@@ -31,6 +33,7 @@ fn test_service_manager_serialization_roundtrip() {
 #[test]
 fn test_service_status_struct_creation() {
     let status = ServiceStatus {
+        variant: SkhdVariant::Zig,
         state: ServiceState::Running,
         pid: Some(12345),
         last_updated: chrono::Utc::now(),
@@ -38,6 +41,7 @@ fn test_service_status_struct_creation() {
         error_message: None,
         accessibility_permission: AccessibilityPermission::Granted,
         accessibility_guidance: String::new(),
+        input_monitoring_permission: InputMonitoringPermission::Granted,
     };
 
     assert!(matches!(status.state, ServiceState::Running));
@@ -49,6 +53,7 @@ fn test_service_status_struct_creation() {
 #[test]
 fn test_service_status_error_state() {
     let status = ServiceStatus {
+        variant: SkhdVariant::Original,
         state: ServiceState::Error,
         pid: None,
         last_updated: chrono::Utc::now(),
@@ -56,6 +61,7 @@ fn test_service_status_error_state() {
         error_message: Some("Test error".to_string()),
         accessibility_permission: AccessibilityPermission::Unknown,
         accessibility_guidance: String::new(),
+        input_monitoring_permission: InputMonitoringPermission::NotRequired,
     };
 
     assert!(matches!(status.state, ServiceState::Error));
@@ -66,6 +72,7 @@ fn test_service_status_error_state() {
 #[test]
 fn test_service_status_serialization() {
     let status = ServiceStatus {
+        variant: SkhdVariant::Zig,
         state: ServiceState::Running,
         pid: Some(12345),
         last_updated: chrono::Utc::now(),
@@ -73,6 +80,7 @@ fn test_service_status_serialization() {
         error_message: None,
         accessibility_permission: AccessibilityPermission::Granted,
         accessibility_guidance: String::new(),
+        input_monitoring_permission: InputMonitoringPermission::Granted,
     };
 
     let json = serde_json::to_string(&status).expect("Should serialize");
@@ -166,6 +174,7 @@ fn test_service_status_config_path_handling() {
 
     for path in paths {
         let status = ServiceStatus {
+            variant: SkhdVariant::Original,
             state: ServiceState::Running,
             pid: None,
             last_updated: chrono::Utc::now(),
@@ -173,6 +182,7 @@ fn test_service_status_config_path_handling() {
             error_message: None,
             accessibility_permission: AccessibilityPermission::Unknown,
             accessibility_guidance: String::new(),
+            input_monitoring_permission: InputMonitoringPermission::NotRequired,
         };
 
         assert_eq!(status.config_path, path);
@@ -183,6 +193,7 @@ fn test_service_status_config_path_handling() {
 fn test_service_status_timestamp() {
     let before = chrono::Utc::now();
     let status = ServiceStatus {
+        variant: SkhdVariant::Original,
         state: ServiceState::Running,
         pid: None,
         last_updated: chrono::Utc::now(),
@@ -190,6 +201,7 @@ fn test_service_status_timestamp() {
         error_message: None,
         accessibility_permission: AccessibilityPermission::Granted,
         accessibility_guidance: String::new(),
+        input_monitoring_permission: InputMonitoringPermission::NotRequired,
     };
     let after = chrono::Utc::now();
 

@@ -40,6 +40,18 @@ pub struct ConfigFile {
     /// Differs from file_path when user imports from custom location
     #[serde(default = "ConfigFile::default_file_path")]
     pub current_file_path: String,
+
+    /// Original text used to preserve directives and unsupported syntax on save.
+    #[serde(default)]
+    pub original_content: Option<String>,
+
+    /// Shortcut lines found in original_content.
+    #[serde(default)]
+    pub original_shortcut_lines: Vec<usize>,
+
+    /// Number of skhd.zig directives preserved as read-only text.
+    #[serde(default)]
+    pub read_only_directive_count: usize,
 }
 
 impl ConfigFile {
@@ -64,6 +76,9 @@ impl ConfigFile {
             backup_path: None,
             parse_errors: Vec::new(),
             current_file_path,
+            original_content: None,
+            original_shortcut_lines: Vec::new(),
+            read_only_directive_count: 0,
         }
     }
 

@@ -4,6 +4,8 @@ use tauri::State;
 
 const ACCESSIBILITY_SETTINGS_URL: &str =
     "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
+const INPUT_MONITORING_SETTINGS_URL: &str =
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent";
 
 /// Get the current status of the skhd service
 #[tauri::command]
@@ -53,5 +55,12 @@ pub async fn uninstall_service(service_manager: State<'_, ServiceManager>) -> Re
 #[tauri::command]
 pub fn open_accessibility_settings() -> Result<(), String> {
     tauri_plugin_opener::open_url(ACCESSIBILITY_SETTINGS_URL, None::<&str>)
+        .map_err(|error| error.to_string())
+}
+
+/// Open the macOS Input Monitoring pane without exposing arbitrary URL opening.
+#[tauri::command]
+pub fn open_input_monitoring_settings() -> Result<(), String> {
+    tauri_plugin_opener::open_url(INPUT_MONITORING_SETTINGS_URL, None::<&str>)
         .map_err(|error| error.to_string())
 }

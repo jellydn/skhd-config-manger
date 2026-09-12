@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use super::SkhdVariant;
+
 /// Accessibility permission state verified from the skhd daemon itself.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AccessibilityPermission {
@@ -10,6 +12,19 @@ pub enum AccessibilityPermission {
     Denied,
     #[serde(rename = "Unknown")]
     Unknown,
+}
+
+/// Input Monitoring state reported by skhd.zig.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum InputMonitoringPermission {
+    #[serde(rename = "Granted")]
+    Granted,
+    #[serde(rename = "Denied")]
+    Denied,
+    #[serde(rename = "Unknown")]
+    Unknown,
+    #[serde(rename = "NotRequired")]
+    NotRequired,
 }
 
 /// Represents skhd service lifecycle states
@@ -47,6 +62,9 @@ pub enum ServiceState {
 /// Represents the current state of the skhd service
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceStatus {
+    /// Variant whose service was inspected.
+    pub variant: SkhdVariant,
+
     /// Current lifecycle state
     pub state: ServiceState,
 
@@ -67,12 +85,16 @@ pub struct ServiceStatus {
 
     /// Correct macOS permission target and recovery steps
     pub accessibility_guidance: String,
+
+    /// Input Monitoring state. Classic skhd does not report this separately.
+    pub input_monitoring_permission: InputMonitoringPermission,
 }
 
 impl ServiceStatus {
     /// Create a new service status
     pub fn new(state: ServiceState) -> Self {
         Self {
+            variant: SkhdVariant::Original,
             state,
             pid: None,
             last_updated: Utc::now(),
@@ -80,12 +102,14 @@ impl ServiceStatus {
             error_message: None,
             accessibility_permission: AccessibilityPermission::Unknown,
             accessibility_guidance: String::new(),
+            input_monitoring_permission: InputMonitoringPermission::NotRequired,
         }
     }
 
     /// Create a service status with PID (for Running state)
     pub fn running(pid: u32) -> Self {
         Self {
+            variant: SkhdVariant::Original,
             state: ServiceState::Running,
             pid: Some(pid),
             last_updated: Utc::now(),
@@ -93,12 +117,14 @@ impl ServiceStatus {
             error_message: None,
             accessibility_permission: AccessibilityPermission::Granted,
             accessibility_guidance: String::new(),
+            input_monitoring_permission: InputMonitoringPermission::NotRequired,
         }
     }
 
     /// Create an error status with message
     pub fn error(message: String) -> Self {
         Self {
+            variant: SkhdVariant::Original,
             state: ServiceState::Error,
             pid: None,
             last_updated: Utc::now(),
@@ -106,6 +132,7 @@ impl ServiceStatus {
             error_message: Some(message),
             accessibility_permission: AccessibilityPermission::Unknown,
             accessibility_guidance: String::new(),
+            input_monitoring_permission: InputMonitoringPermission::NotRequired,
         }
     }
 

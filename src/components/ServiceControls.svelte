@@ -4,6 +4,7 @@
   import {
     getServiceStatus,
     openAccessibilitySettings,
+    openInputMonitoringSettings,
     restartService,
     startService,
   } from '../services/service';
@@ -93,6 +94,17 @@
     }
   }
 
+  async function handleOpenInputMonitoringSettings() {
+    try {
+      await openInputMonitoringSettings();
+    } catch (error) {
+      feedback = {
+        type: 'error',
+        message: `Could not open System Settings: ${error}`,
+      };
+    }
+  }
+
   function getStatusClass(state: ServiceState): string {
     switch (state) {
       case 'Running':
@@ -118,6 +130,10 @@
       <div class="service-status" role="status" aria-label="Service status: {status.state}">
         <div class="status-indicator {getStatusClass(status.state)}" aria-hidden="true"></div>
         <span class="status-text">{status.state}</span>
+        <span class="variant-badge">{status.variant === 'zig' ? 'skhd.zig' : 'skhd'}</span>
+        {#if status.variant === 'zig'}
+          <span class="status-detail">Input: {status.input_monitoring_permission}</span>
+        {/if}
         {#if status.pid}
           <span class="status-pid">PID: {status.pid}</span>
         {/if}
@@ -207,17 +223,18 @@
   </div>
 </header>
 
-{#if status && status.accessibility_permission !== 'Granted'}
+{#if status && (status.accessibility_permission !== 'Granted' || status.input_monitoring_permission === 'Denied')}
   <section
-    class:permission-denied={status.accessibility_permission === 'Denied'}
+    class:permission-denied={status.accessibility_permission === 'Denied' ||
+      status.input_monitoring_permission === 'Denied'}
     class="permission-panel"
     aria-live="polite"
   >
     <div>
       <h2>
-        Accessibility {status.accessibility_permission === 'Denied'
-          ? 'permission denied'
-          : 'permission not verified'}
+        {status.input_monitoring_permission === 'Denied'
+          ? 'Input Monitoring permission denied'
+          : `Accessibility ${status.accessibility_permission === 'Denied' ? 'permission denied' : 'permission not verified'}`}
       </h2>
       <p>{status.accessibility_guidance}</p>
       {#if status.accessibility_permission === 'Unknown'}
@@ -227,9 +244,16 @@
         </p>
       {/if}
     </div>
-    <button class="toolbar-btn" onclick={handleOpenAccessibilitySettings}
-      >Open Accessibility Settings</button
-    >
+    <div class="permission-actions">
+      <button class="toolbar-btn" onclick={handleOpenAccessibilitySettings}
+        >Open Accessibility Settings</button
+      >
+      {#if status.variant === 'zig'}
+        <button class="toolbar-btn" onclick={handleOpenInputMonitoringSettings}
+          >Open Input Monitoring</button
+        >
+      {/if}
+    </div>
   </section>
 {/if}
 
@@ -316,6 +340,20 @@
 
   .status-pid {
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .status-detail {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+  }
+
+  .variant-badge {
+    padding: 2px 6px;
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 10px;
   }
 
   .toolbar-actions {
@@ -411,6 +449,12 @@
   .permission-note {
     margin-top: 4px !important;
     color: var(--color-text-secondary);
+  }
+
+  .permission-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
   }
 
   .service-feedback {

@@ -103,7 +103,10 @@
         parse_errors: [],
         last_modified: new Date().toISOString(),
         is_modified: true, // Mark as modified so user can save with location choice
-        current_file_path: '' // No current file path yet - will be set on first save
+        current_file_path: '', // No current file path yet - will be set on first save
+        original_content: null,
+        original_shortcut_lines: [],
+        read_only_directive_count: 0
       };
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -547,6 +550,13 @@
         </div>
       </div>
     {:else if config}
+      {#if config.read_only_directive_count > 0}
+        <div class="directive-notice" role="status">
+          This file contains {config.read_only_directive_count} skhd.zig
+          {config.read_only_directive_count === 1 ? 'directive' : 'directives'}. Keybinder preserves
+          them unchanged, but does not edit them.
+        </div>
+      {/if}
       {#if config.parse_errors.length > 0}
         <ErrorDisplay errors={config.parse_errors} />
       {/if}
@@ -763,6 +773,16 @@
     overflow-x: hidden;
     padding: 20px;
     background: var(--color-background);
+  }
+
+  .directive-notice {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    color: var(--color-status-warning);
+    background: var(--color-status-warning-bg);
+    border: 1px solid var(--color-status-warning-border);
+    border-radius: 6px;
+    font-size: 12px;
   }
 
   .loading-state {

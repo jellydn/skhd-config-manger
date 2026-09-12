@@ -5,7 +5,9 @@
 /// - Streaming log data in real-time using macOS `log stream`
 /// - Managing the lifecycle of log streaming (start/stop)
 /// - Event emission for new log entries to the frontend
-use crate::models::{LogEntry, LogLevel};
+use crate::models::{LogEntry, LogLevel, SkhdVariant};
+use crate::services::settings::effective_variant_async;
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
@@ -96,10 +98,25 @@ pub struct LogTailer {
 
 /// Internal handle to the running log stream processes and tasks
 struct StreamHandle {
-    stdout_process: Child,
-    stdout_task: JoinHandle<()>,
-    stderr_process: Child,
-    stderr_task: JoinHandle<()>,
+    processes: Vec<Child>,
+    tasks: Vec<JoinHandle<()>>,
+}
+
+pub fn log_sources(variant: SkhdVariant, username: &str, home: PathBuf) -> Vec<(PathBuf, bool)> {
+    match variant {
+        SkhdVariant::Original => {
+            let username = sanitize_username(username);
+            vec![
+                (
+                    PathBuf::from(format!("/tmp/skhd_{username}.out.log")),
+                    false,
+                ),
+                (PathBuf::from(format!("/tmp/skhd_{username}.err.log")), true),
+            ]
+        }
+        // skhd.zig combines normal messages and errors in one file.
+        SkhdVariant::Zig => vec![(home.join("Library/Logs/skhd.log"), false)],
+    }
 }
 
 impl LogTailer {
@@ -135,7 +152,10 @@ impl LogTailer {
 
         // Check if already running
         if handle.is_some() {
-            return Err("Log stream is already running. Stop the current stream before starting a new one.".to_string());
+            return Err(
+                "Log stream is already running. Stop the current stream before starting a new one."
+                    .to_string(),
+            );
         }
 
         // Get current username for log file paths
@@ -143,93 +163,38 @@ impl LogTailer {
             .or_else(|_| std::env::var("USERNAME"))
             .unwrap_or_else(|_| "unknown".to_string());
 
-        // Sanitize username to prevent path traversal attacks
-        let sanitized_username = sanitize_username(&username);
-        let stdout_log_file = format!("/tmp/skhd_{}.out.log", sanitized_username);
-        let stderr_log_file = format!("/tmp/skhd_{}.err.log", sanitized_username);
+        let variant = effective_variant_async().await.variant;
+        let home = dirs::home_dir().unwrap_or_default();
+        let mut processes = Vec::new();
+        let mut tasks = Vec::new();
 
-        // Spawn tail process for stdout (INFO logs)
-        let mut stdout_process = Command::new("tail")
-            .arg("-f")
-            .arg("-n")
-            .arg("50") // Start with last 50 lines from stdout
-            .arg(&stdout_log_file)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|e| {
-                format!(
-                    "Failed to start stdout log monitoring for {}: {}. \
-                     The log file may not exist yet if skhd has never been started.",
-                    stdout_log_file, e
-                )
-            })?;
-
-        let stdout_stream = stdout_process.stdout.take().ok_or(
-            "Failed to capture stdout log stream. \
-             This is an internal error - please report this issue."
-                .to_string(),
-        )?;
-
-        // Spawn tail process for stderr (ERROR logs)
-        let mut stderr_process = Command::new("tail")
-            .arg("-f")
-            .arg("-n")
-            .arg("50") // Start with last 50 lines from stderr
-            .arg(&stderr_log_file)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|e| {
-                format!(
-                    "Failed to start stderr log monitoring for {}: {}. \
-                     Make sure the skhd service is running and has generated logs.",
-                    stderr_log_file, e
-                )
-            })?;
-
-        let stderr_stream = stderr_process.stdout.take().ok_or(
-            "Failed to capture stderr log stream. \
-             This is an internal error - please report this issue."
-                .to_string(),
-        )?;
-
-        // Spawn task to read stdout lines and emit events
-        let app_handle_stdout = self.app_handle.clone();
-        let stdout_task = tokio::spawn(async move {
-            let reader = BufReader::new(stdout_stream);
-            let mut lines = reader.lines();
-
-            while let Ok(Some(line)) = lines.next_line().await {
-                // Parse log line from stdout (INFO level)
-                if let Some(entry) = parse_log_line(&line, false) {
-                    // Emit event to frontend
-                    let _ = app_handle_stdout.emit("log-entry", &entry);
+        for (path, is_error) in log_sources(variant, &username, home) {
+            let mut process = Command::new("tail")
+                .arg("-f")
+                .arg("-n")
+                .arg("50")
+                .arg(&path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .spawn()
+                .map_err(|error| format!("Failed to monitor {}: {error}", path.display()))?;
+            let stream = process
+                .stdout
+                .take()
+                .ok_or_else(|| format!("Failed to capture log stream for {}", path.display()))?;
+            let app_handle = self.app_handle.clone();
+            tasks.push(tokio::spawn(async move {
+                let mut lines = BufReader::new(stream).lines();
+                while let Ok(Some(line)) = lines.next_line().await {
+                    if let Some(entry) = parse_log_line(&line, is_error) {
+                        let _ = app_handle.emit("log-entry", &entry);
+                    }
                 }
-            }
-        });
+            }));
+            processes.push(process);
+        }
 
-        // Spawn task to read stderr lines and emit events
-        let app_handle_stderr = self.app_handle.clone();
-        let stderr_task = tokio::spawn(async move {
-            let reader = BufReader::new(stderr_stream);
-            let mut lines = reader.lines();
-
-            while let Ok(Some(line)) = lines.next_line().await {
-                // Parse log line from stderr (ERROR level)
-                if let Some(entry) = parse_log_line(&line, true) {
-                    // Emit event to frontend
-                    let _ = app_handle_stderr.emit("log-entry", &entry);
-                }
-            }
-        });
-
-        *handle = Some(StreamHandle {
-            stdout_process,
-            stdout_task,
-            stderr_process,
-            stderr_task,
-        });
+        *handle = Some(StreamHandle { processes, tasks });
 
         Ok(())
     }
@@ -253,31 +218,22 @@ impl LogTailer {
         let mut handle = self.stream_handle.lock().await;
 
         if let Some(mut stream) = handle.take() {
-            // Kill the stdout process
-            stream.stdout_process.kill().await.map_err(|e| {
-                format!(
-                    "Failed to stop stdout log stream process: {}. \
-                     The process may have already terminated.",
-                    e
-                )
-            })?;
-
-            // Kill the stderr process
-            stream.stderr_process.kill().await.map_err(|e| {
-                format!(
-                    "Failed to stop stderr log stream process: {}. \
-                     The process may have already terminated.",
-                    e
-                )
-            })?;
-
-            // Abort both tasks
-            stream.stdout_task.abort();
-            stream.stderr_task.abort();
+            for process in &mut stream.processes {
+                process
+                    .kill()
+                    .await
+                    .map_err(|error| format!("Failed to stop a log stream process: {error}"))?;
+            }
+            for task in stream.tasks {
+                task.abort();
+            }
 
             Ok(())
         } else {
-            Err("Log stream is not running. Start the stream before attempting to stop it.".to_string())
+            Err(
+                "Log stream is not running. Start the stream before attempting to stop it."
+                    .to_string(),
+            )
         }
     }
 
@@ -328,10 +284,7 @@ mod tests {
         let line = "   \t\n   ";
         let entry = parse_log_line(line, false);
 
-        assert!(
-            entry.is_none(),
-            "Whitespace-only lines should return None"
-        );
+        assert!(entry.is_none(), "Whitespace-only lines should return None");
     }
 
     #[test]
@@ -354,5 +307,20 @@ mod tests {
         assert_eq!(sanitize_username("user$name"), "username");
         assert_eq!(sanitize_username("user;name"), "username");
         assert_eq!(sanitize_username("user|name"), "username");
+    }
+
+    #[test]
+    fn test_log_sources_are_variant_specific() {
+        assert_eq!(
+            log_sources(SkhdVariant::Zig, "alice", PathBuf::from("/Users/alice")),
+            vec![(PathBuf::from("/Users/alice/Library/Logs/skhd.log"), false)]
+        );
+        assert_eq!(
+            log_sources(SkhdVariant::Original, "a/lice", PathBuf::from("/ignored")),
+            vec![
+                (PathBuf::from("/tmp/skhd_alice.out.log"), false),
+                (PathBuf::from("/tmp/skhd_alice.err.log"), true),
+            ]
+        );
     }
 }

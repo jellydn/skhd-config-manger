@@ -1,7 +1,7 @@
 /// Settings management service
 use crate::models::{DetectedVariant, Settings, SkhdVariant, SkhdVariantSetting};
 use crate::services::file_io::write_config_atomic;
-use crate::services::variant_detector::detect_variant;
+use crate::services::variant_detector::{detect_variant, is_variant_installed};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -121,10 +121,7 @@ impl SettingsManager {
             }
             SkhdVariantSetting::Original => {
                 let detected = detect_variant();
-                let is_installed = detected
-                    .variant
-                    .map(|v| v == SkhdVariant::Original)
-                    .unwrap_or(false);
+                let is_installed = is_variant_installed(SkhdVariant::Original);
 
                 EffectiveVariantResult {
                     variant: SkhdVariant::Original,
@@ -141,10 +138,7 @@ impl SettingsManager {
             }
             SkhdVariantSetting::Zig => {
                 let detected = detect_variant();
-                let is_installed = detected
-                    .variant
-                    .map(|v| v == SkhdVariant::Zig)
-                    .unwrap_or(false);
+                let is_installed = is_variant_installed(SkhdVariant::Zig);
 
                 EffectiveVariantResult {
                     variant: SkhdVariant::Zig,
