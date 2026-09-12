@@ -38,6 +38,14 @@ export async function openAccessibilitySettings(): Promise<void> {
   return invoke('open_accessibility_settings');
 }
 
+export async function openInputMonitoringSettings(): Promise<void> {
+  return invoke('open_input_monitoring_settings');
+}
+
+export async function installService(): Promise<void> {
+  return invoke('install_service');
+}
+
 /**
  * Reload the skhd service
  *

@@ -2085,6 +2085,7 @@ dependencies = [
  "block",
  "chrono",
  "dirs",
+ "libc",
  "mockall",
  "notify",
  "objc",

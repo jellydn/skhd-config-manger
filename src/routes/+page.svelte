@@ -28,6 +28,7 @@
   import Modal from '../components/Modal.svelte';
   import TestResultDisplay from '../components/TestResultDisplay.svelte';
   import ConfirmDialog from '../components/ConfirmDialog.svelte';
+  import ReadOnlyDirectiveNotice from '../components/ReadOnlyDirectiveNotice.svelte';
 
   let config = $state<ConfigFile | null>(null);
   let loading = $state(true);
@@ -103,7 +104,10 @@
         parse_errors: [],
         last_modified: new Date().toISOString(),
         is_modified: true, // Mark as modified so user can save with location choice
-        current_file_path: '' // No current file path yet - will be set on first save
+        current_file_path: '', // No current file path yet - will be set on first save
+        original_content: null,
+        original_shortcut_lines: [],
+        read_only_directive_count: 0
       };
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -547,6 +551,9 @@
         </div>
       </div>
     {:else if config}
+      {#if config.read_only_directive_count > 0}
+        <ReadOnlyDirectiveNotice count={config.read_only_directive_count} />
+      {/if}
       {#if config.parse_errors.length > 0}
         <ErrorDisplay errors={config.parse_errors} />
       {/if}

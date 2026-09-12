@@ -5,39 +5,15 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::sync::Mutex;
 
-use crate::models::{AccessibilityPermission, ServiceState, ServiceStatus, SkhdVariant};
+use crate::models::{
+    AccessibilityPermission, InputMonitoringPermission, ServiceState, ServiceStatus, SkhdVariant,
+};
+use crate::services::service_diagnostics::{
+    accessibility_guidance, config_requires_grabber, current_accessibility_denial, parse_zig_status,
+};
 use crate::services::settings::{effective_variant_async, EffectiveVariantResult};
+use crate::services::variant_detector::find_binary;
 use crate::utils::path::get_config_path_for_variant;
-
-fn config_requires_grabber(content: &str) -> bool {
-    content.lines().any(|line| {
-        let directive = line.trim_start();
-        directive.strip_prefix(".remap").is_some_and(|content| {
-            content.starts_with(char::is_whitespace) && content.contains('{')
-        })
-    })
-}
-
-fn parse_skhd_status(stdout: &str) -> (ServiceState, Option<String>) {
-    let normalized = stdout.trim().to_lowercase();
-
-    if normalized.contains("not running")
-        || normalized.contains("stopped")
-        || normalized.contains("inactive")
-    {
-        (ServiceState::Stopped, None)
-    } else if normalized.contains("running")
-        || normalized.contains("active")
-        || normalized.contains("started")
-    {
-        (ServiceState::Running, None)
-    } else {
-        (
-            ServiceState::Unknown,
-            Some(format!("Status: {}", stdout.trim())),
-        )
-    }
-}
 
 fn parse_launchctl_service_line(line: &str) -> Option<(ServiceState, Option<u32>, Option<String>)> {
     let mut parts = line.split_whitespace();
@@ -57,29 +33,6 @@ fn parse_launchctl_service_line(line: &str) -> Option<(ServiceState, Option<u32>
     } else {
         Some((ServiceState::Running, pid.parse().ok(), None))
     }
-}
-
-fn accessibility_guidance(variant: SkhdVariant) -> String {
-    match variant {
-        SkhdVariant::Original => "Add the skhd executable used by the launch agent to System Settings → Privacy & Security → Accessibility, enable it, then restart the service. Granting Keybinder or Terminal does not grant the launchd service.".to_string(),
-        SkhdVariant::Zig => "Add and enable /Applications/skhd.app in System Settings → Privacy & Security → Accessibility. Also approve Input Monitoring if macOS requests it, then restart the service.".to_string(),
-    }
-}
-
-fn is_accessibility_denial(message: &str) -> bool {
-    let normalized = message.to_lowercase();
-    normalized.contains("must be run with accessibility access")
-        || normalized.contains("accessibilitypermissiondenied")
-        || normalized.contains("accessibility permission denied")
-}
-
-fn current_accessibility_denial(log_tail: &str) -> Option<String> {
-    log_tail
-        .lines()
-        .rev()
-        .find(|line| !line.trim().is_empty())
-        .filter(|line| is_accessibility_denial(line))
-        .map(str::to_string)
 }
 
 /// Error type for service operations
@@ -128,9 +81,13 @@ impl ServiceManager {
             SkhdVariant::Original => self.get_status_original().await,
             SkhdVariant::Zig => self.get_status_zig(&effective).await,
         }?;
-        Ok(self
-            .with_accessibility_status(status, effective.variant)
-            .await)
+        if effective.variant == SkhdVariant::Original {
+            Ok(self
+                .with_accessibility_status(status, effective.variant)
+                .await)
+        } else {
+            Ok(status)
+        }
     }
 
     async fn with_accessibility_status(
@@ -206,28 +163,31 @@ impl ServiceManager {
         &self,
         effective: &EffectiveVariantResult,
     ) -> Result<ServiceStatus, String> {
-        // First check launchctl list for com.jackielii.skhd
-        let launchctl_status = self.get_status_from_launchctl("com.jackielii.skhd").await?;
-
-        // If we got a valid state, return it
-        if !matches!(launchctl_status.state, ServiceState::Unknown) {
-            return Ok(launchctl_status);
-        }
-
-        // If launchctl doesn't show the service, try `skhd --status`
+        // skhd.zig --status reports SMAppService registration, daemon PID, event-tap
+        // health, Accessibility, and Input Monitoring in one authoritative probe.
         if let Some(ref detected) = effective.detected {
-            if let Some(ref binary_path) = detected.binary_path {
-                return self.get_status_from_skhd_command(binary_path).await;
+            if detected.variant == Some(SkhdVariant::Zig) {
+                if let Some(ref binary_path) = detected.binary_path {
+                    return self.get_status_from_skhd_command(binary_path).await;
+                }
             }
         }
 
-        // Check PATH for skhd binary
-        if let Ok(binary_path) = self.get_skhd_binary_path_from_path().await {
+        if let Some(binary_path) = find_binary(SkhdVariant::Zig) {
             return self.get_status_from_skhd_command(&binary_path).await;
+        }
+
+        let mut launchctl_status = self
+            .get_status_from_launchctl(SkhdVariant::Zig.service_label())
+            .await?;
+        if !matches!(launchctl_status.state, ServiceState::Unknown) {
+            launchctl_status.accessibility_guidance = accessibility_guidance(SkhdVariant::Zig);
+            return Ok(launchctl_status);
         }
 
         // Service not found
         Ok(ServiceStatus {
+            variant: SkhdVariant::Zig,
             state: ServiceState::Unknown,
             pid: None,
             last_updated: chrono::Utc::now(),
@@ -239,6 +199,7 @@ impl ServiceManager {
             ),
             accessibility_permission: AccessibilityPermission::Unknown,
             accessibility_guidance: accessibility_guidance(SkhdVariant::Zig),
+            input_monitoring_permission: InputMonitoringPermission::Unknown,
         })
     }
 
@@ -267,6 +228,11 @@ impl ServiceManager {
                     };
 
                     return Ok(ServiceStatus {
+                        variant: if label == SkhdVariant::Zig.service_label() {
+                            SkhdVariant::Zig
+                        } else {
+                            SkhdVariant::Original
+                        },
                         state,
                         pid,
                         last_updated: chrono::Utc::now(),
@@ -274,6 +240,11 @@ impl ServiceManager {
                         error_message,
                         accessibility_permission: AccessibilityPermission::Unknown,
                         accessibility_guidance: String::new(),
+                        input_monitoring_permission: if label == SkhdVariant::Zig.service_label() {
+                            InputMonitoringPermission::Unknown
+                        } else {
+                            InputMonitoringPermission::NotRequired
+                        },
                     });
                 }
             }
@@ -281,6 +252,11 @@ impl ServiceManager {
 
         // Service not found in launchctl list
         Ok(ServiceStatus {
+            variant: if label == SkhdVariant::Zig.service_label() {
+                SkhdVariant::Zig
+            } else {
+                SkhdVariant::Original
+            },
             state: ServiceState::Unknown,
             pid: None,
             last_updated: chrono::Utc::now(),
@@ -296,6 +272,11 @@ impl ServiceManager {
             }),
             accessibility_permission: AccessibilityPermission::Unknown,
             accessibility_guidance: String::new(),
+            input_monitoring_permission: if label == SkhdVariant::Zig.service_label() {
+                InputMonitoringPermission::Unknown
+            } else {
+                InputMonitoringPermission::NotRequired
+            },
         })
     }
 
@@ -306,52 +287,46 @@ impl ServiceManager {
     ) -> Result<ServiceStatus, String> {
         let output = Command::new(binary_path).arg("--status").output().ok();
 
-        let (state, error_message) = if let Some(output) = output {
-            if output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                parse_skhd_status(&stdout)
+        let (state, pid, accessibility_permission, input_monitoring_permission, error_message) =
+            if let Some(output) = output {
+                if output.status.success() {
+                    let status_output = format!(
+                        "{}\n{}",
+                        String::from_utf8_lossy(&output.stderr),
+                        String::from_utf8_lossy(&output.stdout)
+                    );
+                    parse_zig_status(&status_output)
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    (
+                        ServiceState::Error,
+                        None,
+                        AccessibilityPermission::Unknown,
+                        InputMonitoringPermission::Unknown,
+                        Some(format!("skhd.zig: skhd --status failed: {}", stderr.trim())),
+                    )
+                }
             } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
                 (
-                    ServiceState::Error,
-                    Some(format!("skhd --status failed: {}", stderr.trim())),
+                    ServiceState::Unknown,
+                    None,
+                    AccessibilityPermission::Unknown,
+                    InputMonitoringPermission::Unknown,
+                    Some("skhd.zig: Failed to run skhd --status".to_string()),
                 )
-            }
-        } else {
-            (
-                ServiceState::Unknown,
-                Some("Failed to run skhd --status".to_string()),
-            )
-        };
+            };
 
         Ok(ServiceStatus {
+            variant: SkhdVariant::Zig,
             state,
-            pid: None, // skhd.zig doesn't expose PID via --status
+            pid,
             last_updated: chrono::Utc::now(),
             config_path: self.get_active_config_path_zig().await.ok(),
             error_message,
-            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_permission,
             accessibility_guidance: accessibility_guidance(SkhdVariant::Zig),
+            input_monitoring_permission,
         })
-    }
-
-    /// Find skhd binary in PATH
-    async fn get_skhd_binary_path_from_path(&self) -> Result<String, String> {
-        let output = Command::new("which")
-            .arg("skhd")
-            .output()
-            .map_err(|e| format!("Failed to find skhd in PATH: {}", e))?;
-
-        if output.status.success() {
-            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !path.is_empty() {
-                Ok(path)
-            } else {
-                Err("skhd not found in PATH".to_string())
-            }
-        } else {
-            Err("skhd not found in PATH".to_string())
-        }
     }
 
     /// Stop the skhd service
@@ -537,6 +512,19 @@ impl ServiceManager {
     async fn start_service_zig(&self, effective: &EffectiveVariantResult) -> Result<(), String> {
         let binary_path = self.get_skhd_binary_path(effective).await?;
 
+        if let Ok(config_path) = get_config_path_for_variant(SkhdVariant::Zig) {
+            let content = std::fs::read_to_string(&config_path).map_err(|error| {
+                format!("skhd.zig: Failed to inspect configuration at {config_path}: {error}")
+            })?;
+            if config_requires_grabber(&content) {
+                return Err(
+                    "skhd.zig: This configuration uses block-form .remap rules. Run \
+                     'skhd --start-service' manually in Terminal to review privileged helper setup."
+                        .to_string(),
+                );
+            }
+        }
+
         let output = Command::new(&binary_path)
             .arg("--start-service")
             .output()
@@ -561,9 +549,7 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service started
-        let status = self
-            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
-            .await;
+        let status = self.get_status_zig(effective).await?;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
@@ -654,9 +640,7 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service is running
-        let status = self
-            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
-            .await;
+        let status = self.get_status_zig(effective).await?;
         if !matches!(status.state, ServiceState::Running) {
             return Err(status.error_message.unwrap_or_else(|| {
                 "skhd.zig: Service failed to restart. Check the service status and logs."
@@ -825,13 +809,19 @@ impl ServiceManager {
     ) -> Result<String, String> {
         // First, check if we have a detected binary path
         if let Some(ref detected) = effective.detected {
-            if let Some(ref binary_path) = detected.binary_path {
-                return Ok(binary_path.clone());
+            if detected.variant == Some(effective.variant) {
+                if let Some(ref binary_path) = detected.binary_path {
+                    return Ok(binary_path.clone());
+                }
             }
         }
 
-        // Try to find skhd in PATH
-        self.get_skhd_binary_path_from_path().await
+        find_binary(effective.variant).ok_or_else(|| {
+            format!(
+                "{}: No matching executable was found. Install it or select another implementation in Settings.",
+                effective.variant.display_name()
+            )
+        })
     }
 
     /// Get the path to the skhd launchd plist file for original skhd
@@ -909,22 +899,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_skhd_status_checks_negative_forms_first() {
-        assert!(matches!(
-            parse_skhd_status("Service is not running").0,
-            ServiceState::Stopped
-        ));
-        assert!(matches!(
-            parse_skhd_status(" RUNNING \n").0,
-            ServiceState::Running
-        ));
-        assert!(matches!(
-            parse_skhd_status("unexpected output").0,
-            ServiceState::Unknown
-        ));
-    }
-
-    #[test]
     fn test_launchctl_nonzero_exit_without_pid_is_an_error() {
         let (state, pid, message) =
             parse_launchctl_service_line("- 1 com.koekeishiya.skhd").unwrap();
@@ -938,56 +912,6 @@ mod tests {
         assert_eq!(state, ServiceState::Stopped);
         assert_eq!(pid, None);
         assert_eq!(message, None);
-    }
-
-    #[test]
-    fn test_accessibility_denial_matches_daemon_errors() {
-        assert!(is_accessibility_denial(
-            "skhd: must be run with accessibility access! abort.."
-        ));
-        assert!(is_accessibility_denial(
-            "error.AccessibilityPermissionDenied"
-        ));
-        assert!(!is_accessibility_denial("service exited with code 1"));
-    }
-
-    #[test]
-    fn test_only_current_log_diagnostic_can_report_accessibility_denial() {
-        assert_eq!(
-            current_accessibility_denial(
-                "skhd: configuration error\nskhd: must be run with accessibility access! abort..\n"
-            )
-            .as_deref(),
-            Some("skhd: must be run with accessibility access! abort..")
-        );
-        assert_eq!(
-            current_accessibility_denial(
-                "skhd: must be run with accessibility access! abort..\nskhd: configuration error\n"
-            ),
-            None
-        );
-    }
-
-    #[test]
-    fn test_accessibility_guidance_names_the_correct_permission_target() {
-        let original = accessibility_guidance(SkhdVariant::Original);
-        assert!(original.contains("skhd executable"));
-        assert!(original.contains("Granting Keybinder or Terminal does not grant"));
-
-        let zig = accessibility_guidance(SkhdVariant::Zig);
-        assert!(zig.contains("/Applications/skhd.app"));
-        assert!(zig.contains("Input Monitoring"));
-    }
-
-    #[test]
-    fn test_config_requires_grabber_only_for_block_remaps() {
-        assert!(config_requires_grabber(
-            ".remap caps_lock [device builtin] {\n  tap: escape\n}\n"
-        ));
-        assert!(!config_requires_grabber(
-            ".remap caps_lock [device builtin] : escape\n"
-        ));
-        assert!(!config_requires_grabber("# .remap caps_lock {\n"));
     }
 
     #[test]

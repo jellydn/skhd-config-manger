@@ -1,6 +1,6 @@
 # Keybinder
 
-A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts.
+A modern, intuitive macOS app for managing keyboard shortcuts for [skhd](https://github.com/koekeishiya/skhd) and [skhd.zig](https://github.com/jackielii/skhd.zig).
 
 ![CI](https://github.com/jellydn/keybinder/workflows/CI/badge.svg)
 ![Release](https://github.com/jellydn/keybinder/workflows/Release/badge.svg)
@@ -48,7 +48,7 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Real-time Log Viewer**: Live streaming of skhd service logs with automatic updates using `tail -f`
 - **Historical Logs**: Load up to 100 recent logs from before the app opened
 - **Progressive Loading**: Infinite scroll support to load older logs on demand
-- **Dual Log Sources**: Monitors both stdout (INFO) and stderr (ERROR) streams
+- **Variant-aware Logs**: Reads classic skhd stdout/stderr logs or `~/Library/Logs/skhd.log` for skhd.zig
 - **Level Filtering**: Toggle between ERROR and INFO log views with pagination support
 - **Virtual Scrolling**: Smooth performance with thousands of logs (1000+ entries)
 - **Color-Coded Levels**: Visual distinction for ERROR (red) and INFO (blue) messages
@@ -82,12 +82,42 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 
 ## Prerequisites
 
-- macOS 10.15 or later
-- [skhd](https://github.com/koekeishiya/skhd) installed (optional for config detection)
+- macOS 10.15 or later. skhd.zig requires macOS 13 or later; use classic skhd on older releases.
+- [skhd](https://github.com/koekeishiya/skhd) or [skhd.zig](https://github.com/jackielii/skhd.zig) installed (optional for config editing)
 - [Rust](https://rustup.rs/) 1.77.2+ (for building from source)
 - [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/) 20.19+ (for frontend development)
 
 ## Installation
+
+### Supported skhd implementations
+
+Keybinder keeps classic skhd behavior as the default when it cannot detect an installation. You can
+select **Auto-detect**, **skhd (original)**, or **skhd.zig** under **Settings → skhd implementation**.
+
+Install classic skhd with:
+
+```bash
+brew install koekeishiya/formulae/skhd
+```
+
+Install the current skhd.zig cask with:
+
+```bash
+brew install --cask jackielii/tap/skhd-zig
+```
+
+The skhd.zig cask installs `/Applications/skhd.app`. It registers
+`com.jackielii.skhd` through macOS SMAppService and uses `skhd --start-service`,
+`--stop-service`, `--restart-service`, and `--reload`. Do not manage skhd.zig with
+`brew services`; an old Homebrew service can compete for the event tap.
+
+Both implementations use `$XDG_CONFIG_HOME/skhd/skhdrc`, `~/.config/skhd/skhdrc`,
+and `~/.skhdrc`. Keybinder recognizes skhd.zig directives and preserves them as
+read-only text when it saves edited shortcuts. skhd.zig states that classic configs
+are compatible, but Keybinder does not claim exhaustive behavioral equivalence.
+Advanced `.remap` rules can require the privileged `skhd-grabber` and DriverKit
+setup. Run `skhd --install-service` in Terminal when Keybinder asks you to review
+that flow.
 
 ### From Release (Recommended)
 
@@ -256,7 +286,8 @@ the skhd daemon:
 - **Original skhd**: Add the exact `skhd` executable used by its launch agent to
   **System Settings → Privacy & Security → Accessibility**.
 - **skhd.zig**: Add `/Applications/skhd.app` to Accessibility. Approve **Input
-  Monitoring** too if macOS requests it.
+  Monitoring** too. If registration reports that approval is required, enable skhd
+  under **System Settings → General → Login Items & Extensions**.
 
 After you enable permission, return to Service Manager and select **Restart
 Service**. Keybinder reports permission as granted only after the daemon runs.

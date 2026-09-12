@@ -4,7 +4,7 @@ use std::process::Command;
 use crate::models::skhd_variant::{DetectedVariant, DetectionSource, SkhdVariant};
 
 fn classify_version_output(output: &str) -> SkhdVariant {
-    if output.to_lowercase().contains("zig") {
+    if output.trim_start().to_lowercase().starts_with("skhd.zig v") {
         SkhdVariant::Zig
     } else {
         SkhdVariant::Original
@@ -44,6 +44,35 @@ pub fn detect_variant() -> DetectedVariant {
     DetectedVariant::none()
 }
 
+/// Check one variant without allowing another installed variant to mask it.
+pub fn is_variant_installed(variant: SkhdVariant) -> bool {
+    if Command::new("launchctl")
+        .args(["list", variant.service_label()])
+        .output()
+        .is_ok_and(|output| output.status.success())
+    {
+        return true;
+    }
+
+    let brew_args: &[&str] = match variant {
+        SkhdVariant::Original => &["list", "skhd"],
+        SkhdVariant::Zig => &["list", "--cask", "skhd-zig"],
+    };
+    if Command::new("brew")
+        .args(brew_args)
+        .output()
+        .is_ok_and(|output| output.status.success())
+    {
+        return true;
+    }
+
+    if variant == SkhdVariant::Zig && std::path::Path::new(&app_bundle_binary()).exists() {
+        return true;
+    }
+
+    find_binary(variant).is_some()
+}
+
 /// Detect from running launchd jobs
 fn detect_from_launchd() -> Option<DetectedVariant> {
     // Check for skhd.zig first (jackielii)
@@ -55,8 +84,8 @@ fn detect_from_launchd() -> Option<DetectedVariant> {
     if output.status.success() {
         return Some(DetectedVariant::new(
             Some(SkhdVariant::Zig),
-            None,
-            Some("com.jackielii.skhd".to_string()),
+            find_binary(SkhdVariant::Zig),
+            Some(SkhdVariant::Zig.service_label().to_string()),
             DetectionSource::Running,
         ));
     }
@@ -70,8 +99,8 @@ fn detect_from_launchd() -> Option<DetectedVariant> {
     if output.status.success() {
         return Some(DetectedVariant::new(
             Some(SkhdVariant::Original),
-            None,
-            Some("com.koekeishiya.skhd".to_string()),
+            find_binary(SkhdVariant::Original),
+            Some(SkhdVariant::Original.service_label().to_string()),
             DetectionSource::Running,
         ));
     }
@@ -81,28 +110,23 @@ fn detect_from_launchd() -> Option<DetectedVariant> {
 
 /// Detect from Homebrew installation
 fn detect_from_homebrew() -> Option<DetectedVariant> {
-    // Check for skhd.zig first (jackielii/tap/skhd-zig)
+    // skhd.zig is distributed as a cask. Its app may use a custom Homebrew appdir,
+    // so prefer the executable path reported by `brew list --cask`.
     let output = Command::new("brew")
-        .args(["list", "skhd-zig"])
+        .args(["list", "--cask", "skhd-zig"])
         .output()
         .ok()?;
 
     if output.status.success() {
-        // Get the binary path from brew --prefix
-        let prefix_output = Command::new("brew")
-            .args(["--prefix", "skhd-zig"])
-            .output()
-            .ok()?;
-
-        let prefix = String::from_utf8_lossy(&prefix_output.stdout)
-            .trim()
-            .to_string();
-        let binary_path = format!("{}/bin/skhd", prefix);
+        let listed_files = String::from_utf8_lossy(&output.stdout);
+        let binary_path = cask_binary_from_listing(&listed_files).or_else(|| {
+            Some(app_bundle_binary()).filter(|path| std::path::Path::new(path).exists())
+        });
 
         return Some(DetectedVariant::new(
             Some(SkhdVariant::Zig),
-            Some(binary_path),
-            Some("com.jackielii.skhd".to_string()),
+            binary_path,
+            Some(SkhdVariant::Zig.service_label().to_string()),
             DetectionSource::Homebrew,
         ));
     }
@@ -125,7 +149,7 @@ fn detect_from_homebrew() -> Option<DetectedVariant> {
         return Some(DetectedVariant::new(
             Some(SkhdVariant::Original),
             Some(binary_path),
-            Some("com.koekeishiya.skhd".to_string()),
+            Some(SkhdVariant::Original.service_label().to_string()),
             DetectionSource::Homebrew,
         ));
     }
@@ -165,34 +189,102 @@ fn detect_from_path() -> Option<DetectedVariant> {
         })
         .unwrap_or(SkhdVariant::Original);
 
-    let plist_label = match variant {
-        SkhdVariant::Original => "com.koekeishiya.skhd",
-        SkhdVariant::Zig => "com.jackielii.skhd",
-    };
-
     Some(DetectedVariant::new(
         Some(variant),
         Some(binary_path),
-        Some(plist_label.to_string()),
+        Some(variant.service_label().to_string()),
         DetectionSource::Path,
     ))
 }
 
 /// Detect from .app bundle
 fn detect_from_app_bundle() -> Option<DetectedVariant> {
-    let app_bundle_path = "/Applications/skhd.app/Contents/MacOS/skhd".to_string();
+    let app_bundle_path = app_bundle_binary();
 
     if std::path::Path::new(&app_bundle_path).exists() {
         // Treat .app bundle as skhd.zig variant
         return Some(DetectedVariant::new(
             Some(SkhdVariant::Zig),
             Some(app_bundle_path),
-            Some("com.jackielii.skhd".to_string()),
+            Some(SkhdVariant::Zig.service_label().to_string()),
             DetectionSource::AppBundle,
         ));
     }
 
     None
+}
+
+fn app_bundle_binary() -> String {
+    "/Applications/skhd.app/Contents/MacOS/skhd".to_string()
+}
+
+fn cask_binary_from_listing(listing: &str) -> Option<String> {
+    listing.lines().map(str::trim).find_map(|path| {
+        if path.ends_with("/skhd.app/Contents/MacOS/skhd") {
+            Some(path.to_string())
+        } else if path.ends_with("/skhd.app") {
+            Some(format!("{path}/Contents/MacOS/skhd"))
+        } else {
+            None
+        }
+    })
+}
+
+fn zig_cask_binary() -> Option<String> {
+    let output = Command::new("brew")
+        .args(["list", "--cask", "skhd-zig"])
+        .output()
+        .ok()?;
+    output
+        .status
+        .success()
+        .then(|| cask_binary_from_listing(&String::from_utf8_lossy(&output.stdout)))
+        .flatten()
+}
+
+fn original_brew_binary() -> Option<String> {
+    let output = Command::new("brew")
+        .args(["--prefix", "skhd"])
+        .output()
+        .ok()?;
+    output.status.success().then(|| {
+        format!(
+            "{}/bin/skhd",
+            String::from_utf8_lossy(&output.stdout).trim()
+        )
+    })
+}
+
+fn path_binary() -> Option<String> {
+    let output = Command::new("which").arg("skhd").output().ok()?;
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .filter(|path| !path.is_empty())
+}
+
+pub(crate) fn find_binary(variant: SkhdVariant) -> Option<String> {
+    if variant == SkhdVariant::Zig {
+        let app = app_bundle_binary();
+        if std::path::Path::new(&app).exists() {
+            return Some(app);
+        }
+        if let Some(cask_binary) = zig_cask_binary() {
+            return Some(cask_binary);
+        }
+    } else if let Some(brew_binary) = original_brew_binary() {
+        return Some(brew_binary);
+    }
+
+    let path = path_binary()?;
+    let output = Command::new(&path).arg("--version").output().ok()?;
+    let version = format!(
+        "{} {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    (classify_version_output(&version) == variant).then_some(path)
 }
 
 /// Async version of detect_variant for Tauri commands
@@ -212,8 +304,23 @@ mod tests {
         assert_eq!(classify_version_output("skhd.zig v0.2.0"), SkhdVariant::Zig);
         assert_eq!(classify_version_output("skhd 0.3.9"), SkhdVariant::Original);
         assert_eq!(
-            classify_version_output("unknown option"),
+            classify_version_output("built with zig cc"),
             SkhdVariant::Original
+        );
+    }
+
+    #[test]
+    fn test_cask_binary_from_listing_uses_the_app_executable() {
+        let listing = "/Applications/skhd.app\n/opt/homebrew/bin/skhd\n";
+        assert_eq!(
+            cask_binary_from_listing(listing).as_deref(),
+            Some("/Applications/skhd.app/Contents/MacOS/skhd")
+        );
+
+        let executable_listing = "/custom/skhd.app/Contents/MacOS/skhd\n/opt/homebrew/bin/skhd\n";
+        assert_eq!(
+            cask_binary_from_listing(executable_listing).as_deref(),
+            Some("/custom/skhd.app/Contents/MacOS/skhd")
         );
     }
 

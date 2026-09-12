@@ -18,7 +18,9 @@ pub use command_category::CommandCategory;
 pub use command_template::{CommandParameter, CommandTemplate};
 pub use config::{ConfigFile, ParseError};
 pub use log_entry::{LogEntry, LogLevel};
-pub use service_status::{AccessibilityPermission, ServiceState, ServiceStatus};
+pub use service_status::{
+    AccessibilityPermission, InputMonitoringPermission, ServiceState, ServiceStatus,
+};
 pub use settings::{Settings, SkhdVariantSetting};
 pub use shortcut::Shortcut;
 pub use skhd_variant::{DetectedVariant, DetectionSource, SkhdVariant};

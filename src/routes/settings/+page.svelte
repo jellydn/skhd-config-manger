@@ -10,10 +10,21 @@
     setAutomaticDownload,
     updateState,
   } from '../../services/updateService';
+  import {
+    getEffectiveVariant,
+    getSkhdVariantSetting,
+    setSkhdVariantSetting,
+  } from '../../services/settingsService';
+  import { installService } from '../../services/service';
+  import type { EffectiveVariantResponse, SkhdVariantSetting } from '../../types';
 
   let currentVersion = $state('Loading…');
   let automaticCheck = $state(true);
   let automaticDownload = $state(false);
+  let variantSetting = $state<SkhdVariantSetting>('auto');
+  let effectiveVariant = $state<EffectiveVariantResponse | null>(null);
+  let variantFeedback = $state<string | null>(null);
+  let changingVariant = $state(false);
 
   let progress = $derived(
     $updateState.totalBytes
@@ -28,7 +39,50 @@
     } catch {
       currentVersion = 'Development build';
     }
+    await loadVariant();
   });
+
+  async function loadVariant() {
+    try {
+      variantSetting = await getSkhdVariantSetting();
+      effectiveVariant = await getEffectiveVariant();
+    } catch (error) {
+      variantFeedback = `Could not inspect skhd: ${error}`;
+    }
+  }
+
+  async function changeVariant(value: SkhdVariantSetting) {
+    changingVariant = true;
+    variantFeedback = null;
+    try {
+      await setSkhdVariantSetting(value);
+      variantSetting = value;
+      effectiveVariant = await getEffectiveVariant();
+    } catch (error) {
+      variantFeedback = `Could not save the skhd selection: ${error}`;
+    } finally {
+      changingVariant = false;
+    }
+  }
+
+  async function handleInstallService() {
+    changingVariant = true;
+    variantFeedback = null;
+    try {
+      await installService();
+      variantFeedback = 'skhd.zig service registration completed.';
+      effectiveVariant = await getEffectiveVariant();
+    } catch (error) {
+      variantFeedback = String(error);
+    } finally {
+      changingVariant = false;
+    }
+  }
+
+  function effectiveVariantName(): string {
+    if (!effectiveVariant) return 'Detecting…';
+    return effectiveVariant.variant === 'zig' ? 'skhd.zig' : 'skhd';
+  }
 
   function changeAutomaticCheck(enabled: boolean) {
     automaticCheck = enabled;
@@ -51,6 +105,57 @@
   </header>
 
   <main>
+    <section class="settings-card">
+      <div class="section-heading">
+        <div>
+          <h2>skhd implementation</h2>
+          <p>
+            Active: {effectiveVariantName()}
+            {effectiveVariant?.is_auto_detected ? ' (detected automatically)' : ''}
+          </p>
+        </div>
+        <select
+          aria-label="skhd implementation"
+          value={variantSetting}
+          disabled={changingVariant}
+          onchange={(event) => changeVariant(event.currentTarget.value as SkhdVariantSetting)}
+        >
+          <option value="auto">Auto-detect</option>
+          <option value="original">skhd (original)</option>
+          <option value="zig">skhd.zig</option>
+        </select>
+      </div>
+
+      <div class="variant-details">
+        {#if effectiveVariant?.warning}
+          <strong>{effectiveVariant.warning}</strong>
+        {/if}
+        {#if effectiveVariant?.variant === 'zig'}
+          <p><code>brew install --cask jackielii/tap/skhd-zig</code></p>
+          <p>
+            skhd.zig requires macOS 13 or later. It uses <code>/Applications/skhd.app</code>,
+            SMAppService label
+            <code>com.jackielii.skhd</code>, and <code>~/Library/Logs/skhd.log</code>. It does not
+            use
+            <code>brew services</code>.
+          </p>
+          <button onclick={handleInstallService} disabled={changingVariant}
+            >Register or Repair Service</button
+          >
+          <small>
+            Configurations with advanced <code>.remap</code> rules must run
+            <code>skhd --install-service</code> in Terminal to review privileged helper setup.
+          </small>
+        {:else}
+          <p><code>brew install koekeishiya/formulae/skhd</code></p>
+          <p>Classic skhd continues to use its per-user LaunchAgent and Homebrew service flow.</p>
+        {/if}
+        {#if variantFeedback}
+          <p class="variant-feedback" role="status">{variantFeedback}</p>
+        {/if}
+      </div>
+    </section>
+
     <section class="settings-card">
       <div class="section-heading">
         <div>
@@ -167,6 +272,10 @@
     border-radius: 8px;
   }
 
+  .settings-card + .settings-card {
+    margin-top: 20px;
+  }
+
   .section-heading,
   .setting-row,
   .update-status {
@@ -196,6 +305,37 @@
     margin-bottom: 4px;
     color: var(--color-text);
     font-size: 12px;
+  }
+
+  select {
+    min-width: 160px;
+    padding: 7px 9px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+  }
+
+  .variant-details {
+    padding: 16px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .variant-details p + p,
+  .variant-details button,
+  .variant-details small {
+    margin-top: 10px;
+  }
+
+  .variant-details small {
+    display: block;
+  }
+
+  .variant-feedback {
+    color: var(--color-status-warning);
+    white-space: pre-line;
   }
 
   .setting-row.disabled {
