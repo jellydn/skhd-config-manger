@@ -70,6 +70,12 @@ export function shouldRunAutomaticCheck(
   return enabled && (lastCheck === null || now - lastCheck >= CHECK_INTERVAL_MS);
 }
 
+export function parseLastCheck(rawLastCheck: string | null): number | null {
+  if (rawLastCheck === null) return null;
+  const lastCheck = Number(rawLastCheck);
+  return Number.isFinite(lastCheck) ? lastCheck : null;
+}
+
 export async function checkForUpdates(userInitiated = true): Promise<void> {
   if (operationActive) return;
   operationActive = true;
@@ -177,8 +183,7 @@ export async function checkForUpdatesAutomatically(): Promise<void> {
   if (!isTauri()) return;
 
   const { automaticCheck } = getUpdatePreferences();
-  const rawLastCheck = localStorage.getItem(LAST_CHECK_KEY);
-  const lastCheck = rawLastCheck === null ? null : Number(rawLastCheck);
+  const lastCheck = parseLastCheck(localStorage.getItem(LAST_CHECK_KEY));
 
   if (shouldRunAutomaticCheck(Date.now(), lastCheck, automaticCheck)) {
     await checkForUpdates(false);

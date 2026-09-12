@@ -26,7 +26,7 @@ chrono = { version = "0.4", features = ["serde"] }
 notify = "8.0"
 rfd = "0.17"
 dirs = "6.0"
-tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util", "sync"] }
+tokio = { version = "1.40", features = ["process", "time", "macros", "rt", "io-util", "sync", "fs"] }
 regex = "1.10"
 plist = "1.6"
 tauri-plugin-updater = "2"

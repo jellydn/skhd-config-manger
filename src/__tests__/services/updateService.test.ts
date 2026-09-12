@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   getUpdatePreferences,
+  parseLastCheck,
   setAutomaticCheck,
   setAutomaticDownload,
   shouldRunAutomaticCheck,
@@ -51,5 +52,11 @@ describe('automatic update interval', () => {
   it('does not check early or when disabled', () => {
     expect(shouldRunAutomaticCheck(day - 1, 0, true)).toBe(false);
     expect(shouldRunAutomaticCheck(day * 2, 0, false)).toBe(false);
+  });
+
+  it('treats corrupt saved timestamps as a first check', () => {
+    expect(parseLastCheck(null)).toBeNull();
+    expect(parseLastCheck('not-a-timestamp')).toBeNull();
+    expect(parseLastCheck('86400000')).toBe(86_400_000);
   });
 });

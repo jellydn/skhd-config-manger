@@ -107,7 +107,11 @@
             <p>{$updateState.notes}</p>
           {/if}
           {#if $updateState.phase === 'downloading'}
-            <progress value={progress ?? undefined} max="100"></progress>
+            <progress
+              value={progress ?? undefined}
+              max="100"
+              aria-label="Keybinder update download progress"
+            ></progress>
             <small>{progress === null ? 'Downloading…' : `${progress}% downloaded`}</small>
           {/if}
         </div>

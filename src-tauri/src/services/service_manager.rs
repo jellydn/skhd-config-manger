@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::sync::Mutex;
 
 use crate::models::{AccessibilityPermission, ServiceState, ServiceStatus, SkhdVariant};
@@ -72,6 +73,15 @@ fn is_accessibility_denial(message: &str) -> bool {
         || normalized.contains("accessibility permission denied")
 }
 
+fn current_accessibility_denial(log_tail: &str) -> Option<String> {
+    log_tail
+        .lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .filter(|line| is_accessibility_denial(line))
+        .map(str::to_string)
+}
+
 /// Error type for service operations
 #[derive(Debug, Clone)]
 pub struct ServiceError {
@@ -118,10 +128,12 @@ impl ServiceManager {
             SkhdVariant::Original => self.get_status_original().await,
             SkhdVariant::Zig => self.get_status_zig(&effective).await,
         }?;
-        Ok(self.with_accessibility_status(status, effective.variant))
+        Ok(self
+            .with_accessibility_status(status, effective.variant)
+            .await)
     }
 
-    fn with_accessibility_status(
+    async fn with_accessibility_status(
         &self,
         mut status: ServiceStatus,
         variant: SkhdVariant,
@@ -133,7 +145,7 @@ impl ServiceManager {
             return status;
         }
 
-        if let Some(diagnostic) = self.recent_accessibility_denial(variant) {
+        if let Some(diagnostic) = self.recent_accessibility_denial(variant).await {
             status.state = ServiceState::Error;
             status.accessibility_permission = AccessibilityPermission::Denied;
             status.error_message = Some(diagnostic.trim().to_string());
@@ -142,7 +154,7 @@ impl ServiceManager {
         status
     }
 
-    fn recent_accessibility_denial(&self, variant: SkhdVariant) -> Option<String> {
+    async fn recent_accessibility_denial(&self, variant: SkhdVariant) -> Option<String> {
         let path = match variant {
             SkhdVariant::Original => {
                 let username = std::env::var("USER")
@@ -159,17 +171,29 @@ impl ServiceManager {
             SkhdVariant::Zig => dirs::home_dir()?.join("Library/Logs/skhd.log"),
         };
 
-        let metadata = std::fs::metadata(&path).ok()?;
+        let mut file = tokio::fs::File::open(path).await.ok()?;
+        let metadata = file.metadata().await.ok()?;
         if metadata.modified().ok()?.elapsed().ok()? > Duration::from_secs(300) {
             return None;
         }
 
-        std::fs::read_to_string(path)
-            .ok()?
-            .lines()
-            .rev()
-            .find(|line| is_accessibility_denial(line))
-            .map(str::to_string)
+        const MAX_LOG_TAIL_BYTES: u64 = 16 * 1024;
+        let start = metadata.len().saturating_sub(MAX_LOG_TAIL_BYTES);
+        file.seek(std::io::SeekFrom::Start(start)).await.ok()?;
+
+        let mut bytes = Vec::with_capacity((metadata.len() - start) as usize);
+        file.take(MAX_LOG_TAIL_BYTES)
+            .read_to_end(&mut bytes)
+            .await
+            .ok()?;
+        let tail = String::from_utf8_lossy(&bytes);
+        let complete_tail = if start == 0 {
+            tail.as_ref()
+        } else {
+            tail.split_once('\n').map_or("", |(_, rest)| rest)
+        };
+
+        current_accessibility_denial(complete_tail)
     }
 
     /// Get status for original skhd (koekeishiya)
@@ -470,7 +494,8 @@ impl ServiceManager {
 
         // Verify service started
         let status = self
-            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original);
+            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original)
+            .await;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
@@ -514,8 +539,9 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service started
-        let status =
-            self.with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig);
+        let status = self
+            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
+            .await;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
@@ -568,7 +594,8 @@ impl ServiceManager {
 
         // Verify service is running
         let status = self
-            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original);
+            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original)
+            .await;
         if !matches!(status.state, ServiceState::Running) {
             return Err(status.error_message.unwrap_or_else(|| {
                 "skhd: Service failed to restart. Check the service status and logs.".to_string()
@@ -605,8 +632,9 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service is running
-        let status =
-            self.with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig);
+        let status = self
+            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
+            .await;
         if !matches!(status.state, ServiceState::Running) {
             return Err(status.error_message.unwrap_or_else(|| {
                 "skhd.zig: Service failed to restart. Check the service status and logs."
@@ -899,6 +927,23 @@ mod tests {
             "error.AccessibilityPermissionDenied"
         ));
         assert!(!is_accessibility_denial("service exited with code 1"));
+    }
+
+    #[test]
+    fn test_only_current_log_diagnostic_can_report_accessibility_denial() {
+        assert_eq!(
+            current_accessibility_denial(
+                "skhd: configuration error\nskhd: must be run with accessibility access! abort..\n"
+            )
+            .as_deref(),
+            Some("skhd: must be run with accessibility access! abort..")
+        );
+        assert_eq!(
+            current_accessibility_denial(
+                "skhd: must be run with accessibility access! abort..\nskhd: configuration error\n"
+            ),
+            None
+        );
     }
 
     #[test]

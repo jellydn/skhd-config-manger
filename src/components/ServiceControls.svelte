@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import type { ServiceState, ServiceStatus } from '../types';
   import { getServiceStatus, restartService, startService } from '../services/service';
@@ -19,14 +19,20 @@
   let isReloading = $state(false);
   let feedback = $state<{ type: 'success' | 'error'; message: string } | null>(null);
   let statusPollInterval: number | null = null;
+  let displayedFeedback = $derived(
+    status?.error_message ? { type: 'error' as const, message: status.error_message } : feedback
+  );
 
-  onMount(async () => {
-    await loadStatus();
-    statusPollInterval = window.setInterval(loadStatus, 5000);
-  });
+  onMount(() => {
+    let destroyed = false;
+    void loadStatus().then(() => {
+      if (!destroyed) statusPollInterval = window.setInterval(loadStatus, 5000);
+    });
 
-  onDestroy(() => {
-    if (statusPollInterval) window.clearInterval(statusPollInterval);
+    return () => {
+      destroyed = true;
+      if (statusPollInterval) window.clearInterval(statusPollInterval);
+    };
   });
 
   async function loadStatus() {
@@ -121,7 +127,7 @@
       <button
         class="toolbar-btn toolbar-btn-primary"
         onclick={() => handleServiceAction('start')}
-        disabled={isChangingService}
+        disabled={isChangingService || isReloading}
       >
         {isChangingService ? 'Starting…' : 'Start Service'}
       </button>
@@ -129,7 +135,7 @@
       <button
         class="toolbar-btn"
         onclick={() => handleServiceAction('restart')}
-        disabled={isChangingService}
+        disabled={isChangingService || isReloading}
       >
         {isChangingService ? 'Restarting…' : 'Restart Service'}
       </button>
@@ -159,7 +165,7 @@
     <button
       class="toolbar-btn"
       onclick={handleReload}
-      disabled={isReloading || !status || status.state === 'Error'}
+      disabled={isReloading || isChangingService || status?.state !== 'Running'}
       aria-label="Reload skhd service"
     >
       {#if isReloading}
@@ -225,13 +231,13 @@
   </section>
 {/if}
 
-{#if status?.error_message || feedback}
+{#if displayedFeedback}
   <div
-    class:error-feedback={(feedback?.type ?? 'error') === 'error'}
+    class:error-feedback={displayedFeedback.type === 'error'}
     class="service-feedback"
     role="alert"
   >
-    {feedback?.message ?? status?.error_message}
+    {displayedFeedback.message}
   </div>
 {/if}
 
