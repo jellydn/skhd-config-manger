@@ -82,7 +82,7 @@ A modern, intuitive macOS app for managing keyboard shortcuts for [skhd](https:/
 
 ## Prerequisites
 
-- macOS 10.15 or later
+- macOS 10.15 or later. skhd.zig requires macOS 13 or later; use classic skhd on older releases.
 - [skhd](https://github.com/koekeishiya/skhd) or [skhd.zig](https://github.com/jackielii/skhd.zig) installed (optional for config editing)
 - [Rust](https://rustup.rs/) 1.77.2+ (for building from source)
 - [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/) 20.19+ (for frontend development)

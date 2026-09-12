@@ -230,6 +230,31 @@ fn cask_binary_from_listing(listing: &str) -> Option<String> {
     })
 }
 
+fn zig_cask_binary() -> Option<String> {
+    let output = Command::new("brew")
+        .args(["list", "--cask", "skhd-zig"])
+        .output()
+        .ok()?;
+    output
+        .status
+        .success()
+        .then(|| cask_binary_from_listing(&String::from_utf8_lossy(&output.stdout)))
+        .flatten()
+}
+
+fn original_brew_binary() -> Option<String> {
+    let output = Command::new("brew")
+        .args(["--prefix", "skhd"])
+        .output()
+        .ok()?;
+    output.status.success().then(|| {
+        format!(
+            "{}/bin/skhd",
+            String::from_utf8_lossy(&output.stdout).trim()
+        )
+    })
+}
+
 fn path_binary() -> Option<String> {
     let output = Command::new("which").arg("skhd").output().ok()?;
     output
@@ -239,12 +264,17 @@ fn path_binary() -> Option<String> {
         .filter(|path| !path.is_empty())
 }
 
-fn find_binary(variant: SkhdVariant) -> Option<String> {
+pub(crate) fn find_binary(variant: SkhdVariant) -> Option<String> {
     if variant == SkhdVariant::Zig {
         let app = app_bundle_binary();
         if std::path::Path::new(&app).exists() {
             return Some(app);
         }
+        if let Some(cask_binary) = zig_cask_binary() {
+            return Some(cask_binary);
+        }
+    } else if let Some(brew_binary) = original_brew_binary() {
+        return Some(brew_binary);
     }
 
     let path = path_binary()?;

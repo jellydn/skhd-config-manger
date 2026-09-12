@@ -49,7 +49,7 @@ pub struct ConfigFile {
     #[serde(default)]
     pub original_shortcut_lines: Vec<usize>,
 
-    /// Number of skhd.zig directives preserved as read-only text.
+    /// Number of directives preserved as read-only text.
     #[serde(default)]
     pub read_only_directive_count: usize,
 }

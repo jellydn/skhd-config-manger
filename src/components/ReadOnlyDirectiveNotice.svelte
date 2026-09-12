@@ -3,7 +3,7 @@
 </script>
 
 <div class="directive-notice" role="status">
-  This file contains {count} skhd.zig {count === 1 ? 'directive' : 'directives'}. Keybinder
+  This file contains {count} read-only {count === 1 ? 'directive' : 'directives'}. Keybinder
   preserves them unchanged, but does not edit them.
 </div>
 

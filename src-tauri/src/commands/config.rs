@@ -393,13 +393,6 @@ pub fn serialize_config(config: &ConfigFile) -> String {
 
     // Serialize each shortcut
     for shortcut in shortcuts {
-        // Add comment if present
-        if let Some(comment) = &shortcut.comment {
-            output.push_str("# ");
-            output.push_str(comment);
-            output.push('\n');
-        }
-
         output.push_str(&serialize_shortcut(&shortcut));
     }
 
@@ -451,6 +444,11 @@ fn serialize_preserving_original(config: &ConfigFile, original_content: &str) ->
 }
 
 fn serialize_shortcut(shortcut: &Shortcut) -> String {
+    let comment = shortcut
+        .comment
+        .as_ref()
+        .map(|comment| format!("# {comment}\n"))
+        .unwrap_or_default();
     let modifier_str = if shortcut.modifiers.is_empty() {
         String::new()
     } else {
@@ -460,8 +458,8 @@ fn serialize_shortcut(shortcut: &Shortcut) -> String {
     };
 
     format!(
-        "{}- {} : {}\n",
-        modifier_str, shortcut.key, shortcut.command
+        "{comment}{}- {} : {}\n",
+        modifier_str, shortcut.key, shortcut.command,
     )
 }
 
@@ -552,6 +550,25 @@ mod tests {
         assert_eq!(
             serialize_config(&config),
             ".shell /bin/zsh\nalt - y : new\n"
+        );
+    }
+
+    #[test]
+    fn test_serialize_config_preserves_new_shortcut_comments() {
+        let mut config = ConfigFile::new("/test/path".to_string());
+        config.original_content = Some(".shell /bin/zsh\n".to_string());
+        let mut shortcut = Shortcut::new(
+            vec!["cmd".to_string()],
+            "x".to_string(),
+            "open app".to_string(),
+            2,
+        );
+        shortcut.comment = Some("Launch the app".to_string());
+        config.shortcuts.push(shortcut);
+
+        assert_eq!(
+            serialize_config(&config),
+            ".shell /bin/zsh\n# Launch the app\ncmd - x : open app\n"
         );
     }
 }

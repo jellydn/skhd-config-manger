@@ -133,7 +133,8 @@
         {#if effectiveVariant?.variant === 'zig'}
           <p><code>brew install --cask jackielii/tap/skhd-zig</code></p>
           <p>
-            skhd.zig uses <code>/Applications/skhd.app</code>, SMAppService label
+            skhd.zig requires macOS 13 or later. It uses <code>/Applications/skhd.app</code>,
+            SMAppService label
             <code>com.jackielii.skhd</code>, and <code>~/Library/Logs/skhd.log</code>. It does not
             use
             <code>brew services</code>.

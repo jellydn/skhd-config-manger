@@ -14,7 +14,7 @@ pub(super) fn config_requires_grabber(content: &str) -> bool {
     content.lines().any(|line| {
         let directive = line.trim_start();
         directive.strip_prefix(".remap").is_some_and(|content| {
-            content.starts_with(char::is_whitespace) && content.contains('{')
+            content.starts_with(char::is_whitespace) && content.trim_end().ends_with('{')
         })
     })
 }
@@ -178,6 +178,9 @@ mod tests {
         ));
         assert!(!config_requires_grabber(
             ".remap caps_lock [device builtin] : escape\n"
+        ));
+        assert!(!config_requires_grabber(
+            ".remap caps_lock [device builtin] : echo '{'\n"
         ));
         assert!(!config_requires_grabber("# .remap caps_lock {\n"));
     }

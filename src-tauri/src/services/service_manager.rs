@@ -12,6 +12,7 @@ use crate::services::service_diagnostics::{
     accessibility_guidance, config_requires_grabber, current_accessibility_denial, parse_zig_status,
 };
 use crate::services::settings::{effective_variant_async, EffectiveVariantResult};
+use crate::services::variant_detector::find_binary;
 use crate::utils::path::get_config_path_for_variant;
 
 fn parse_launchctl_service_line(line: &str) -> Option<(ServiceState, Option<u32>, Option<String>)> {
@@ -327,25 +328,6 @@ impl ServiceManager {
             accessibility_guidance: accessibility_guidance(SkhdVariant::Zig),
             input_monitoring_permission,
         })
-    }
-
-    /// Find skhd binary in PATH
-    async fn get_skhd_binary_path_from_path(&self) -> Result<String, String> {
-        let output = Command::new("which")
-            .arg("skhd")
-            .output()
-            .map_err(|e| format!("Failed to find skhd in PATH: {}", e))?;
-
-        if output.status.success() {
-            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !path.is_empty() {
-                Ok(path)
-            } else {
-                Err("skhd not found in PATH".to_string())
-            }
-        } else {
-            Err("skhd not found in PATH".to_string())
-        }
     }
 
     /// Stop the skhd service
@@ -839,35 +821,12 @@ impl ServiceManager {
             }
         }
 
-        if effective.variant == SkhdVariant::Zig {
-            let app_binary = "/Applications/skhd.app/Contents/MacOS/skhd";
-            if std::path::Path::new(app_binary).exists() {
-                return Ok(app_binary.to_string());
-            }
-        }
-
-        let path = self.get_skhd_binary_path_from_path().await?;
-        if effective.variant == SkhdVariant::Zig {
-            let output = Command::new(&path)
-                .arg("--version")
-                .output()
-                .map_err(|error| format!("skhd.zig: Failed to inspect {path}: {error}"))?;
-            let version = format!(
-                "{} {}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
-            );
-            if !version
-                .trim_start()
-                .to_lowercase()
-                .starts_with("skhd.zig v")
-            {
-                return Err(format!(
-                    "skhd.zig: The skhd executable at {path} is not skhd.zig. Select the correct implementation in Settings."
-                ));
-            }
-        }
-        Ok(path)
+        find_binary(effective.variant).ok_or_else(|| {
+            format!(
+                "{}: No matching executable was found. Install it or select another implementation in Settings.",
+                effective.variant.display_name()
+            )
+        })
     }
 
     /// Get the path to the skhd launchd plist file for original skhd

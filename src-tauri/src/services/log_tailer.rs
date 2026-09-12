@@ -38,20 +38,23 @@ use tokio::task::JoinHandle;
 /// assert_eq!(entry.unwrap().level, LogLevel::Error);
 /// ```
 pub fn parse_log_line(line: &str, is_error: bool) -> Option<LogEntry> {
+    parse_log_line_with_level(
+        line,
+        if is_error {
+            LogLevel::Error
+        } else {
+            LogLevel::Info
+        },
+    )
+}
+
+fn parse_log_line_with_level(line: &str, level: LogLevel) -> Option<LogEntry> {
     // Skip empty lines
     if line.trim().is_empty() {
         return None;
     }
 
     let timestamp = chrono::Utc::now();
-    // Simple source-based level assignment:
-    // stderr file -> ERROR, stdout file -> INFO
-    let level = if is_error {
-        LogLevel::Error
-    } else {
-        LogLevel::Info
-    };
-
     Some(LogEntry::new(
         timestamp,
         level,
@@ -102,20 +105,58 @@ struct StreamHandle {
     tasks: Vec<JoinHandle<()>>,
 }
 
-pub fn log_sources(variant: SkhdVariant, username: &str, home: PathBuf) -> Vec<(PathBuf, bool)> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LogSourceKind {
+    Info,
+    Error,
+    Zig,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct LogSource {
+    pub(crate) path: PathBuf,
+    pub(crate) kind: LogSourceKind,
+}
+
+pub(crate) fn parse_source_log_line(line: &str, kind: LogSourceKind) -> Option<LogEntry> {
+    let level = match kind {
+        LogSourceKind::Info => LogLevel::Info,
+        LogSourceKind::Error => LogLevel::Error,
+        LogSourceKind::Zig => {
+            let normalized = line.trim_start().to_ascii_lowercase();
+            if normalized.starts_with("error(") || normalized.starts_with("error:") {
+                LogLevel::Error
+            } else if normalized.starts_with("warning(") || normalized.starts_with("warning:") {
+                LogLevel::Warn
+            } else if normalized.starts_with("debug(") || normalized.starts_with("debug:") {
+                LogLevel::Debug
+            } else {
+                LogLevel::Info
+            }
+        }
+    };
+    parse_log_line_with_level(line, level)
+}
+
+pub(crate) fn log_sources(variant: SkhdVariant, username: &str, home: PathBuf) -> Vec<LogSource> {
     match variant {
         SkhdVariant::Original => {
             let username = sanitize_username(username);
             vec![
-                (
-                    PathBuf::from(format!("/tmp/skhd_{username}.out.log")),
-                    false,
-                ),
-                (PathBuf::from(format!("/tmp/skhd_{username}.err.log")), true),
+                LogSource {
+                    path: PathBuf::from(format!("/tmp/skhd_{username}.out.log")),
+                    kind: LogSourceKind::Info,
+                },
+                LogSource {
+                    path: PathBuf::from(format!("/tmp/skhd_{username}.err.log")),
+                    kind: LogSourceKind::Error,
+                },
             ]
         }
-        // skhd.zig combines normal messages and errors in one file.
-        SkhdVariant::Zig => vec![(home.join("Library/Logs/skhd.log"), false)],
+        SkhdVariant::Zig => vec![LogSource {
+            path: home.join("Library/Logs/skhd.log"),
+            kind: LogSourceKind::Zig,
+        }],
     }
 }
 
@@ -183,26 +224,25 @@ impl LogTailer {
         let mut processes = Vec::new();
         let mut tasks = Vec::new();
 
-        for (path, is_error) in log_sources(variant, &username, home) {
-            ensure_log_source(&path).await?;
+        for source in log_sources(variant, &username, home) {
+            ensure_log_source(&source.path).await?;
             let mut process = Command::new("tail")
                 .arg("-f")
                 .arg("-n")
                 .arg("50")
-                .arg(&path)
+                .arg(&source.path)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
                 .spawn()
-                .map_err(|error| format!("Failed to monitor {}: {error}", path.display()))?;
-            let stream = process
-                .stdout
-                .take()
-                .ok_or_else(|| format!("Failed to capture log stream for {}", path.display()))?;
+                .map_err(|error| format!("Failed to monitor {}: {error}", source.path.display()))?;
+            let stream = process.stdout.take().ok_or_else(|| {
+                format!("Failed to capture log stream for {}", source.path.display())
+            })?;
             let app_handle = self.app_handle.clone();
             tasks.push(tokio::spawn(async move {
                 let mut lines = BufReader::new(stream).lines();
                 while let Ok(Some(line)) = lines.next_line().await {
-                    if let Some(entry) = parse_log_line(&line, is_error) {
+                    if let Some(entry) = parse_source_log_line(&line, source.kind) {
                         let _ = app_handle.emit("log-entry", &entry);
                     }
                 }
@@ -331,14 +371,45 @@ mod tests {
     fn test_log_sources_are_variant_specific() {
         assert_eq!(
             log_sources(SkhdVariant::Zig, "alice", PathBuf::from("/Users/alice")),
-            vec![(PathBuf::from("/Users/alice/Library/Logs/skhd.log"), false)]
+            vec![LogSource {
+                path: PathBuf::from("/Users/alice/Library/Logs/skhd.log"),
+                kind: LogSourceKind::Zig,
+            }]
         );
         assert_eq!(
             log_sources(SkhdVariant::Original, "a/lice", PathBuf::from("/ignored")),
             vec![
-                (PathBuf::from("/tmp/skhd_alice.out.log"), false),
-                (PathBuf::from("/tmp/skhd_alice.err.log"), true),
+                LogSource {
+                    path: PathBuf::from("/tmp/skhd_alice.out.log"),
+                    kind: LogSourceKind::Info,
+                },
+                LogSource {
+                    path: PathBuf::from("/tmp/skhd_alice.err.log"),
+                    kind: LogSourceKind::Error,
+                },
             ]
+        );
+    }
+
+    #[test]
+    fn test_zig_log_levels_use_default_logger_prefixes() {
+        assert_eq!(
+            parse_source_log_line("error(skhd): reload failed", LogSourceKind::Zig)
+                .unwrap()
+                .level,
+            LogLevel::Error
+        );
+        assert_eq!(
+            parse_source_log_line("warning(service): reset failed", LogSourceKind::Zig)
+                .unwrap()
+                .level,
+            LogLevel::Warn
+        );
+        assert_eq!(
+            parse_source_log_line("info(main): started", LogSourceKind::Zig)
+                .unwrap()
+                .level,
+            LogLevel::Info
         );
     }
 

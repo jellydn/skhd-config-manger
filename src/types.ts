@@ -83,7 +83,7 @@ export interface ConfigFile {
   /** Line numbers occupied by shortcuts in original_content */
   original_shortcut_lines: number[];
 
-  /** Number of skhd.zig directives preserved as read-only text */
+  /** Number of directives preserved as read-only text */
   read_only_directive_count: number;
 }
 

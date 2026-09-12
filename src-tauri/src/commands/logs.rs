@@ -11,7 +11,7 @@
 use crate::models::LogEntry;
 use crate::services::{
     effective_variant_async,
-    log_tailer::{log_sources, parse_log_line},
+    log_tailer::{log_sources, parse_source_log_line},
     LogTailer,
 };
 use std::sync::Arc;
@@ -228,9 +228,9 @@ pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, Stri
     let limit_per_file = limit.div_ceil(sources.len());
     let mut log_entries = Vec::new();
 
-    for (path, is_error) in &sources {
-        for line in read_log_file(&path.to_string_lossy(), limit_per_file).await? {
-            if let Some(entry) = parse_log_line(&line, *is_error) {
+    for source in &sources {
+        for line in read_log_file(&source.path.to_string_lossy(), limit_per_file).await? {
+            if let Some(entry) = parse_source_log_line(&line, source.kind) {
                 log_entries.push(entry);
             }
         }
@@ -239,7 +239,7 @@ pub async fn get_recent_logs(limit: Option<usize>) -> Result<Vec<LogEntry>, Stri
     if log_entries.is_empty() {
         let paths = sources
             .iter()
-            .map(|(path, _)| path.display().to_string())
+            .map(|source| source.path.display().to_string())
             .collect::<Vec<_>>()
             .join(" and ");
         return Err(format!(
