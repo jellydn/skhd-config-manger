@@ -2,12 +2,12 @@
 
 A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya/skhd) keyboard shortcuts.
 
-![CI](https://github.com/jellydn/skhd-config-manger/workflows/CI/badge.svg)
-![Release](https://github.com/jellydn/skhd-config-manger/workflows/Release/badge.svg)
+![CI](https://github.com/jellydn/keybinder/workflows/CI/badge.svg)
+![Release](https://github.com/jellydn/keybinder/workflows/Release/badge.svg)
 ![Keybinder](https://img.shields.io/badge/platform-macOS-blue)
 ![Tauri](https://img.shields.io/badge/Tauri-v2-orange)
 ![Svelte](https://img.shields.io/badge/Svelte-5-red)
-![Rust](https://img.shields.io/badge/Rust-1.75+-brown)
+![Rust](https://img.shields.io/badge/Rust-1.77.2+-brown)
 
 ## Features
 
@@ -62,6 +62,13 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 - **Circuit Breaker**: Automatic polling pause after repeated failures to prevent resource exhaustion
 - **Memory Management**: Proper cleanup of timeouts and event listeners to prevent memory leaks
 
+### Updates
+
+- **Automatic Checks**: Checks the latest stable GitHub release at most once per day
+- **Optional Downloads**: Can download updates automatically but asks before installation
+- **Signed Updates**: Verifies every update bundle with Keybinder's embedded Tauri public key
+- **Visible Progress and Errors**: Shows check, download, install, and failure states in Settings
+
 ### User Experience
 
 - **Welcome Screen**: Guided onboarding with clear action paths
@@ -77,14 +84,14 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 
 - macOS 10.15 or later
 - [skhd](https://github.com/koekeishiya/skhd) installed (optional for config detection)
-- [Rust](https://rustup.rs/) 1.75+ (for building from source)
-- [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/) 18+ (for frontend development)
+- [Rust](https://rustup.rs/) 1.77.2+ (for building from source)
+- [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/) 20.19+ (for frontend development)
 
 ## Installation
 
 ### From Release (Recommended)
 
-1. Go to the [Releases page](https://github.com/jellydn/skhd-config-manger/releases)
+1. Go to the [Releases page](https://github.com/jellydn/keybinder/releases)
 2. Download the latest `.dmg` file (works on both Intel and Apple Silicon Macs)
 3. Open the DMG and drag Keybinder to your Applications folder
 4. Launch from Applications or Spotlight
@@ -96,8 +103,8 @@ A modern, intuitive macOS app for managing [skhd](https://github.com/koekeishiya
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/jellydn/skhd-config-manger.git
-cd skhd-config-manger
+git clone https://github.com/jellydn/keybinder.git
+cd keybinder
 ```
 
 2. Install dependencies:
@@ -171,12 +178,14 @@ Examples:
 Keybinder automatically detects potentially destructive commands and requires confirmation:
 
 **Destructive patterns detected:**
+
 - File operations: `rm`, `mv`, `cp` with system paths
 - System commands: `sudo`, `shutdown`, `reboot`, `killall`
 - Permission changes: `chmod`, `chown`
 - Package management: `brew uninstall`, `npm uninstall`
 
 **Example workflow:**
+
 1. Create shortcut: `cmd + shift - t : rm -rf /tmp/test`
 2. Click **Execute** button
 3. ⚠️ **Warning modal appears**: "This command may be destructive"
@@ -233,6 +242,33 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
    - Check logs for reload confirmation messages
    - Success/error notifications with auto-dismiss after 5 seconds
 
+3. **Start or Restart Service**:
+   - Use **Start Service** when launchd has registered skhd but it is not running
+   - Use **Restart Service** after changing macOS privacy permissions
+   - Startup failures remain visible and include the daemon's real diagnostic
+
+#### macOS Accessibility Permission
+
+Keybinder does not request Accessibility permission for itself. macOS grants
+permission to the process that reads keyboard events, so the correct target is
+the skhd daemon:
+
+- **Original skhd**: Add the exact `skhd` executable used by its launch agent to
+  **System Settings → Privacy & Security → Accessibility**.
+- **skhd.zig**: Add `/Applications/skhd.app` to Accessibility. Approve **Input
+  Monitoring** too if macOS requests it.
+
+After you enable permission, return to Service Manager and select **Restart
+Service**. Keybinder reports permission as granted only after the daemon runs.
+Recent daemon messages such as `must be run with accessibility access` are
+shown as real failures, not hidden or converted to a generic stopped state.
+
+### Updating Keybinder
+
+Open **Settings → Updates** to check manually or select automatic checks and
+downloads. Automatic checks use only the latest stable GitHub release. Beta
+workflow artifacts are never placed in the stable feed.
+
 #### Configuration Import Workflow
 
 1. **Import Config**: Click **Import Config** to select an external skhd configuration file
@@ -252,8 +288,8 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 ### Tech Stack
 
 - **Frontend**: Svelte 5 (with Runes mode for reactive state management)
-- **Backend**: Rust 1.75+ with Tauri v2 framework
-- **Build Tool**: Vite 5 with SvelteKit for frontend bundling
+- **Backend**: Rust 1.77.2+ with Tauri v2 framework
+- **Build Tool**: Vite 8 with SvelteKit for frontend bundling
 - **Package Manager**: Bun (or npm/pnpm as alternatives)
 - **Testing**: Vitest for unit tests, cargo test for Rust backend
 - **Linting**: ESLint + TypeScript + cargo clippy
@@ -265,20 +301,38 @@ The Service Manager provides comprehensive monitoring and control of the skhd se
 This project uses GitHub Actions for automated quality checks and releases:
 
 #### Continuous Integration (CI)
+
 - **Trigger**: Every push and pull request
 - **Checks**:
   - Rust: `cargo test`, `cargo clippy`, `cargo check`
   - TypeScript: `bun run typecheck`
   - Runs on macOS latest
-- **Badge**: ![CI](https://github.com/jellydn/skhd-config-manger/workflows/CI/badge.svg)
+- **Badge**: ![CI](https://github.com/jellydn/keybinder/workflows/CI/badge.svg)
 
 #### Automated Releases
+
 - **Trigger**: Push version tags (e.g., `v1.0.0`, `v1.0.0-beta.1`)
 - **Output**: Universal DMG (Intel + Apple Silicon)
-- **Location**: [GitHub Releases](https://github.com/jellydn/skhd-config-manger/releases)
-- **Badge**: ![Release](https://github.com/jellydn/skhd-config-manger/workflows/Release/badge.svg)
+- **Location**: [GitHub Releases](https://github.com/jellydn/keybinder/releases)
+- **Badge**: ![Release](https://github.com/jellydn/keybinder/workflows/Release/badge.svg)
+
+Stable releases also upload `latest.json` and a signed macOS updater archive.
+The release workflow requires these GitHub Actions secrets:
+
+- `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` for the
+  mandatory Tauri update signature. Back up this key; existing installations
+  cannot trust a replacement key.
+- `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, and
+  `APPLE_SIGNING_IDENTITY` for Developer ID signing.
+- `APPLE_ID`, `APPLE_PASSWORD`, and `APPLE_TEAM_ID` for notarization. The
+  password must be an Apple app-specific password.
+
+The Tauri update signature authenticates an update but does not replace Apple
+Developer ID signing or notarization. Configure both before publishing a build
+for end users.
 
 #### Creating a Release
+
 ```bash
 # Create and push a version tag
 git tag v1.0.0
@@ -299,12 +353,14 @@ This project uses [spec-kit](https://github.com/github/spec-kit) for specificati
 **TL;DR**: Spec-kit is great for greenfield projects, less practical for ongoing development. Use it for initial feature planning, but expect to deviate during implementation.
 
 **What it's good for:**
+
 - ✅ Initial feature planning and requirements gathering
 - ✅ Creating structured documentation for new features
 - ✅ Establishing project constitution and coding standards
 - ✅ Generating implementation tasks from specifications
 
 **Limitations in real-world usage:**
+
 - ❌ Assumes specs remain static during implementation (rarely true)
 - ❌ No clear guidance for handling PR feedback or bug fixes
 - ❌ Designed for research/academic contexts, not production workflows
@@ -315,6 +371,7 @@ This project uses [spec-kit](https://github.com/github/spec-kit) for specificati
 We use a **pragmatic subset** of spec-kit for initial planning only:
 
 #### 1. **Initial Feature Specification**
+
 ```bash
 # Create a new feature spec (creates branch and spec directory)
 /speckit.specify <description of what you want to build>
@@ -325,6 +382,7 @@ We use a **pragmatic subset** of spec-kit for initial planning only:
 ```
 
 #### 2. **Implementation Planning**
+
 ```bash
 # Generate technical plan from specification
 /speckit.plan <tech stack and architecture decisions>
@@ -334,6 +392,7 @@ We use a **pragmatic subset** of spec-kit for initial planning only:
 ```
 
 #### 3. **Task Breakdown**
+
 ```bash
 # Generate implementation tasks
 /speckit.tasks
@@ -430,6 +489,7 @@ When working with spec-kit, use this framework to decide whether to update specs
 **PR Feedback**: "Missing aria-labels on icon buttons"
 
 **Spec-Kit Approach:**
+
 1. Recognized as **spec gap** (accessibility requirement missing)
 2. Updated `specs/003-shortcut-duplicate/spec.md` with NFR-A01 to NFR-A04
 3. Fixed code (added aria-labels)
@@ -439,6 +499,7 @@ When working with spec-kit, use this framework to decide whether to update specs
 #### 📚 Full Methodology Guide
 
 See [`claudedocs/spec-kit-methodology-summary.md`](claudedocs/spec-kit-methodology-summary.md) for:
+
 - Complete decision frameworks
 - Handling PR comments, bug fixes, production issues
 - When spec-kit works well vs. when to adapt

@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::process::Command;
+use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::sync::Mutex;
 
-use crate::models::{ServiceState, ServiceStatus, SkhdVariant};
+use crate::models::{AccessibilityPermission, ServiceState, ServiceStatus, SkhdVariant};
 use crate::services::settings::{effective_variant_async, EffectiveVariantResult};
 use crate::utils::path::get_config_path_for_variant;
 
@@ -34,6 +37,49 @@ fn parse_skhd_status(stdout: &str) -> (ServiceState, Option<String>) {
             Some(format!("Status: {}", stdout.trim())),
         )
     }
+}
+
+fn parse_launchctl_service_line(line: &str) -> Option<(ServiceState, Option<u32>, Option<String>)> {
+    let mut parts = line.split_whitespace();
+    let pid = parts.next()?;
+    let exit_code = parts.next()?;
+
+    if exit_code != "0" {
+        return Some((
+            ServiceState::Error,
+            pid.parse().ok(),
+            Some(format!("Service exited with code {}", exit_code)),
+        ));
+    }
+
+    if pid == "-" {
+        Some((ServiceState::Stopped, None, None))
+    } else {
+        Some((ServiceState::Running, pid.parse().ok(), None))
+    }
+}
+
+fn accessibility_guidance(variant: SkhdVariant) -> String {
+    match variant {
+        SkhdVariant::Original => "Add the skhd executable used by the launch agent to System Settings → Privacy & Security → Accessibility, enable it, then restart the service. Granting Keybinder or Terminal does not grant the launchd service.".to_string(),
+        SkhdVariant::Zig => "Add and enable /Applications/skhd.app in System Settings → Privacy & Security → Accessibility. Also approve Input Monitoring if macOS requests it, then restart the service.".to_string(),
+    }
+}
+
+fn is_accessibility_denial(message: &str) -> bool {
+    let normalized = message.to_lowercase();
+    normalized.contains("must be run with accessibility access")
+        || normalized.contains("accessibilitypermissiondenied")
+        || normalized.contains("accessibility permission denied")
+}
+
+fn current_accessibility_denial(log_tail: &str) -> Option<String> {
+    log_tail
+        .lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .filter(|line| is_accessibility_denial(line))
+        .map(str::to_string)
 }
 
 /// Error type for service operations
@@ -78,10 +124,76 @@ impl ServiceManager {
     /// Get the current status of the skhd service
     pub async fn get_status(&self) -> Result<ServiceStatus, String> {
         let effective = effective_variant_async().await;
-        match effective.variant {
+        let status = match effective.variant {
             SkhdVariant::Original => self.get_status_original().await,
             SkhdVariant::Zig => self.get_status_zig(&effective).await,
+        }?;
+        Ok(self
+            .with_accessibility_status(status, effective.variant)
+            .await)
+    }
+
+    async fn with_accessibility_status(
+        &self,
+        mut status: ServiceStatus,
+        variant: SkhdVariant,
+    ) -> ServiceStatus {
+        status.accessibility_guidance = accessibility_guidance(variant);
+
+        if matches!(status.state, ServiceState::Running) {
+            status.accessibility_permission = AccessibilityPermission::Granted;
+            return status;
         }
+
+        if let Some(diagnostic) = self.recent_accessibility_denial(variant).await {
+            status.state = ServiceState::Error;
+            status.accessibility_permission = AccessibilityPermission::Denied;
+            status.error_message = Some(diagnostic.trim().to_string());
+        }
+
+        status
+    }
+
+    async fn recent_accessibility_denial(&self, variant: SkhdVariant) -> Option<String> {
+        let path = match variant {
+            SkhdVariant::Original => {
+                let username = std::env::var("USER")
+                    .or_else(|_| std::env::var("USERNAME"))
+                    .ok()?;
+                let safe_username: String = username
+                    .chars()
+                    .filter(|character| {
+                        character.is_alphanumeric() || *character == '_' || *character == '-'
+                    })
+                    .collect();
+                PathBuf::from(format!("/tmp/skhd_{}.err.log", safe_username))
+            }
+            SkhdVariant::Zig => dirs::home_dir()?.join("Library/Logs/skhd.log"),
+        };
+
+        let mut file = tokio::fs::File::open(path).await.ok()?;
+        let metadata = file.metadata().await.ok()?;
+        if metadata.modified().ok()?.elapsed().ok()? > Duration::from_secs(300) {
+            return None;
+        }
+
+        const MAX_LOG_TAIL_BYTES: u64 = 16 * 1024;
+        let start = metadata.len().saturating_sub(MAX_LOG_TAIL_BYTES);
+        file.seek(std::io::SeekFrom::Start(start)).await.ok()?;
+
+        let mut bytes = Vec::with_capacity((metadata.len() - start) as usize);
+        file.take(MAX_LOG_TAIL_BYTES)
+            .read_to_end(&mut bytes)
+            .await
+            .ok()?;
+        let tail = String::from_utf8_lossy(&bytes);
+        let complete_tail = if start == 0 {
+            tail.as_ref()
+        } else {
+            tail.split_once('\n').map_or("", |(_, rest)| rest)
+        };
+
+        current_accessibility_denial(complete_tail)
     }
 
     /// Get status for original skhd (koekeishiya)
@@ -125,6 +237,8 @@ impl ServiceManager {
                  skhd --install-service && skhd --start-service"
                     .to_string(),
             ),
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: accessibility_guidance(SkhdVariant::Zig),
         })
     }
 
@@ -146,23 +260,7 @@ impl ServiceManager {
         // Look for the service in the output
         for line in stdout.lines() {
             if line.contains(label) {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 3 {
-                    let pid_str = parts[0];
-                    let status_code = parts[1];
-
-                    let (state, pid, error_message) = if pid_str == "-" {
-                        (ServiceState::Stopped, None, None)
-                    } else if status_code != "0" {
-                        (
-                            ServiceState::Error,
-                            pid_str.parse().ok(),
-                            Some(format!("Service exited with code {}", status_code)),
-                        )
-                    } else {
-                        (ServiceState::Running, pid_str.parse().ok(), None)
-                    };
-
+                if let Some((state, pid, error_message)) = parse_launchctl_service_line(line) {
                     let config_path = match label {
                         "com.koekeishiya.skhd" => self.get_active_config_path_original().await.ok(),
                         _ => self.get_active_config_path_zig().await.ok(),
@@ -174,6 +272,8 @@ impl ServiceManager {
                         last_updated: chrono::Utc::now(),
                         config_path,
                         error_message,
+                        accessibility_permission: AccessibilityPermission::Unknown,
+                        accessibility_guidance: String::new(),
                     });
                 }
             }
@@ -194,6 +294,8 @@ impl ServiceManager {
                     label
                 ),
             }),
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: String::new(),
         })
     }
 
@@ -228,6 +330,8 @@ impl ServiceManager {
             last_updated: chrono::Utc::now(),
             config_path: self.get_active_config_path_zig().await.ok(),
             error_message,
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: accessibility_guidance(SkhdVariant::Zig),
         })
     }
 
@@ -346,43 +450,86 @@ impl ServiceManager {
     async fn start_service_original(&self) -> Result<(), String> {
         let plist_path = self.get_plist_path_original()?;
         let domain = Self::gui_domain_target()?;
+        let service_registered = !matches!(
+            self.get_status_original().await?.state,
+            ServiceState::Unknown
+        );
 
-        let output = Command::new("launchctl")
-            .arg("bootstrap")
-            .arg(domain)
-            .arg(&plist_path)
-            .output()
-            .map_err(|e| {
-                format!(
-                    "skhd: Failed to execute launchctl bootstrap: {}. \
-                     Check that you have permission to control launchd services.",
-                    e
-                )
-            })?;
+        let output = if service_registered {
+            Command::new("launchctl")
+                .arg("kickstart")
+                .arg("-k")
+                .arg(format!("{domain}/com.koekeishiya.skhd"))
+                .output()
+        } else {
+            Command::new("launchctl")
+                .arg("bootstrap")
+                .arg(&domain)
+                .arg(&plist_path)
+                .output()
+        }
+        .map_err(|error| {
+            let action = if service_registered {
+                "kickstart"
+            } else {
+                "bootstrap"
+            };
+            format!(
+                "skhd: Failed to execute launchctl {action}: {error}. \
+                 Check that you have permission to control launchd services."
+            )
+        })?;
 
-        // Also try the older load command for backwards compatibility
-        if !output.status.success() {
-            let _ = Command::new("launchctl")
+        let mut command_error = (!output.status.success()).then(|| {
+            let action = if service_registered {
+                "kickstart"
+            } else {
+                "bootstrap"
+            };
+            format!(
+                "skhd: launchctl {action} failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            )
+        });
+
+        // Also try the older load command for backwards compatibility.
+        if !service_registered && !output.status.success() {
+            let fallback = Command::new("launchctl")
                 .arg("load")
                 .arg(&plist_path)
                 .output();
+            if let Ok(fallback) = fallback {
+                if !fallback.status.success() {
+                    command_error = Some(format!(
+                        "skhd: launchctl bootstrap failed: {}. launchctl load also failed: {}",
+                        String::from_utf8_lossy(&output.stderr).trim(),
+                        String::from_utf8_lossy(&fallback.stderr).trim()
+                    ));
+                } else {
+                    command_error = None;
+                }
+            }
         }
 
         // Wait for service to start
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service started
-        let status = self.get_status_original().await?;
+        let status = self
+            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original)
+            .await;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
-                "skhd: Service failed to start. Check your skhd configuration for syntax errors.".to_string()
+                command_error.unwrap_or_else(|| {
+                    "skhd: Service failed to start. Check your skhd configuration and service logs."
+                        .to_string()
+                })
             })),
-            _ => Err(format!(
-                "skhd: Service in unexpected state: {:?}. Try restarting the service manually with: \
-                 brew services restart skhd",
+            _ => Err(command_error.unwrap_or_else(|| format!(
+                "skhd: Service in unexpected state: {:?}. Try restarting the service manually with: brew services restart skhd",
                 status.state
-            )),
+            ))),
         }
     }
 
@@ -414,7 +561,9 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service started
-        let status = self.get_status_zig(effective).await?;
+        let status = self
+            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
+            .await;
         match status.state {
             ServiceState::Running => Ok(()),
             ServiceState::Error => Err(status.error_message.unwrap_or_else(|| {
@@ -466,9 +615,13 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service is running
-        let status = self.get_status_original().await?;
+        let status = self
+            .with_accessibility_status(self.get_status_original().await?, SkhdVariant::Original)
+            .await;
         if !matches!(status.state, ServiceState::Running) {
-            return Err("skhd: Service failed to restart. Check the service status.".to_string());
+            return Err(status.error_message.unwrap_or_else(|| {
+                "skhd: Service failed to restart. Check the service status and logs.".to_string()
+            }));
         }
 
         Ok(())
@@ -501,11 +654,14 @@ impl ServiceManager {
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
         // Verify service is running
-        let status = self.get_status_zig(effective).await?;
+        let status = self
+            .with_accessibility_status(self.get_status_zig(effective).await?, SkhdVariant::Zig)
+            .await;
         if !matches!(status.state, ServiceState::Running) {
-            return Err(
-                "skhd.zig: Service failed to restart. Check the service status.".to_string(),
-            );
+            return Err(status.error_message.unwrap_or_else(|| {
+                "skhd.zig: Service failed to restart. Check the service status and logs."
+                    .to_string()
+            }));
         }
 
         Ok(())
@@ -766,6 +922,61 @@ mod tests {
             parse_skhd_status("unexpected output").0,
             ServiceState::Unknown
         ));
+    }
+
+    #[test]
+    fn test_launchctl_nonzero_exit_without_pid_is_an_error() {
+        let (state, pid, message) =
+            parse_launchctl_service_line("- 1 com.koekeishiya.skhd").unwrap();
+
+        assert_eq!(state, ServiceState::Error);
+        assert_eq!(pid, None);
+        assert_eq!(message.as_deref(), Some("Service exited with code 1"));
+
+        let (state, pid, message) =
+            parse_launchctl_service_line("- 0 com.koekeishiya.skhd").unwrap();
+        assert_eq!(state, ServiceState::Stopped);
+        assert_eq!(pid, None);
+        assert_eq!(message, None);
+    }
+
+    #[test]
+    fn test_accessibility_denial_matches_daemon_errors() {
+        assert!(is_accessibility_denial(
+            "skhd: must be run with accessibility access! abort.."
+        ));
+        assert!(is_accessibility_denial(
+            "error.AccessibilityPermissionDenied"
+        ));
+        assert!(!is_accessibility_denial("service exited with code 1"));
+    }
+
+    #[test]
+    fn test_only_current_log_diagnostic_can_report_accessibility_denial() {
+        assert_eq!(
+            current_accessibility_denial(
+                "skhd: configuration error\nskhd: must be run with accessibility access! abort..\n"
+            )
+            .as_deref(),
+            Some("skhd: must be run with accessibility access! abort..")
+        );
+        assert_eq!(
+            current_accessibility_denial(
+                "skhd: must be run with accessibility access! abort..\nskhd: configuration error\n"
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn test_accessibility_guidance_names_the_correct_permission_target() {
+        let original = accessibility_guidance(SkhdVariant::Original);
+        assert!(original.contains("skhd executable"));
+        assert!(original.contains("Granting Keybinder or Terminal does not grant"));
+
+        let zig = accessibility_guidance(SkhdVariant::Zig);
+        assert!(zig.contains("/Applications/skhd.app"));
+        assert!(zig.contains("Input Monitoring"));
     }
 
     #[test]

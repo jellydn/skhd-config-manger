@@ -1,6 +1,17 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// Accessibility permission state verified from the skhd daemon itself.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AccessibilityPermission {
+    #[serde(rename = "Granted")]
+    Granted,
+    #[serde(rename = "Denied")]
+    Denied,
+    #[serde(rename = "Unknown")]
+    Unknown,
+}
+
 /// Represents skhd service lifecycle states
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ServiceState {
@@ -50,6 +61,12 @@ pub struct ServiceStatus {
 
     /// Error details if state is Error
     pub error_message: Option<String>,
+
+    /// Permission state based on daemon-owned status and recent logs
+    pub accessibility_permission: AccessibilityPermission,
+
+    /// Correct macOS permission target and recovery steps
+    pub accessibility_guidance: String,
 }
 
 impl ServiceStatus {
@@ -61,6 +78,8 @@ impl ServiceStatus {
             last_updated: Utc::now(),
             config_path: None,
             error_message: None,
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: String::new(),
         }
     }
 
@@ -72,6 +91,8 @@ impl ServiceStatus {
             last_updated: Utc::now(),
             config_path: None,
             error_message: None,
+            accessibility_permission: AccessibilityPermission::Granted,
+            accessibility_guidance: String::new(),
         }
     }
 
@@ -83,6 +104,8 @@ impl ServiceStatus {
             last_updated: Utc::now(),
             config_path: None,
             error_message: Some(message),
+            accessibility_permission: AccessibilityPermission::Unknown,
+            accessibility_guidance: String::new(),
         }
     }
 

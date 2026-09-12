@@ -2,6 +2,9 @@ use crate::models::ServiceStatus;
 use crate::services::ServiceManager;
 use tauri::State;
 
+const ACCESSIBILITY_SETTINGS_URL: &str =
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
+
 /// Get the current status of the skhd service
 #[tauri::command]
 pub async fn get_service_status(
@@ -44,4 +47,11 @@ pub async fn install_service(service_manager: State<'_, ServiceManager>) -> Resu
 #[tauri::command]
 pub async fn uninstall_service(service_manager: State<'_, ServiceManager>) -> Result<(), String> {
     service_manager.uninstall_service().await
+}
+
+/// Open the macOS Accessibility pane without exposing arbitrary URL opening.
+#[tauri::command]
+pub fn open_accessibility_settings() -> Result<(), String> {
+    tauri_plugin_opener::open_url(ACCESSIBILITY_SETTINGS_URL, None::<&str>)
+        .map_err(|error| error.to_string())
 }

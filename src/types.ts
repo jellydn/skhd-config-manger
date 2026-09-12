@@ -191,13 +191,7 @@ export interface TestResult {
  * Execution status for UI state management
  */
 export type ExecutionStatus =
-  | 'idle'
-  | 'confirming'
-  | 'executing'
-  | 'success'
-  | 'error'
-  | 'cancelled'
-  | 'timeout';
+  'idle' | 'confirming' | 'executing' | 'success' | 'error' | 'cancelled' | 'timeout';
 
 /**
  * Log level categorization for visual distinction
@@ -228,13 +222,9 @@ export interface LogEntry {
  * skhd service lifecycle states
  */
 export type ServiceState =
-  | 'Stopped'
-  | 'Starting'
-  | 'Running'
-  | 'Stopping'
-  | 'Reloading'
-  | 'Error'
-  | 'Unknown';
+  'Stopped' | 'Starting' | 'Running' | 'Stopping' | 'Reloading' | 'Error' | 'Unknown';
+
+export type AccessibilityPermission = 'Granted' | 'Denied' | 'Unknown';
 
 /**
  * Represents the current state of the skhd service
@@ -254,6 +244,12 @@ export interface ServiceStatus {
 
   /** Error details if state is Error */
   error_message: string | null;
+
+  /** Permission state verified from daemon-owned evidence */
+  accessibility_permission: AccessibilityPermission;
+
+  /** Correct macOS permission target and recovery steps */
+  accessibility_guidance: string;
 }
 
 /**

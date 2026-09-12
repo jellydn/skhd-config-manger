@@ -6,16 +6,12 @@
    * logs from the skhd service.
    */
 
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import LogViewer from '../../components/LogViewer.svelte';
-  import type { ServiceStatus, ConfigFile } from '../../types';
-  import { getServiceStatus, reloadService } from '../../services/service';
+  import ServiceControls from '../../components/ServiceControls.svelte';
+  import type { ConfigFile } from '../../types';
+  import { reloadService } from '../../services/service';
   import { detectActiveConfig, importConfig, saveConfig } from '../../services/tauri';
-
-  // Service status state
-  let status = $state<ServiceStatus | null>(null);
-  let isReloading = $state(false);
-  let statusPollInterval: number | null = null;
 
   // Configuration state
   let activeConfigPath = $state<string>('');
@@ -36,23 +32,8 @@
 
   // Lifecycle
   onMount(async () => {
-    await Promise.all([loadStatus(), loadActiveConfig()]);
-    statusPollInterval = window.setInterval(loadStatus, 5000);
+    await loadActiveConfig();
   });
-
-  onDestroy(() => {
-    if (statusPollInterval) {
-      window.clearInterval(statusPollInterval);
-    }
-  });
-
-  async function loadStatus() {
-    try {
-      status = await getServiceStatus();
-    } catch (err) {
-      console.error('Failed to get service status:', err);
-    }
-  }
 
   async function loadActiveConfig() {
     try {
@@ -78,7 +59,7 @@
 
       importFeedback = {
         type: 'success',
-        message: `Imported: ${config.file_path}. Click "Reload Service" to apply.`
+        message: `Imported: ${config.file_path}. Click "Reload Service" to apply.`,
       };
 
       // Clear feedback after 5 seconds
@@ -89,7 +70,7 @@
       console.error('Failed to import config:', err);
       importFeedback = {
         type: 'error',
-        message: `Failed to import: ${err}`
+        message: `Failed to import: ${err}`,
       };
 
       // Clear feedback after 10 seconds for errors
@@ -102,10 +83,7 @@
   }
 
   async function handleReload() {
-    if (isReloading) return;
     try {
-      isReloading = true;
-
       // If there's a loaded config (from import), save it to the active config path first
       // This ensures skhd reads the imported config when it reloads
       if (loadedConfig && activeConfigPath) {
@@ -119,7 +97,6 @@
 
       // After reload, update what skhd service is actually using
       setTimeout(async () => {
-        await loadStatus();
         await loadActiveConfig();
         // Clear loaded config since it's now active
         loadedConfigPath = '';
@@ -127,20 +104,7 @@
       }, 1000);
     } catch (err) {
       console.error('Failed to reload service:', err);
-    } finally {
-      isReloading = false;
-    }
-  }
-
-  function getStatusClass(state: string): string {
-    switch (state) {
-      case 'Running': return 'status-running';
-      case 'Stopped': return 'status-stopped';
-      case 'Starting':
-      case 'Stopping':
-      case 'Reloading': return 'status-transitioning';
-      case 'Error': return 'status-error';
-      default: return 'status-unknown';
+      throw err;
     }
   }
 
@@ -223,66 +187,7 @@
 </svelte:head>
 
 <div class="logs-page">
-  <!-- Toolbar -->
-  <header class="toolbar">
-    <div class="toolbar-left">
-      <h1>Service Manager</h1>
-      {#if status}
-        <div class="service-status" role="status" aria-label="Service status: {status.state}">
-          <div class="status-indicator {getStatusClass(status.state)}" aria-hidden="true"></div>
-          <span class="status-text">{status.state}</span>
-          {#if status.pid}
-            <span class="status-pid">PID: {status.pid}</span>
-          {/if}
-        </div>
-      {/if}
-    </div>
-    <div class="toolbar-actions">
-      <!-- Configuration Import -->
-      <button
-        class="toolbar-btn"
-        onclick={handleImportConfig}
-        disabled={isImporting}
-        aria-label="Import configuration"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <line x1="9" y1="15" x2="12" y2="12"></line>
-          <line x1="15" y1="15" x2="12" y2="12"></line>
-        </svg>
-        Import Config
-      </button>
-
-      <!-- Service Control -->
-      <button
-        class="toolbar-btn"
-        onclick={handleReload}
-        disabled={isReloading || !status || status?.state === 'Error'}
-        aria-label="Reload skhd service"
-      >
-        {#if isReloading}
-          <svg class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="2" x2="12" y2="6"></line>
-            <line x1="12" y1="18" x2="12" y2="22"></line>
-            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-            <line x1="2" y1="12" x2="6" y2="12"></line>
-            <line x1="18" y1="12" x2="22" y2="12"></line>
-            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-          </svg>
-        {:else}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        {/if}
-        Reload Service
-      </button>
-    </div>
-  </header>
+  <ServiceControls {isImporting} onImport={handleImportConfig} onReload={handleReload} />
 
   <main class="logs-page__content">
     <!-- Log Viewer Controls Panel -->
@@ -302,11 +207,25 @@
         {#if importFeedback}
           <div class="import-feedback-inline import-feedback-{importFeedback.type}">
             {#if importFeedback.type === 'success'}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             {:else}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -320,7 +239,8 @@
         <!-- Pagination and Count Group -->
         <div class="pagination-group">
           <span class="log-count">
-            {logsCount} {logLevelFilter === 'error' ? 'error' : 'info'} logs
+            {logsCount}
+            {logLevelFilter === 'error' ? 'error' : 'info'} logs
           </span>
           <div class="pagination-controls">
             <button
@@ -329,7 +249,14 @@
               disabled={currentPage === 1}
               aria-label="Previous page"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -342,7 +269,14 @@
               disabled={currentPage >= totalPages || totalPages === 0}
               aria-label="Next page"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
@@ -352,22 +286,47 @@
         <!-- Log Level Filter Toggle Icon -->
         <button
           class="filter-toggle-icon"
-          onclick={() => logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error'}
+          onclick={() => (logLevelFilter = logLevelFilter === 'error' ? 'info' : 'error')}
           aria-label={logLevelFilter === 'error' ? 'Show info logs' : 'Show error logs'}
-          title={logLevelFilter === 'error' ? 'Click to show info logs' : 'Click to show error logs'}
+          title={logLevelFilter === 'error'
+            ? 'Click to show info logs'
+            : 'Click to show error logs'}
         >
           {#if logLevelFilter === 'error'}
             <!-- Error/Warning icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 2L2 14H14L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-              <path d="M8 6V9M8 12H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 2L2 14H14L8 2Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M8 6V9M8 12H8.01"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
             </svg>
           {:else}
             <!-- Info/List icon -->
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/>
-              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor" />
+              <rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor" />
+              <rect x="2" y="11" width="8" height="2" rx="1" fill="currentColor" />
             </svg>
           {/if}
         </button>
@@ -393,12 +352,27 @@
           aria-label="Load more historical logs"
         >
           {#if isLoadingMore}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="spinner"
+            >
               <circle cx="12" cy="12" r="10"></circle>
             </svg>
             Loading more logs...
           {:else}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M3 12h18M3 12l6-6M3 12l6 6"></path>
               <path d="M21 12l-6-6M21 12l-6 6"></path>
             </svg>
@@ -416,199 +390,6 @@
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-  }
-
-  /* Toolbar - Native macOS style */
-  .toolbar {
-    background: var(--color-surface-secondary);
-    border-bottom: 1px solid var(--color-border);
-    padding: 20px 20px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    min-height: 52px;
-  }
-
-  .toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .toolbar-left h1 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-text);
-    margin: 0;
-  }
-
-  .service-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--color-text);
-  }
-
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .status-running {
-    background: var(--color-status-success);
-    box-shadow: 0 0 6px var(--color-status-success-bg);
-  }
-
-  .status-stopped {
-    background: var(--color-status-stopped);
-  }
-
-  .status-transitioning {
-    background: var(--color-status-warning);
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  .status-error {
-    background: var(--color-status-error);
-    box-shadow: 0 0 6px var(--color-status-error-bg);
-  }
-
-  .status-unknown {
-    background: var(--color-status-unknown);
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  .status-text {
-    font-weight: 500;
-  }
-
-  .status-pid {
-    color: rgba(255, 255, 255, 0.5);
-  }
-
-  .toolbar-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .toolbar-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--color-button-secondary-bg);
-    border: 1px solid var(--color-button-secondary-border);
-    border-radius: 6px;
-    color: var(--color-button-secondary-text);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    min-height: 28px;
-  }
-
-  .toolbar-btn:hover:not(:disabled) {
-    background: var(--color-button-secondary-hover);
-    border-color: var(--color-button-secondary-border);
-    color: var(--color-text);
-  }
-
-  .toolbar-btn:active:not(:disabled) {
-    background: var(--color-button-secondary-active);
-  }
-
-  .toolbar-btn:focus-visible {
-    outline: 2px solid var(--color-button-secondary-focus);
-    outline-offset: 2px;
-  }
-
-  .toolbar-btn:disabled {
-    background: var(--color-button-disabled-bg);
-    color: var(--color-button-disabled-text);
-    border-color: var(--color-button-disabled-border);
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  .toolbar-btn svg {
-    flex-shrink: 0;
-    opacity: 0.8;
-  }
-
-  .toolbar-btn:hover:not(:disabled) svg {
-    opacity: 1;
-  }
-
-  .spinner {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .toolbar-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--color-button-secondary-bg);
-    border: 1px solid var(--color-button-secondary-border);
-    border-radius: 6px;
-    color: var(--color-button-secondary-text);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .toolbar-checkbox:hover {
-    background: var(--color-button-secondary-hover);
-    border-color: var(--color-button-secondary-border);
-    color: var(--color-text);
-  }
-
-  .toolbar-checkbox svg {
-    flex-shrink: 0;
-    color: var(--color-border-hover);
-  }
-
-  .toolbar-btn-primary {
-    background: var(--color-button-primary-bg);
-    border-color: var(--color-button-primary-bg);
-    color: var(--color-button-primary-text);
-  }
-
-  .toolbar-btn-primary:hover:not(:disabled) {
-    background: var(--color-button-primary-hover);
-    border-color: var(--color-button-primary-hover);
-  }
-
-  .toolbar-btn-primary:active:not(:disabled) {
-    background: var(--color-button-primary-active);
-    border-color: var(--color-button-primary-active);
-  }
-
-  .toolbar-btn-primary:focus-visible {
-    outline: 2px solid var(--color-button-primary-focus);
-    outline-offset: 2px;
-  }
-
-  .toolbar-btn-primary:disabled {
-    background: var(--color-button-disabled-bg);
-    color: var(--color-button-disabled-text);
-    border-color: var(--color-button-disabled-border);
-    cursor: not-allowed;
-    opacity: 0.6;
   }
 
   .logs-page__content {
